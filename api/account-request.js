@@ -1,0 +1,58 @@
+import { authenticate, cors, failure, validKey } from '../lib/server/firebase.js';
+export default async function handler(req, res) {
+  if (cors(req, res)) return;
+  try {
+    const { auth, db, user } = await authenticate(req, ['admin']);
+    const { action, targetUid, newPassword, note = '', isActive } = req.body || {};
+    const actions = ['approve', 'reject', 'toggleTeacherStatus', 'resetStudentPassword', 'deleteStudentAccount'];
+    if (!actions.includes(action) || !validKey(targetUid) || typeof note !== 'string' || note.length > 1000) return res.status(400).json({ error: 'إجراء أو بيانات غير صالحة.' });
+    if (targetUid === user.uid) return res.status(403).json({ error: 'لا يمكن تعديل حسابك الإداري بهذه العملية.' });
+    const target = await auth.getUser(targetUid);
+    if (target.customClaims?.role === 'admin') return res.status(403).json({ error: 'لا يمكن تعديل حساب مدير بهذه العملية.' });
+    const now = Date.now();
+    const setRole = async role => {
+      const claims = { ...(target.customClaims || {}) };
+      if (role) claims.role = role; else delete claims.role;
+      await auth.setCustomUserClaims(targetUid, claims);
+      await auth.revokeRefreshTokens(targetUid);
+    };
+    if (['approve', 'reject', 'toggleTeacherStatus'].includes(action)) {
+      const request = (await db.ref(`scorear_account_requests/${targetUid}`).once('value')).val();
+      if (!request && target.customClaims?.role !== 'teacher') return res.status(404).json({ error: 'طلب المعلم غير موجود.' });
+      const active = action === 'approve' || (action === 'toggleTeacherStatus' && isActive === true);
+      if (action === 'toggleTeacherStatus' && typeof isActive !== 'boolean') return res.status(400).json({ error: 'حالة التفعيل غير صحيحة.' });
+      if (active && !target.emailVerified) return res.status(400).json({ error: 'يجب تأكيد بريد المعلم أولًا.' });
+      await setRole(active ? 'teacher' : null);
+      const status = active ? 'approved' : action === 'reject' ? 'rejected' : 'suspended';
+      const updates = {};
+      if (request) Object.assign(updates, {
+        [`scorear_account_requests/${targetUid}/status`]: status,
+        [`scorear_account_requests/${targetUid}/reviewedAt`]: now,
+        [`scorear_account_requests/${targetUid}/reviewedBy`]: user.uid,
+        [`scorear_account_requests/${targetUid}/reviewNote`]: note
+      });
+      updates[`scorear_teachers_registry/${targetUid}`] = {
+        userId: targetUid, firebaseUid: targetUid, email: target.email || '',
+        displayName: request?.displayName || target.displayName || 'معلم',
+        schoolSubject: request?.subject || '', school: request?.school || '', status, updatedAt: now
+      };
+      await db.ref().update(updates);
+      return res.status(200).json({ success: true, status, message: 'تم تحديث حساب المعلم.' });
+    }
+    const student = (await db.ref(`scorear_students/${targetUid}`).once('value')).val();
+    if (!student || target.customClaims?.role === 'teacher') return res.status(403).json({ error: 'العملية مخصصة لحساب طالب.' });
+    if (action === 'resetStudentPassword') {
+      if (typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 128) return res.status(400).json({ error: 'كلمة المرور يجب أن تكون من 8 إلى 128 حرفًا.' });
+      await auth.updateUser(targetUid, { password: newPassword });
+      await auth.revokeRefreshTokens(targetUid);
+      await db.ref(`scorear_students/${targetUid}`).update({ isTemporaryPassword: true, updatedAt: now });
+    } else {
+      await auth.updateUser(targetUid, { disabled: true });
+      await auth.revokeRefreshTokens(targetUid);
+      await db.ref(`scorear_students/${targetUid}`).update({ isActive: false, deletionPending: true });
+      await auth.deleteUser(targetUid);
+      await db.ref(`scorear_students/${targetUid}`).remove();
+    }
+    return res.status(200).json({ success: true, message: 'تم تنفيذ العملية.' });
+  } catch (err) { return failure(res, err); }
+}

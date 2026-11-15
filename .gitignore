@@ -1,0 +1,12 @@
+node_modules/
+dist/
+public/
+*.log
+*.zip
+.firebase/
+.tmp*
+scratch/
+js/engines/assets/
+.vercel
+.env*
+!.env.example

@@ -1,0 +1,25 @@
+{
+  "name": "«سكور آر | ScoreAR» — منصة المسابقات التعليمية التفاعلية",
+  "short_name": "ScoreAR | سكور آر",
+  "description": "من محتوى الدرس إلى رحلة تعلم ومنافسة داخل الفصل - كل سؤال يفتح بابًا للفهم",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFD93D",
+  "dir": "rtl",
+  "lang": "ar",
+  "categories": [
+    "education",
+    "games"
+  ],
+  "icons": [
+    {
+      "src": "assets/mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

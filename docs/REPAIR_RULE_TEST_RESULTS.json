@@ -1,0 +1,6 @@
+{
+  "checks": 44,
+  "passed": true,
+  "emulator": "Firebase RTDB 4.11.2",
+  "namespace": "demo-scorear-repair"
+}

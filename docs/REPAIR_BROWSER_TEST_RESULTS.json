@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "scenario": "one teacher + two anonymous guests with the same name + demo bot; real SDK and real RTDB rules",
+  "results": [
+    {
+      "id": "browser-guest-1-134337",
+      "score": 998,
+      "isDemo": false
+    },
+    {
+      "id": "browser-guest-2-134337",
+      "score": 0,
+      "isDemo": false
+    },
+    {
+      "id": "demo_1794767191992_uc2j",
+      "score": 998,
+      "isDemo": true
+    }
+  ],
+  "lateEntryRejected": true,
+  "existingGuestReconnected": true,
+  "classMembershipAndTaskCreation": true,
+  "errors": []
+}

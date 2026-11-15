@@ -1,0 +1,10 @@
+{
+  "projects": {
+    "default": "scorear2",
+    "production": "scorear2",
+    "scorear-e4186": "scorear-e4186",
+    "staging": "scorear-staging-test"
+  },
+  "targets": {},
+  "etags": {}
+}

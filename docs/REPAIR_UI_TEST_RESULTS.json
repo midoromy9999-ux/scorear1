@@ -1,0 +1,44 @@
+[
+  {
+    "url": "/",
+    "viewport": 1440,
+    "title": "سكور آر | كل سؤال، بداية مغامرة",
+    "pageErrors": [],
+    "horizontalOverflow": false
+  },
+  {
+    "url": "/characters.html",
+    "viewport": 1440,
+    "title": "أبطال سكور آر | ٢٠ رفيقاً كرتونياً للمغامرة",
+    "pageErrors": [],
+    "horizontalOverflow": false
+  },
+  {
+    "url": "/cards.html",
+    "viewport": 1440,
+    "title": "كروت سكور آر | ٢٠ كارت تكتيكي لحرب الكروت والمنافسة",
+    "pageErrors": [],
+    "horizontalOverflow": false
+  },
+  {
+    "url": "/",
+    "viewport": 390,
+    "title": "سكور آر | كل سؤال، بداية مغامرة",
+    "pageErrors": [],
+    "horizontalOverflow": false
+  },
+  {
+    "url": "/characters.html",
+    "viewport": 390,
+    "title": "أبطال سكور آر | ٢٠ رفيقاً كرتونياً للمغامرة",
+    "pageErrors": [],
+    "horizontalOverflow": false
+  },
+  {
+    "url": "/cards.html",
+    "viewport": 390,
+    "title": "كروت سكور آر | ٢٠ كارت تكتيكي لحرب الكروت والمنافسة",
+    "pageErrors": [],
+    "horizontalOverflow": false
+  }
+]
