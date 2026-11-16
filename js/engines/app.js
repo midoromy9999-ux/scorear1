@@ -985,3 +985,26 @@ window.join = join;
 hydrate();
 render();
 matchMedia('(max-width:1000px)').addEventListener('change',syncSidebar);
+
+
+// Auto-detect ?pin=XXXXXX from QR code scan and jump straight to Name + Avatar
+(function autoCheckQrPinOnStartup() {
+  try {
+    const params = new URLSearchParams(window.location.search || '');
+    let qrPin = params.get('pin');
+    if (!qrPin && window.location.hash.includes('pin=')) {
+      const qPart = window.location.hash.split('?')[1] || '';
+      qrPin = new URLSearchParams(qPart).get('pin');
+    }
+    if (qrPin && /^\d{6}$/.test(qrPin.trim())) {
+      const clean = qrPin.trim();
+      setTimeout(() => {
+        if (window.history && window.history.replaceState) {
+          const cleanUrl = window.location.pathname + (window.location.hash.split('?')[0] || '');
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+        join(clean);
+      }, 180);
+    }
+  } catch (e) {}
+})();

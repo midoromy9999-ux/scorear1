@@ -118,17 +118,27 @@
           <button class="btn outline" onclick="ScoreARQuizHost.closeHostSession()" style="background:rgba(0,0,0,0.5);border-radius:12px;padding:9px 15px;color:#fff;">✕ مغادرة القاعة</button>
         </div>
       </div>
-      <div class="host-lobby-pin-stage" style="position:absolute;top:82px;left:50%;transform:translateX(-50%);z-index:20;max-width:94vw;">
-        <div class="lobby-white-3d-box host-lobby-pin-box" style="padding:14px 34px;display:flex;align-items:center;gap:24px;text-align:right;">
-          <div id="lobbyQrCodeHolder" style="width:72px;height:72px;flex-shrink:0;background:#fff;border-radius:12px;padding:3px;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;">
-            <img src="${qrUrl}" alt="QR" style="width:66px;height:66px;border-radius:8px;display:block;">
+      <div class="host-lobby-pin-stage" style="position:absolute;top:78px;left:50%;transform:translateX(-50%);z-index:20;max-width:96vw;">
+        <div class="host-lobby-pin-box" style="background:linear-gradient(135deg, rgba(19,17,44,0.95) 0%, rgba(32,24,68,0.95) 100%);backdrop-filter:blur(20px);border:2px solid rgba(251,191,36,0.65);border-radius:26px;padding:12px 26px;display:flex;align-items:center;gap:22px;box-shadow:0 20px 55px rgba(0,0,0,0.75), 0 0 35px rgba(117,80,239,0.45);direction:rtl;">
+          <div onclick="ScoreARQuizHostView.toggleQrZoom('${currentRoom.pin}')" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;" title="اضغط لتكبير الباركود بملء الشاشة">
+            <div id="lobbyQrCodeHolder" style="width:78px;height:78px;flex-shrink:0;background:#fff;border-radius:14px;padding:5px;box-shadow:0 0 20px rgba(251,191,36,0.45);display:flex;align-items:center;justify-content:center;border:2px solid #fbbf24;transition:transform 0.2s;">
+              <img src="${qrUrl}" alt="QR" style="width:68px;height:68px;border-radius:8px;display:block;">
+            </div>
+            <span style="font-size:10px;font-weight:900;color:#fcd34d;background:rgba(245,158,11,0.2);padding:1px 8px;border-radius:999px;">🔍 كبّر الباركود</span>
           </div>
-          <div style="min-width:0;">
-            <span style="font-size:11px;font-weight:900;letter-spacing:1px;color:#7550ef;text-transform:uppercase;display:block;">رمز القاعة المباشر (PIN)</span>
-            <div class="host-lobby-pin-digits" style="font-size:40px;font-weight:900;letter-spacing:10px;line-height:1.1;color:#0c0d1d;font-family:Arial,monospace,sans-serif;margin:3px 0;">${currentRoom.pin}</div>
-            <small style="color:#4b5563;font-size:12px;font-weight:700;display:block;">ادخل واكتب الرمز لبدء التحدي</small>
+          <div style="width:2px;height:64px;background:linear-gradient(180deg,transparent,rgba(251,191,36,0.5),transparent);"></div>
+          <div style="text-align:center;">
+            <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:4px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 10px #34d399;"></span>
+              <span style="font-size:11.5px;font-weight:900;letter-spacing:0.5px;color:#c4b5fd;">امسح الباركود للدخول المباشر أو اكتب رمز القاعة:</span>
+            </div>
+            <div class="host-lobby-pin-digits" style="display:flex;align-items:center;justify-content:center;gap:10px;direction:ltr;">
+              <span style="background:linear-gradient(180deg,#ffffff,#e2e8f0);color:#090a16;font-size:38px;font-weight:900;font-family:Arial,monospace;padding:3px 16px;border-radius:14px;letter-spacing:6px;box-shadow:0 6px 18px rgba(0,0,0,0.4),inset 0 2px 4px #fff;">${String(currentRoom.pin).slice(0,3)}</span>
+              <span style="color:#fbbf24;font-size:28px;font-weight:900;">•</span>
+              <span style="background:linear-gradient(180deg,#ffffff,#e2e8f0);color:#090a16;font-size:38px;font-weight:900;font-family:Arial,monospace;padding:3px 16px;border-radius:14px;letter-spacing:6px;box-shadow:0 6px 18px rgba(0,0,0,0.4),inset 0 2px 4px #fff;">${String(currentRoom.pin).slice(3,6)}</span>
+            </div>
           </div>
-          <button class="host-lobby-copy-btn" onclick="navigator.clipboard?.writeText('${currentRoom.pin}'); if(window.toast) window.toast('تم نسخ رمز القاعة: ' + '${currentRoom.pin}');" style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:12px;padding:10px 14px;font-size:12px;font-weight:800;color:#1f2937;cursor:pointer;flex-shrink:0;">نسخ 📋</button>
+          <button class="host-lobby-copy-btn" onclick="navigator.clipboard?.writeText('${currentRoom.pin}'); if(window.toast) window.toast('تم نسخ رمز القاعة: ' + '${currentRoom.pin}');" style="background:linear-gradient(135deg,#f59e0b,#d97706);border:1px solid #fef08a;border-radius:14px;padding:10px 16px;font-size:12px;font-weight:900;color:#090a16;cursor:pointer;flex-shrink:0;box-shadow:0 4px 15px rgba(245,158,11,0.4);">نسخ الرمز 📋</button>
         </div>
       </div>
       <div id="hostCharactersArena" class="host-lobby-characters-arena" style="position:absolute;bottom:0;left:0;right:0;height:52vh;display:flex;align-items:flex-end;justify-content:center;gap:26px;padding:0 35px 24px;z-index:15;pointer-events:none;overflow-x:auto;">
@@ -179,18 +189,17 @@
     if (!currentRoom || !currentRoom.players) return;
     setTimeout(() => {
       currentRoom.players.forEach((p, idx) => {
-        const slot = document.getElementById(`hostHeroSlot_${idx}`);
-        const img = document.getElementById(`hostHeroImg_${idx}`);
-        if (img) {
-          img.style.setProperty('visibility', 'visible', 'important');
-          img.style.setProperty('display', 'block', 'important');
-        }
-        if (slot) {
-          slot.style.setProperty('visibility', 'visible', 'important');
-          slot.style.setProperty('display', 'flex', 'important');
+        const slot = document.getElementById('hostHeroSlot_' + idx);
+        if (!slot) return;
+        const rawAvatar = p.avatarId || p.characterId || p.avatar || (p.player && (p.player.avatarId || p.player.characterId)) || 'char_01';
+        const code = normalizeAvatarCode(rawAvatar);
+        slot.setAttribute('data-char-code', code);
+        slot.setAttribute('data-cur-pose', currentLobbyPose || 'walk');
+        if (global.ScoreARMotionEngine && typeof global.ScoreARMotionEngine.mount === 'function') {
+          global.ScoreARMotionEngine.mount(slot, code, currentLobbyPose || 'walk', { width: 140, height: 185 });
         }
       });
-    }, 40);
+    }, 35);
   }
 
   function refreshLobbyUi(currentRoom) {
@@ -388,7 +397,65 @@
     });
   }
 
+
+  function renderQuestionResultBarChart(qData, counts, correctIndices, fastest, explanation) {
+    const timerArea = document.getElementById('hostTimerArea');
+    if (!timerArea) return;
+    const totalAns = counts.reduce((a, b) => a + b, 0) || 1;
+    const maxCount = Math.max(1, ...counts);
+
+    timerArea.style.display = 'flex';
+    timerArea.style.width = '100%';
+    timerArea.innerHTML = `
+      <div style="width:100%;max-width:960px;margin:0 auto;background:rgba(13,15,34,0.92);backdrop-filter:blur(18px);border:2px solid rgba(142,100,239,0.45);border-radius:24px;padding:18px 26px;box-shadow:0 20px 55px rgba(0,0,0,0.65);animation:optionEntranceSlide 0.45s cubic-bezier(0.16,1,0.3,1) both;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:12.5px;font-weight:900;padding:5px 14px;border-radius:999px;box-shadow:0 0 18px rgba(16,185,129,0.5);">📊 إحصائية الإجابات الحية</span>
+            ${fastest ? `<span style="background:rgba(245,158,11,0.2);border:1.5px solid #f59e0b;color:#fcd34d;font-size:12.5px;font-weight:900;padding:4px 14px;border-radius:999px;">⚡ أسرع إجابة صحيحة: <b>${escapeHtml(fastest.name)}</b> (${fastest.timeSec}ث)</span>` : `<span style="color:#94a3b8;font-size:12px;font-weight:700;">انتهى وقت السؤال</span>`}
+          </div>
+          <button type="button" onclick="ScoreARQuizHost.renderHostLeaderboard()" style="background:linear-gradient(135deg,#7550ef,#9665ff);border:1.5px solid #c4b5fd;color:#fff;padding:8px 22px;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 6px 20px rgba(117,80,239,0.55);display:inline-flex;align-items:center;gap:8px;">
+            <span>التالي: مضمار المتصدرين</span>
+            <span>➔</span>
+          </button>
+        </div>
+
+        <!-- Kahoot 4-Column Bar Chart -->
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:18px;align-items:end;height:155px;padding:12px 24px 0;direction:rtl;">
+          ${[0, 1, 2, 3].map(i => {
+            const theme = OPTION_THEMES[i % 4];
+            const count = counts[i] || 0;
+            const isCorrect = correctIndices.includes(i);
+            const heightPx = count > 0 ? Math.max(28, Math.round((count / maxCount) * 105)) : 14;
+            const pct = Math.round((count / totalAns) * 100);
+            return `
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+                <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;font-size:16px;font-weight:900;color:${isCorrect ? '#34d399' : '#ffffff'};">
+                  ${isCorrect ? '<span style="background:#10b981;color:#fff;width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;font-size:13px;box-shadow:0 0 12px #10b981;">✓</span>' : ''}
+                  <span>${count}</span>
+                  <small style="font-size:11px;color:#94a3b8;font-weight:700;">(${pct}%)</small>
+                </div>
+                <div style="width:100%;max-width:96px;height:${heightPx}px;background:${theme.bg};border:2.5px solid ${isCorrect ? '#34d399' : theme.border};border-radius:14px 14px 6px 6px;box-shadow:${isCorrect ? '0 0 28px rgba(16,185,129,0.75)' : '0 6px 16px rgba(0,0,0,0.4)'};display:flex;align-items:center;justify-content:center;transition:height 0.7s cubic-bezier(0.34,1.56,0.64,1);opacity:${isCorrect ? '1' : '0.55'};">
+                  <span style="font-size:20px;color:#fff;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));">${theme.shape}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        ${explanation ? `
+          <div style="margin-top:12px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.4);border-radius:12px;padding:8px 14px;font-size:13px;color:#d1fae5;text-align:right;">
+            💡 <b>التفسير والقاعدة:</b> ${escapeHtml(explanation)}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
   const ScoreARQuizHostView = {
+    setLobbyHeroesPose,
+    cycleSingleHeroPose,
+    toggleQrZoom,
+    renderQuestionResultBarChart,
     setLobbyHeroesPose,
     cycleSingleHeroPose,
     renderHostLobby,
@@ -402,6 +469,7 @@
   };
 
   global.ScoreARQuizHostView = ScoreARQuizHostView;
+  global.ScoreARHostView = ScoreARQuizHostView;
   global.ScoreARHostView = ScoreARQuizHostView;
   try { if (typeof globalThis !== 'undefined') globalThis.ScoreARQuizHostView = ScoreARQuizHostView; } catch(e){}
   if (typeof module !== 'undefined' && module.exports) module.exports = ScoreARQuizHostView;

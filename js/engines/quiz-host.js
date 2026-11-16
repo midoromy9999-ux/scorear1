@@ -373,11 +373,9 @@
       }
     }
 
-    let autoSec = 5;
-    autoAdvanceTimer = setInterval(() => {
-      autoSec--;
-      if (autoSec <= 0) { clearInterval(autoAdvanceTimer); renderHostLeaderboard(); }
-    }, 1000);
+    if (view() && typeof view().renderQuestionResultBarChart === 'function') {
+      view().renderQuestionResultBarChart(qData, counts, correctIndices, fastest, qData.explanation || qData.why || '');
+    }
 
     const cardMgr = global.ScoreARCardArena?.getManager?.();
     if (global.ScoreARCardArena?.syncHostRoster) global.ScoreARCardArena.syncHostRoster(currentRoom.players);

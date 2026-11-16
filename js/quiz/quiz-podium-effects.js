@@ -172,7 +172,15 @@
       <span style="font-size:18px;">🏆</span>
       <span style="font-size:16px;font-weight:900;color:#fef3c7;letter-spacing:0.4px;text-shadow:0 2px 10px rgba(0,0,0,0.8);">منصة التتويج الكبرى — سكور آر</span>
     </div>
-    <div style="font-size:13px;color:#cbd5e1;font-weight:800;background:rgba(255,255,255,0.06);padding:5px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);">المتسابقون: <b style="color:#38bdf8;">${sorted.length}</b></div>
+    <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+        ${[
+          { id: 'chests', lbl: '💎 خزائن الكنز' },
+          { id: 'cards', lbl: '🃏 بطاقات الأساطير' },
+          { id: 'rockets', lbl: '🚀 صواريخ الفضاء' },
+          { id: 'finishline', lbl: '🏁 خط النهاية' },
+          { id: 'portal', lbl: '👑 بوابة النور' }
+        ].map(m => `<button type="button" data-ceremony-btn="${m.id}" onclick="ScoreARPodiumEffects.switchCeremonyTheme('${m.id}')" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#fff;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:900;cursor:pointer;font-family:inherit;">${m.lbl}</button>`).join('')}
+      </div>
   </header>
 
   <!-- Main 3D Podium Arena -->
@@ -261,6 +269,7 @@
     setTimeout(() => {
       const sc = $('scSpot'), pc = $('scPart');
       if (sc) runSpotlights(sc, wid, 0);
+      applyCreativeCeremonyTheme();
       if (pc) particles(pc, wid);
     }, 50);
 
@@ -331,6 +340,52 @@
     advanceReveal();
   }
 
+
+  function applyCreativeCeremonyTheme(themeId) {
+    const mode = themeId || (typeof localStorage !== 'undefined' && localStorage.getItem('scorear_ceremony_mode')) || 'chests';
+    try { localStorage.setItem('scorear_ceremony_mode', mode); } catch (e) {}
+    const root = document.getElementById('podiumStageRoot');
+    if (!root) return;
+    root.setAttribute('data-ceremony-theme', mode);
+
+    document.querySelectorAll('[data-ceremony-btn]').forEach(b => {
+      const act = b.getAttribute('data-ceremony-btn') === mode;
+      b.style.background = act ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'rgba(255,255,255,0.08)';
+      b.style.color = act ? '#090a16' : '#f8fafc';
+      b.style.borderColor = act ? '#fef08a' : 'rgba(255,255,255,0.18)';
+    });
+
+    const poseMap = { chests: 'celebrate', cards: 'celebrate', rockets: 'fly', finishline: 'run', portal: 'celebrate' };
+    setHeroPose(poseMap[mode] || 'celebrate');
+
+    [1, 2, 3].forEach(r => {
+      const ped = document.getElementById('podiumPedestal_' + r);
+      const medal = document.getElementById('pedMedal_' + r);
+      if (!ped) return;
+      if (mode === 'chests') {
+        if (medal) medal.textContent = r === 1 ? '💎' : r === 2 ? '👑' : '🪙';
+        ped.style.borderRadius = '22px';
+        ped.style.transform = 'scale(1.02)';
+      } else if (mode === 'cards') {
+        if (medal) medal.textContent = r === 1 ? '🃏' : r === 2 ? '⚡' : '✦';
+        ped.style.borderRadius = '20px';
+        ped.style.transform = 'perspective(600px) rotateY(-6deg)';
+      } else if (mode === 'rockets') {
+        if (medal) medal.textContent = '🚀';
+        ped.style.borderRadius = '40px 40px 12px 12px';
+        ped.style.transform = 'translateY(-10px)';
+      } else if (mode === 'finishline') {
+        if (medal) medal.textContent = '🏁';
+        ped.style.borderRadius = '12px';
+        ped.style.transform = 'skewX(-4deg)';
+      } else {
+        if (medal) medal.textContent = r === 1 ? '👑' : r === 2 ? '🥈' : '🥉';
+        ped.style.borderRadius = '50% 50% 14px 14px';
+        ped.style.transform = 'scale(1.04)';
+      }
+    });
+  }
+
   function setHeroPose(pose) {
     currentPose = POSES.includes(pose) ? pose : 'celebrate';
     [1, 2, 3].forEach(r => { const box = $(`hm_${r}`); if (!box) return; const pl = players[r === 1 ? 0 : r === 2 ? 1 : 2]; if (pl) mountHero(box, pl.avatarId, currentPose); });
@@ -354,7 +409,7 @@
     renderHostPodium(c, { worldId: opts.worldId || 'royal', world: { id: opts.worldId || 'royal' }, players: p }, opts.onComplete || opts.onClose);
   }
 
-  const ScoreARPodiumEffects = { renderHostPodium, startPodiumShow, renderHero, advanceReveal, startCinematicShow, revealAll, setHeroPose, toggleAudioMute, triggerSnapshot, triggerCertificates, handleStudentReaction, mountHeroMotion: mountHero };
+  const ScoreARPodiumEffects = { renderHostPodium, startPodiumShow, renderHero, advanceReveal, startCinematicShow, revealAll, setHeroPose, switchCeremonyTheme: applyCreativeCeremonyTheme, toggleAudioMute, triggerSnapshot, triggerCertificates, handleStudentReaction, mountHeroMotion: mountHero };
   global.ScoreARPodiumEffects = ScoreARPodiumEffects;
   try { if (typeof globalThis !== 'undefined') globalThis.ScoreARPodiumEffects = ScoreARPodiumEffects; } catch(e){}
   if (typeof module !== 'undefined' && module.exports) module.exports = ScoreARPodiumEffects;

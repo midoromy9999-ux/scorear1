@@ -989,7 +989,7 @@ dialog::backdrop {
 @media (max-width: 640px) {
   .world-grid, .worlds-grid, .principles { grid-template-columns: 1fr; gap: 16px; }
   .topbar { padding: 0 12px; height: 62px; gap: 8px; }
-  .topbar-title { display: none; }
+  .topbar-title #breadcrumb { display: none; } .topbar-title { display: flex !important; }
   .topbar-actions, .top-actions { gap: 6px; }
   .join-top { padding: 6px 10px; font-size: 11px; gap: 5px; }
   .btn { padding: 10px 16px; font-size: 13px; }

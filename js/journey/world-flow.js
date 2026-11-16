@@ -344,6 +344,23 @@
             }).join('')}
           </div>
 
+                    <!-- Ceremony Mode Selector (5 Creative Non-Traditional Modes) -->
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(251,191,36,0.35);border-radius:16px;padding:10px 14px;margin-bottom:16px;">
+            <div style="font-size:12px;font-weight:900;color:#fcd34d;margin-bottom:8px;">🎬 اختر مشهد التتويج النهائي للأبطال (بعد نهاية الأسئلة):</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(125px, 1fr));gap:7px;">
+              ${[
+                { id: 'chests', icon: '💎', name: 'خزائن الكنز الثلاث' },
+                { id: 'cards', icon: '🃏', name: 'بطاقات الأساطير 3D' },
+                { id: 'rockets', icon: '🚀', name: 'إقلاع صواريخ الفضاء' },
+                { id: 'finishline', icon: '🏁', name: 'اختراق خط النهاية' },
+                { id: 'portal', icon: '👑', name: 'بوابة النور والعرش' }
+              ].map(cm => {
+                const curCm = localStorage.getItem('scorear_ceremony_mode') || 'chests';
+                const active = curCm === cm.id;
+                return `<button type="button" data-ceremony-pick="${cm.id}" onclick="ScoreARWorldFlow.selectCeremonyMode('${cm.id}')" style="background:${active ? 'rgba(245,158,11,0.28)' : 'rgba(255,255,255,0.04)'};border:1.5px solid ${active ? '#fbbf24' : 'rgba(255,255,255,0.12)'};color:${active ? '#fef08a' : '#e2e8f0'};border-radius:11px;padding:7px 8px;font-size:11px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit;"><span>${cm.icon}</span><span>${cm.name}</span></button>`;
+              }).join('')}
+            </div>
+          </div>
           <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.1);padding-top:14px;">
             <button type="button" onclick="ScoreARWorldFlow.closeWorldModal()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:10px 18px;border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;">إلغاء ✕</button>
             <button type="button" onclick="ScoreARWorldFlow.confirmPickerWorld()" style="background:linear-gradient(135deg, #10b981, #059669);border:none;color:#fff;padding:12px 28px;border-radius:14px;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 4px 18px rgba(16,185,129,0.4);display:flex;align-items:center;gap:8px;">
@@ -374,6 +391,17 @@
       c.style.background = isSel ? 'rgba(142,100,239,0.3)' : 'rgba(255,255,255,0.03)';
       c.style.transform = isSel ? 'scale(1.02)' : 'scale(1)';
       c.style.boxShadow = isSel ? '0 0 16px rgba(142,100,239,0.5)' : 'none';
+    });
+  }
+
+
+  function selectCeremonyMode(modeId) {
+    try { localStorage.setItem('scorear_ceremony_mode', modeId || 'chests'); } catch (e) {}
+    document.querySelectorAll('[data-ceremony-pick]').forEach(btn => {
+      const act = btn.getAttribute('data-ceremony-pick') === modeId;
+      btn.style.background = act ? 'rgba(245,158,11,0.28)' : 'rgba(255,255,255,0.04)';
+      btn.style.borderColor = act ? '#fbbf24' : 'rgba(255,255,255,0.12)';
+      btn.style.color = act ? '#fef08a' : '#e2e8f0';
     });
   }
 
@@ -430,7 +458,7 @@
     getCurrentRole,
     getWorld,
     openWorld,
-    openWorldPicker,
+    openWorldPicker, selectCeremonyMode,
     selectPickerWorld,
     confirmPickerWorld,
     closeWorldModal,

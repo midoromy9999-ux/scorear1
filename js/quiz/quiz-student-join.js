@@ -31,7 +31,13 @@
   function init(container, initialPin = '') {
     containerEl = container;
     const cleanPin = String(initialPin || '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).trim();
-    state = { step: 1, pin: /^\d{1,6}$/.test(cleanPin) ? cleanPin : '', name: '', avatarId: 'char_01', isRegistered: false, error: null, loading: false, existingPlayers: [] };
+    const isFullQrPin = /^\d{6}$/.test(cleanPin);
+    state = { step: isFullQrPin ? 2 : 1, fromQr: isFullQrPin, pin: /^\d{1,6}$/.test(cleanPin) ? cleanPin : '', name: '', avatarId: 'char_01', isRegistered: false, error: null, loading: false, existingPlayers: [] };
+    if (isFullQrPin) {
+      verifyRoomOpen(cleanPin).then(rc => {
+        if (rc && rc.players) state.existingPlayers = rc.players;
+      }).catch(() => {});
+    }
 
     // Warm-up anonymous auth early for instantaneous RTDB verification
     try {
@@ -164,26 +170,51 @@
     `;
   }
 
-  // STEP 2: Nickname Input
+  // STEP 2: Unified Direct Name + 20-Hero Picker (1-Step Fast Entry after QR Scan)
   function renderStep2Html() {
+    const list = (global.ScoreARCharacters && global.ScoreARCharacters.list) ? global.ScoreARCharacters.list : [];
+    const currentHero = list.find(c => c.code === state.avatarId) || list[0] || { name: 'زياد', title: 'المستكشف' };
     return `
       <div>
-        <div style="text-align:center;margin-bottom:12px;">
-          <h3 style="font-size:20px;font-weight:900;color:#ffffff;margin:2px 0 4px;">اكتب اسمك للمشاركة</h3>
-          <p style="font-size:12px;color:#a5b4fc;margin:0;">اسمك مفرد، ثلاثي، أو رقم الفصل ورقمه (مثال: أحمد، أو أحمد صلاح، أو 3/1 رقم 15)</p>
-          ${state.isRegistered ? `<span style="display:inline-block;margin-top:6px;background:rgba(52,211,153,0.15);border:1px solid #10b981;color:#34d399;font-size:11px;font-weight:800;padding:2px 10px;border-radius:12px;">✓ تم التعرف على حسابك المسجل</span>` : ''}
+        <div style="text-align:center;margin-bottom:10px;">
+          <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.18);border:1px solid #10b981;color:#6ee7b7;font-size:11.5px;font-weight:900;padding:4px 12px;border-radius:999px;margin-bottom:6px;">
+            <span>✓ متصل بالقاعة رقم: <b style="font-family:monospace;font-size:13px;color:#fff;">${escapeHtml(state.pin)}</b></span>
+          </div>
+          <h3 style="font-size:19px;font-weight:900;color:#ffffff;margin:2px 0;">سجّل اسمك واختر بطلك الكرتوني</h3>
         </div>
-        <div style="margin-bottom:16px;">
-          <label style="display:block;font-size:12px;font-weight:700;color:#c9baff;margin-bottom:6px;">الاسم المستعار في القاعة (1 - 40 حرفاً):</label>
-          <input id="studentJoinNameInput" type="text" maxlength="40" placeholder="اكتب اسمك أو رقم فصلك هنا..." style="width:100%;box-sizing:border-box;background:#111426;border:2px solid #7550ef;border-radius:14px;color:#fff;padding:12px 14px;font-size:15px;font-weight:800;outline:none;" onkeydown="if(event.key==='Enter'){event.preventDefault();ScoreARStudentJoin.submitStep2();}">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:#857aa8;margin-top:4px;">
-            <span>مسموح: حروف عربي/لاتيني، أرقام، مسافات، شرطات، سلاش</span>
-            <span id="studentNameCharCount">أقصى حد: 40</span>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:12px;font-weight:800;color:#c9baff;margin-bottom:5px;">١. اكتب اسمك للمشاركة في القاعة:</label>
+          <input id="studentJoinNameInput" type="text" maxlength="40" placeholder="مثال: أحمد محمد، أو 3/1 رقم 15..." style="width:100%;box-sizing:border-box;background:#111426;border:2px solid #8e64ef;border-radius:13px;color:#fff;padding:11px 14px;font-size:15px;font-weight:800;outline:none;" onkeydown="if(event.key==='Enter'){event.preventDefault();ScoreARStudentJoin.submitStep2();}">
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:12px;font-weight:800;color:#52d9ed;margin-bottom:6px;">٢. اختر صورتك / بطلك المفضل (٢٠ بطلاً):</label>
+          <div style="background:rgba(21,23,49,0.92);border:1.5px solid rgba(142,100,239,0.5);border-radius:16px;padding:8px 12px;display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+            <div style="width:56px;height:68px;display:flex;align-items:flex-end;justify-content:center;background:rgba(255,255,255,0.05);border-radius:10px;padding:2px;flex-shrink:0;">
+              <img id="studentAvatarLiveImg" src="assets/characters/animated/${escapeHtml(state.avatarId)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="البطل" style="height:64px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6));">
+            </div>
+            <div>
+              <div id="studentAvatarLiveName" style="font-size:15px;font-weight:900;color:#ffffff;">${escapeHtml(currentHero.name)}</div>
+              <div id="studentAvatarLiveTitle" style="font-size:11px;color:#a5b4fc;font-weight:700;">${escapeHtml(currentHero.title)}</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:6px;max-height:165px;overflow-y:auto;padding:2px;">
+            ${list.map((c) => {
+              const isSel = (c.code === state.avatarId);
+              return `<div class="avatar-card-picker ${isSel?'selected':''}" onclick="ScoreARStudentJoin.selectAvatar('${c.code}')" style="display:flex;flex-direction:column;align-items:center;background:${isSel?'rgba(117,80,239,0.32)':'#16182e'};border:2px solid ${isSel?'#a855f7':'rgba(255,255,255,0.1)'};border-radius:11px;padding:5px 2px;cursor:pointer;">
+                <img src="assets/characters/animated/${c.code}-idle.webp" loading="lazy" alt="${escapeHtml(c.name)}" style="width:42px;height:50px;object-fit:contain;">
+                <span style="font-size:9.5px;font-weight:800;color:#fff;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48px;">${escapeHtml(c.name)}</span>
+              </div>`;
+            }).join('')}
           </div>
         </div>
-        <div style="display:flex;gap:10px;">
-          <button type="button" onclick="ScoreARStudentJoin.goToStep(1)" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:12px;border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;">⬅ رجوع</button>
-          <button type="button" id="studentStep2NextBtn" onclick="ScoreARStudentJoin.submitStep2()" style="flex:2;background:linear-gradient(135deg, #7550ef, #4f46e5);border:none;color:#fff;padding:12px;border-radius:12px;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 4px 14px rgba(117,80,239,0.4);">دخول ➔</button>
+
+        <div style="display:flex;gap:8px;">
+          ${!state.fromQr ? `<button type="button" onclick="ScoreARStudentJoin.goToStep(1)" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:12px;border-radius:12px;font-weight:800;font-size:12.5px;cursor:pointer;">⬅ تغيير الرمز</button>` : ''}
+          <button type="button" id="studentStep2NextBtn" onclick="ScoreARStudentJoin.submitStep2()" ${state.loading?'disabled':''} style="flex:2;background:linear-gradient(135deg, #10b981, #059669);border:none;color:#fff;padding:12px;border-radius:12px;font-weight:900;font-size:14.5px;cursor:pointer;box-shadow:0 4px 16px rgba(16,185,129,0.4);">
+            ${state.loading ? 'جارٍ الدخول للقاعة... ⏳' : 'دخول للقاعة الآن 🚀'}
+          </button>
         </div>
       </div>
     `;
@@ -352,8 +383,8 @@
     // Deduplication against existing players in the room
     const deduped = deduplicateName(rawName, state.existingPlayers);
     state.name = deduped;
-    state.step = 3;
-    render();
+    submitStep3();
+    return;
 
     // Fill selected name preview strictly via textContent
     setTimeout(() => {
