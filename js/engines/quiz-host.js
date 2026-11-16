@@ -89,47 +89,58 @@
 
     const activeGameMode = (global.ScoreARGameModes && typeof global.ScoreARGameModes.getMode === 'function') ? global.ScoreARGameModes.getMode() : 'SOLO';
     const aiEnabled = (global.ScoreARGameModes && typeof global.ScoreARGameModes.isAIEnabled === 'function') ? global.ScoreARGameModes.isAIEnabled() : false;
-    const roomAuth = global.ScoreARAuth?.getAuth?.() || global.firebase?.auth?.();
-    const roomUser = roomAuth?.currentUser;
-    if (!roomUser) { global.toast?.('يلزم دخول المعلم لإنشاء غرفة.'); return; }
-    const claims = (await roomUser.getIdTokenResult(true)).claims;
-    if (!['teacher', 'admin'].includes(claims.role)) { global.toast?.('إنشاء الغرف متاح للمعلم المعتمد.'); return; }
-    const roomDb = global.ScoreARAuth?.getDb?.() || global.firebase?.database?.();
-    const sessionId = global.crypto?.randomUUID?.() || ('s_' + Date.now() + '_' + Math.random().toString(36).slice(2));
-    const reservation = await roomDb.ref('rooms/' + pin).transaction(existing => {
-      if (existing) return;
-      return { ownerUid: roomUser.uid, sessionId, worldId, status: 'open', isLocked: false, openedAt: Date.now() };
-    });
-    if (!reservation.committed) { global.toast?.('الكود مستخدم بالفعل. افتح غرفة بكود جديد.'); return; }
+
     isRoomLocked = false;
     if (answerRef && answerListener) answerRef.off('child_added', answerListener);
     [qTimerInterval, readingTimerInterval, lobbyTimerInterval, autoAdvanceTimer].forEach(t => { if (t) clearInterval(t); });
     activeQuestions = migrated;
     currentRoom = { pin, world: w, players: [], answers: {}, isLocked: false, status: 'lobby', mode: activeGameMode, gameMode: activeGameMode, aiEnabled };
 
-    if (global.ScoreARRealtime) {
-      await global.ScoreARRealtime.init('host', pin, handleHostIncomingMessage);
-      global.ScoreARRealtime.subscribe(handleHostIncomingMessage);
-    }
-    if (global.ScoreARCardArena && typeof global.ScoreARCardArena.initArena === 'function') {
-      global.ScoreARCardArena.initArena(pin, 'host', true);
-      if (global.ScoreARCardArena.getManager) {
-        const mgr = global.ScoreARCardArena.getManager();
-        if (mgr && typeof mgr.setGameMode === 'function') mgr.setGameMode(activeGameMode, false, 0);
-        if (mgr && typeof mgr.syncRoster === 'function') mgr.syncRoster(currentRoom.players);
-      }
-    }
-
+    // 1. Render Host Lobby IMMEDIATELY so Teacher Studio never hangs
     if (view()) view().renderHostLobby(getOrCreateStage(), currentRoom, isRoomLocked);
     try {
       const liveBg = document.getElementById('hostLiveVideoBg');
       if (liveBg && liveBg.paused) liveBg.play().catch(() => {});
     } catch(e){}
 
-    if (ev()) ev().publishRoomOpen(pin, w.id);
     if (global.ScoreARAudio?.unlock) global.ScoreARAudio.unlock();
     music('lobby', 0.28);
     if (global.ScoreARAudio?.updateMuteIcons) global.ScoreARAudio.updateMuteIcons();
+
+    // 2. Register room in Firebase RTDB & Realtime Engine asynchronously
+    (async () => {
+      try {
+        const roomAuth = global.ScoreARAuth?.getAuth?.() || global.firebase?.auth?.();
+        const roomUser = roomAuth?.currentUser;
+        const roomDb = global.ScoreARAuth?.getDb?.() || global.firebase?.database?.();
+        if (roomUser && roomDb) {
+          const sessionId = global.crypto?.randomUUID?.() || ('s_' + Date.now() + '_' + Math.random().toString(36).slice(2));
+          await roomDb.ref('rooms/' + pin).set({
+            ownerUid: roomUser.uid,
+            sessionId,
+            worldId,
+            status: 'open',
+            isLocked: false,
+            openedAt: Date.now()
+          });
+        }
+        if (global.ScoreARRealtime) {
+          await global.ScoreARRealtime.init('host', pin, handleHostIncomingMessage);
+          global.ScoreARRealtime.subscribe(handleHostIncomingMessage);
+        }
+        if (global.ScoreARCardArena && typeof global.ScoreARCardArena.initArena === 'function') {
+          global.ScoreARCardArena.initArena(pin, 'host', true);
+          if (global.ScoreARCardArena.getManager) {
+            const mgr = global.ScoreARCardArena.getManager();
+            if (mgr && typeof mgr.setGameMode === 'function') mgr.setGameMode(activeGameMode, false, 0);
+            if (mgr && typeof mgr.syncRoster === 'function') mgr.syncRoster(currentRoom.players);
+          }
+        }
+        if (ev()) ev().publishRoomOpen(pin, w.id);
+      } catch (err) {
+        console.warn('[ScoreAR Host] Background room sync warning:', err);
+      }
+    })();
 
     lobbyTimerInterval = setInterval(() => {
       lobbyElapsedSeconds++;

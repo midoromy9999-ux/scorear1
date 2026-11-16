@@ -419,14 +419,12 @@
   function launchRoomNow(overrideWorldId) {
     closeWorldModal();
     const worldId = overrideWorldId || wizardState.worldId || activeSelectedWorldId || 'royal';
-    const pin = (typeof global.currentLobbyPin === 'string' && /^\d{6}$/.test(global.currentLobbyPin)) ? global.currentLobbyPin : String(Math.floor(100000 + Math.random() * 900000));
+    const pin = String(Math.floor(100000 + Math.random() * 900000));
     global.currentLobbyPin = pin;
     if (global.ScoreARQuizHost && typeof global.ScoreARQuizHost.startHostLobby === 'function') {
-      global.ScoreARQuizHost.startHostLobby(worldId, pin, true, false);
+      global.ScoreARQuizHost.startHostLobby(worldId, pin, true, true);
     } else if (typeof global.renderLiveLobby === 'function') {
-      global.renderLiveLobby(worldId, pin, true, false);
-    } else {
-      window.location.hash = '#worlds';
+      global.renderLiveLobby(worldId, pin, true, true);
     }
   }
 

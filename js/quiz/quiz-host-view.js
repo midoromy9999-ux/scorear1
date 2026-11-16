@@ -12,6 +12,11 @@
     currentLobbyPose = pose || 'walk';
     document.querySelectorAll('.host-lobby-hero-char').forEach(el => {
       el.className = 'scorear-character host-lobby-hero-char character-' + currentLobbyPose;
+      const code = el.getAttribute('data-char-code') || 'char_01';
+      el.setAttribute('data-cur-pose', currentLobbyPose);
+      if (global.ScoreARMotionEngine && typeof global.ScoreARMotionEngine.mount === 'function') {
+        global.ScoreARMotionEngine.mount(el, code, currentLobbyPose, { width: 140, height: 185 });
+      }
     });
     document.querySelectorAll('[data-lobby-pose]').forEach(btn => {
       const act = btn.getAttribute('data-lobby-pose') === currentLobbyPose;
@@ -23,8 +28,38 @@
     const s = document.getElementById('hostHeroSlot_' + idx);
     if (!s) return;
     const ps = ['walk', 'run', 'celebrate', 'fly', 'idle'];
-    const c = ps.find(p => s.classList.contains('character-' + p)) || 'walk';
-    s.className = 'scorear-character host-lobby-hero-char character-' + ps[(ps.indexOf(c) + 1) % ps.length];
+    const cur = s.getAttribute('data-cur-pose') || 'walk';
+    const nextPose = ps[(ps.indexOf(cur) + 1) % ps.length];
+    s.setAttribute('data-cur-pose', nextPose);
+    s.className = 'scorear-character host-lobby-hero-char character-' + nextPose;
+    const code = s.getAttribute('data-char-code') || 'char_01';
+    if (global.ScoreARMotionEngine && typeof global.ScoreARMotionEngine.mount === 'function') {
+      global.ScoreARMotionEngine.mount(s, code, nextPose, { width: 140, height: 185 });
+    }
+  }
+
+
+  function toggleQrZoom(pin) {
+    const existing = document.getElementById('scorearQrZoomModal');
+    if (existing) { existing.remove(); return; }
+    const qrBigUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=460x460&data=' + encodeURIComponent(window.location.origin + window.location.pathname + '?pin=' + pin);
+    const modal = document.createElement('div');
+    modal.id = 'scorearQrZoomModal';
+    modal.onclick = () => modal.remove();
+    modal.style.cssText = 'position:fixed;inset:0;z-index:100005;background:rgba(7,8,20,0.92);backdrop-filter:blur(18px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;cursor:pointer;direction:rtl;font-family:Cairo,Tajawal,sans-serif;';
+    modal.innerHTML = '<div onclick="event.stopPropagation()" style="background:linear-gradient(135deg,#151731,#231b49);border:3px solid #fbbf24;border-radius:32px;padding:28px 38px;text-align:center;box-shadow:0 25px 80px rgba(0,0,0,0.85),0 0 50px rgba(251,191,36,0.35);max-width:92vw;">' +
+      '<div style="font-size:20px;font-weight:900;color:#fef08a;margin-bottom:14px;">📱 امسح الباركود بكاميرا هاتفك للدخول المباشر للقاعة</div>' +
+      '<div style="background:#fff;padding:16px;border-radius:24px;display:inline-block;border:4px solid #fbbf24;box-shadow:0 12px 35px rgba(0,0,0,0.5);">' +
+        '<img src="' + qrBigUrl + '" alt="QR Code" style="width:min(340px,70vw);height:min(340px,70vw);display:block;border-radius:12px;">' +
+      '</div>' +
+      '<div style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:12px;direction:ltr;">' +
+        '<span style="background:#fff;color:#090a16;font-size:44px;font-weight:900;font-family:monospace;padding:4px 20px;border-radius:16px;letter-spacing:8px;">' + String(pin).slice(0,3) + '</span>' +
+        '<span style="color:#fbbf24;font-size:34px;font-weight:900;">•</span>' +
+        '<span style="background:#fff;color:#090a16;font-size:44px;font-weight:900;font-family:monospace;padding:4px 20px;border-radius:16px;letter-spacing:8px;">' + String(pin).slice(3,6) + '</span>' +
+      '</div>' +
+      '<div style="margin-top:14px;"><button type="button" onclick="document.getElementById(\'scorearQrZoomModal\')?.remove()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:8px 26px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">✕ إغلاق التكبير</button></div>' +
+    '</div>';
+    document.body.appendChild(modal);
   }
 
   const OPTION_THEMES = [
@@ -456,8 +491,6 @@
     cycleSingleHeroPose,
     toggleQrZoom,
     renderQuestionResultBarChart,
-    setLobbyHeroesPose,
-    cycleSingleHeroPose,
     renderHostLobby,
     refreshLobbyUi,
     updateLobbyModeBadge,
