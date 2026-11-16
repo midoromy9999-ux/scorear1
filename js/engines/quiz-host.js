@@ -211,9 +211,21 @@
     if (ev()) ev().handleHostIncomingMessage(msg, ctx);
   }
 
-  function launchQuestion(idx = 0) {
+  function launchQuestion(idx = 0, skipIntro = false) {
     if (!currentRoom) return;
     [lobbyTimerInterval, autoAdvanceTimer, qTimerInterval, readingTimerInterval].forEach(t => { if (t) clearInterval(t); });
+    if (idx === 0 && !skipIntro && currentRoom.status === 'lobby' && view() && typeof view().renderContestIntroSequence === 'function') {
+      currentRoom.status = 'intro';
+      sfx('reveal');
+      view().renderContestIntroSequence(
+        getOrCreateStage(),
+        currentRoom,
+        global.activeQuizTitle || currentRoom.quizTitle || 'كأس التفوق — مسابقة سكور آر التفاعلية',
+        activeQuestions.length,
+        () => launchQuestion(0, true)
+      );
+      return;
+    }
     if (answerRef && answerListener) answerRef.off('child_added', answerListener);
     answerRef = null; answerListener = null;
     currentQIndex = idx;
@@ -384,8 +396,9 @@
       }
     }
 
+    const isLastQuestion = (currentQIndex + 1 >= activeQuestions.length);
     if (view() && typeof view().renderQuestionResultBarChart === 'function') {
-      view().renderQuestionResultBarChart(qData, counts, correctIndices, fastest, qData.explanation || qData.why || '');
+      view().renderQuestionResultBarChart(qData, counts, correctIndices, fastest, qData.explanation || qData.why || '', isLastQuestion);
     }
 
     const cardMgr = global.ScoreARCardArena?.getManager?.();
@@ -400,7 +413,8 @@
         correct: correctIndices, correctAnswer: correctIdx, correctAnswerText: evalResult.correctAnswerText,
         explanation: qData.explanation || qData.why || '', fastestStudent: fastest,
         fastestTop2: evalResult.fastestTop2 || [],
-        topLeaderboard: [...currentRoom.players].sort((a,b) => b.score - a.score).slice(0, 5),
+        topLeaderboard: isLastQuestion ? [] : [...currentRoom.players].sort((a,b) => b.score - a.score).slice(0, 5),
+        isLastQuestion,
         playerResults, worldId: (currentRoom?.world?.id || 'royal')
       });
     }

@@ -422,9 +422,9 @@
     const pin = String(Math.floor(100000 + Math.random() * 900000));
     global.currentLobbyPin = pin;
     if (global.ScoreARQuizHost && typeof global.ScoreARQuizHost.startHostLobby === 'function') {
-      global.ScoreARQuizHost.startHostLobby(worldId, pin, true, true);
+      global.ScoreARQuizHost.startHostLobby(worldId, pin, true, false);
     } else if (typeof global.renderLiveLobby === 'function') {
-      global.renderLiveLobby(worldId, pin, true, true);
+      global.renderLiveLobby(worldId, pin, true, false);
     }
   }
 

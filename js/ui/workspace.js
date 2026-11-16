@@ -14,7 +14,7 @@ window.renderTeacherStudio = function(){
         </div>
       </div>
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-        <button class="btn launch-primary" onclick="window.ScoreARWorldFlow && window.ScoreARWorldFlow.openWorldPicker ? window.ScoreARWorldFlow.openWorldPicker({ onConfirm: function(wId){ renderLiveLobby(wId, null, true, true); } }) : renderLiveLobby('royal', null, false, false)" style="padding:12px 24px;font-weight:900;font-size:14px;">قاعة المنافسات الحية 🚀</button>
+        <button class="btn launch-primary" onclick="window.ScoreARWorldFlow && window.ScoreARWorldFlow.openWorldPicker ? window.ScoreARWorldFlow.openWorldPicker({ onConfirm: function(wId){ renderLiveLobby(wId, null, true, false); } }) : renderLiveLobby('royal', null, false, false)" style="padding:12px 24px;font-weight:900;font-size:14px;">قاعة المنافسات الحية 🚀</button>
         <button class="btn launch-outline" onclick="window.ScoreARClassrooms?.openView?.()" style="padding:12px 18px;font-weight:800;font-size:13px;border-color:#38bdf8;color:#7dd3fc;display:inline-flex;align-items:center;gap:6px;">🏫 صفوفي وطلابي</button>
         <a href="characters.html" class="btn launch-outline" style="text-decoration:none;padding:12px 18px;font-weight:800;font-size:13px;display:inline-flex;align-items:center;gap:6px;">✨ قاعة الأبطال (٢٠)</a>
         <a href="cards.html" class="btn launch-outline" style="text-decoration:none;padding:12px 18px;font-weight:800;font-size:13px;border-color:#f59e0b;color:#fcd34d;display:inline-flex;align-items:center;gap:6px;">🃏 قاعة الكروت (٢٠)</a>
@@ -31,7 +31,7 @@ window.renderTeacherStudio = function(){
         <p>من أول سؤال في ملف الدرس إلى آخر لحظة اكتشاف وتتويج على منصة الأبطال.</p>
         <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:20px;">
           <button class="btn launch-primary" onclick="openToolModal('builder')" style="padding:13px 26px;font-weight:900;font-size:14px;display:inline-flex;align-items:center;gap:8px;">${icon('edit')} إنشاء مسابقة جديدة وبدء التحدي 🚀</button>
-          <button class="btn launch-outline" onclick="window.ScoreARWorldFlow && window.ScoreARWorldFlow.openWorldPicker ? window.ScoreARWorldFlow.openWorldPicker({ onConfirm: function(wId){ renderLiveLobby(wId, null, true, true); } }) : renderLiveLobby('royal', null, false, false)" style="padding:13px 22px;font-weight:800;font-size:14px;display:inline-flex;align-items:center;gap:8px;">${icon('planet')} فتح قاعة اللوبي المباشرة</button>
+          <button class="btn launch-outline" onclick="window.ScoreARWorldFlow && window.ScoreARWorldFlow.openWorldPicker ? window.ScoreARWorldFlow.openWorldPicker({ onConfirm: function(wId){ renderLiveLobby(wId, null, true, false); } }) : renderLiveLobby('royal', null, false, false)" style="padding:13px 22px;font-weight:800;font-size:14px;display:inline-flex;align-items:center;gap:8px;">${icon('planet')} فتح قاعة اللوبي المباشرة</button>
         </div>
       </div>
     </section>
@@ -54,7 +54,7 @@ window.renderTeacherStudio = function(){
         <span class="experience-link">افتح مكتبتي وبنك الأسئلة ${icon('arrow')}</span>
       </div>
 
-      <div class="studio-step spotlight reveal" onclick="window.ScoreARWorldFlow && window.ScoreARWorldFlow.openWorldPicker ? window.ScoreARWorldFlow.openWorldPicker({ onConfirm: function(wId){ renderLiveLobby(wId, null, true, true); } }) : renderLiveLobby('royal', null, false, false)" style="cursor:pointer;">
+      <div class="studio-step spotlight reveal" onclick="window.ScoreARWorldFlow && window.ScoreARWorldFlow.openWorldPicker ? window.ScoreARWorldFlow.openWorldPicker({ onConfirm: function(wId){ renderLiveLobby(wId, null, true, false); } }) : renderLiveLobby('royal', null, false, false)" style="cursor:pointer;">
         <span class="experience-num">02 / للانطلاق</span>
         <span class="experience-icon">${icon('planet')}</span>
         <h3>أطلق المنافسة</h3>
@@ -134,7 +134,7 @@ window.renderAcademy=function(){
     `<div class="academy-intro"><span class="studio-kicker">المغامرة تبدأ معًا</span><h2>مكانك بين الأبطال.</h2><p>في القاعة الفعلية يظهر رمز الانضمام والطلاب المتصلون هنا.</p><div class="academy-heroes"><span>✦</span><span>✧</span><span>✦</span></div><button class="btn launch-primary" data-academy="2">شاهد شاشة السؤال ${icon('arrow')}</button></div>`,
     `<div class="academy-question"><div class="academy-question-top"><span>تجربة سؤال / اللغة العربية</span><span>${icon('book')} النعت</span></div><h2>«قرأتُ كتابًا ممتعًا»</h2><p>ما إعراب «ممتعًا»؟</p><div class="academy-answers">${['حال منصوب','نعت منصوب','مفعول به منصوب','خبر مرفوع'].map((t,i)=>`<button data-academy-answer="${i}"><span>${['أ','ب','ج','د'][i]}</span>${t}</button>`).join('')}</div></div>`,
     `<div class="academy-intro"><span class="academy-seal">${icon(academyAnswer===1?'check':'book')}</span><span class="studio-kicker">لحظة فهم</span><h2>${academyAnswer===null?'الإجابة: نعت منصوب':academyAnswer===1?'أحسنت، فتحت بابًا جديدًا!':'خلّينا نفهمها معًا.'}</h2><p>«ممتعًا» تصف الكتاب وتتبعُه في النصب والتنكير؛ لذلك فهي نعت منصوب.</p><button class="btn launch-primary" data-academy="4">شاهد التتويج ${icon('arrow')}</button></div>`,
-    `<div class="academy-intro"><span class="academy-seal gold">${icon('trophy')}</span><span class="studio-kicker">كل خطوة تستحق الاحتفال</span><h2>المعرفة هي المكسب.</h2><p>هنا تُعرض نتائج القاعة وأبطالها بعد نهاية المسابقة.</p><button class="btn launch-primary" onclick="window.ScoreARWorldFlow && window.ScoreARWorldFlow.openWorldPicker ? window.ScoreARWorldFlow.openWorldPicker({ onConfirm: function(wId){ renderLiveLobby(wId, null, true, true); } }) : renderLiveLobby('royal', null, false, false)">جهّز منافسة فعلية الآن ${icon('arrow')}</button></div>`
+    `<div class="academy-intro"><span class="academy-seal gold">${icon('trophy')}</span><span class="studio-kicker">كل خطوة تستحق الاحتفال</span><h2>المعرفة هي المكسب.</h2><p>هنا تُعرض نتائج القاعة وأبطالها بعد نهاية المسابقة.</p><button class="btn launch-primary" onclick="window.ScoreARWorldFlow && window.ScoreARWorldFlow.openWorldPicker ? window.ScoreARWorldFlow.openWorldPicker({ onConfirm: function(wId){ renderLiveLobby(wId, null, true, false); } }) : renderLiveLobby('royal', null, false, false)">جهّز منافسة فعلية الآن ${icon('arrow')}</button></div>`
   ];
   return `<div class="page academy-page">
     <div class="studio-heading">

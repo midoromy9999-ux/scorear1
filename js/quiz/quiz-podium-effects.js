@@ -10,7 +10,7 @@
   const sfx = n => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n); };
   const $   = id => document.getElementById(id);
 
-  const POSES = ['celebrate', 'idle', 'walk', 'run', 'climb', 'fly'];
+  const POSES = ['idle', 'walk', 'celebrate'];
   let revealStep = 0, players = [], room = null, rafId = null, partTimer = null, spotCanvas = null, currentPose = 'celebrate', cTimer = null;
 
   function charCode(avatarId) {
@@ -255,13 +255,10 @@
       </div>
     </div>
     <div style="display:flex;gap:5px;align-items:center;background:rgba(15,15,38,0.92);padding:4px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);">
-      <span style="font-size:11px;font-weight:900;color:#cbd5e1;white-space:nowrap;">حركة الأبطال:</span>
-      <button data-podium-motion="celebrate" onclick="ScoreARPodiumEffects.setHeroPose('celebrate')" style="background:rgba(82,217,237,0.22);border:1px solid #52d9ed;color:#fff;padding:4px 9px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;" title="احتفال وقفز">🎉</button>
-      <button data-podium-motion="idle"      onclick="ScoreARPodiumEffects.setHeroPose('idle')"      style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);color:#fff;padding:4px 9px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;" title="وقوف">🧍</button>
-      <button data-podium-motion="walk"      onclick="ScoreARPodiumEffects.setHeroPose('walk')"      style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);color:#fff;padding:4px 9px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;" title="مشي">🚶</button>
-      <button data-podium-motion="run"       onclick="ScoreARPodiumEffects.setHeroPose('run')"       style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);color:#fff;padding:4px 9px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;" title="جري">🏃</button>
-      <button data-podium-motion="climb" onclick="ScoreARPodiumEffects.setHeroPose('celebrate')" style="display:none;" aria-hidden="true"></button>
-      <button data-podium-motion="fly"   onclick="ScoreARPodiumEffects.setHeroPose('celebrate')" style="display:none;" aria-hidden="true"></button>
+      <span style="font-size:11.5px;font-weight:900;color:#cbd5e1;white-space:nowrap;">حركة الأبطال (٣ حركات):</span>
+      <button data-podium-motion="idle"      onclick="ScoreARPodiumEffects.setHeroPose('idle')"      style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);color:#fff;padding:4px 10px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">🧍 الوقوف</button>
+      <button data-podium-motion="walk"      onclick="ScoreARPodiumEffects.setHeroPose('walk')"      style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);color:#fff;padding:4px 10px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">🚶 المشي</button>
+      <button data-podium-motion="celebrate" onclick="ScoreARPodiumEffects.setHeroPose('celebrate')" style="background:rgba(82,217,237,0.22);border:1px solid #52d9ed;color:#fff;padding:4px 10px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">🦘 القفز</button>
     </div>
   </footer>
 </div>`;
@@ -282,10 +279,13 @@
   function advanceReveal() {
     revealStep++;
     const rig = $('podiumCameraRig'), btn = $('scRevBtn'), wid = room?.world?.id || room?.worldId || 'royal';
-    const sc = $('scSpot');
+    const sc = $('scSpot'), c1 = $('col_1'), c2 = $('col_2'), c3 = $('col_3');
     if (revealStep === 1) {
       sfx('whoosh'); sfx('pop');
       if (sc) runSpotlights(sc, wid, 1);
+      if (c3) { c3.style.transition = 'all 0.65s cubic-bezier(0.22,1,0.36,1)'; c3.style.transform = 'scale(1.14) translateY(-10px)'; c3.style.zIndex = '15'; }
+      if (c2) { c2.style.opacity = '0.35'; c2.style.transform = 'scale(0.88)'; }
+      if (c1) { c1.style.opacity = '0.35'; c1.style.transform = 'scale(0.88)'; }
       const h3 = $('podiumHeroArea_3');
       if (h3) { h3.style.display = 'flex'; mountHero($('hm_3'), players[2]?.avatarId, currentPose); }
       setMysteryScore(3, players[2]?.score || 0, '#fed7aa');
@@ -293,18 +293,29 @@
     } else if (revealStep === 2) {
       sfx('whoosh'); sfx('pop');
       if (sc) runSpotlights(sc, wid, 2);
+      if (c3) { c3.style.transform = 'scale(0.86)'; c3.style.opacity = '0.68'; c3.style.zIndex = '4'; }
+      if (c2) { c2.style.transition = 'all 0.65s cubic-bezier(0.22,1,0.36,1)'; c2.style.opacity = '1'; c2.style.transform = 'scale(1.14) translateY(-10px)'; c2.style.zIndex = '15'; }
       const h2 = $('podiumHeroArea_2');
       if (h2) { h2.style.display = 'flex'; mountHero($('hm_2'), players[1]?.avatarId, currentPose); }
       setMysteryScore(2, players[1]?.score || 0, '#e2e8f0');
-      if (btn) { btn.textContent = '👑 كشف بطل الأبطال!'; btn.style.background = 'linear-gradient(135deg,#059669,#047857)'; }
+      if (btn) { btn.textContent = '👑 كشف بطل الأبطال (Spotlight)!'; btn.style.background = 'linear-gradient(135deg,#059669,#047857)'; }
     } else if (revealStep === 3) {
       sfx('drumroll'); sfx('fanfare');
       if (sc) runSpotlights(sc, wid, 3);
-      if (rig) rig.style.transform = 'scale(1.02)';
+      if (c2) { c2.style.transform = 'scale(0.88)'; c2.style.opacity = '0.72'; c2.style.zIndex = '4'; }
+      if (c3) { c3.style.transform = 'scale(0.84)'; c3.style.opacity = '0.68'; c3.style.zIndex = '4'; }
+      if (c1) { c1.style.transition = 'all 0.75s cubic-bezier(0.22,1,0.36,1)'; c1.style.opacity = '1'; c1.style.transform = 'scale(1.16) translateY(-12px)'; c1.style.zIndex = '20'; }
       const h1 = $('podiumHeroArea_1'), crown = $('championCrownEl'), pc = $('scPart');
       if (h1) { h1.style.display = 'flex'; mountHero($('hm_1'), players[0]?.avatarId, currentPose); }
       if (crown) crown.style.visibility = 'visible';
       if (pc) pc.style.opacity = '1';
+      // Kahoot Screenshot-8 Circular Spotlight Halo around 1st Place
+      if (h1 && !document.getElementById('kahootChampSpotlight')) {
+        const spot = document.createElement('div');
+        spot.id = 'kahootChampSpotlight';
+        spot.style.cssText = 'position:absolute;top:-35px;left:50%;transform:translateX(-50%);width:310px;height:310px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,0.34) 0%, rgba(196,181,253,0.22) 55%, rgba(0,0,0,0) 72%);box-shadow:0 0 80px rgba(255,255,255,0.35);pointer-events:none;z-index:-1;';
+        h1.appendChild(spot);
+      }
       setMysteryScore(1, players[0]?.score || 0, '#fef08a');
       if (global.confetti) {
         global.confetti({ particleCount: 200, spread: 165, origin: { y: 0.5 } });
@@ -355,7 +366,7 @@
       b.style.borderColor = act ? '#fef08a' : 'rgba(255,255,255,0.18)';
     });
 
-    const poseMap = { chests: 'celebrate', cards: 'celebrate', rockets: 'fly', finishline: 'run', portal: 'celebrate' };
+    const poseMap = { chests: 'celebrate', cards: 'celebrate', rockets: 'celebrate', finishline: 'walk', portal: 'celebrate' };
     setHeroPose(poseMap[mode] || 'celebrate');
 
     [1, 2, 3].forEach(r => {
