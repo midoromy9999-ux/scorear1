@@ -7,6 +7,26 @@
 (function(global) {
   'use strict';
 
+  let currentLobbyPose = 'walk';
+  function setLobbyHeroesPose(pose) {
+    currentLobbyPose = pose || 'walk';
+    document.querySelectorAll('.host-lobby-hero-char').forEach(el => {
+      el.className = 'scorear-character host-lobby-hero-char character-' + currentLobbyPose;
+    });
+    document.querySelectorAll('[data-lobby-pose]').forEach(btn => {
+      const act = btn.getAttribute('data-lobby-pose') === currentLobbyPose;
+      btn.style.background = act ? 'rgba(142,100,239,0.45)' : 'rgba(255,255,255,0.07)';
+      btn.style.borderColor = act ? '#a78bfa' : 'rgba(255,255,255,0.15)';
+    });
+  }
+  function cycleSingleHeroPose(idx) {
+    const s = document.getElementById('hostHeroSlot_' + idx);
+    if (!s) return;
+    const ps = ['walk', 'run', 'celebrate', 'fly', 'idle'];
+    const c = ps.find(p => s.classList.contains('character-' + p)) || 'walk';
+    s.className = 'scorear-character host-lobby-hero-char character-' + ps[(ps.indexOf(c) + 1) % ps.length];
+  }
+
   const OPTION_THEMES = [
     { bg: '#e21b3c', border: '#ff5c77', shape: '▲' },
     { bg: '#1368ce', border: '#4f9fff', shape: '◆' },
@@ -114,9 +134,19 @@
       <div id="hostCharactersArena" class="host-lobby-characters-arena" style="position:absolute;bottom:0;left:0;right:0;height:52vh;display:flex;align-items:flex-end;justify-content:center;gap:26px;padding:0 35px 24px;z-index:15;pointer-events:none;overflow-x:auto;">
         ${renderFullbodyCharactersHtml(currentRoom)}
       </div>
-      <div class="host-lobby-footer-pills" style="position:absolute;bottom:12px;left:24px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;z-index:20;">
+      <div class="host-lobby-footer-pills" style="position:absolute;bottom:12px;left:24px;right:24px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;z-index:20;">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <span style="background:rgba(17,18,37,0.85);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);padding:5px 14px;border-radius:12px;color:#ddd8ff;font-size:12px;font-weight:700;">👥 المتسابقون المتصلون: <b id="hostConnectedPlayersPill" style="color:#52d9ed;">${currentRoom.players.length}</b></span>
         <span style="background:rgba(17,18,37,0.85);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);padding:5px 14px;border-radius:12px;color:#ddd8ff;font-size:12px;font-weight:700;">⏱️ وقت الانتظار: <b id="hostLobbyTimerText" style="color:#fff;">0:00</b></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(17,18,37,0.88);backdrop-filter:blur(12px);border:1px solid rgba(142,100,239,0.35);padding:5px 12px;border-radius:14px;">
+          <span style="font-size:11.5px;font-weight:900;color:#c4b5fd;margin-left:4px;">🎮 حركة الأبطال:</span>
+          <button type="button" data-lobby-pose="walk" onclick="ScoreARHostView.setLobbyHeroesPose('walk')" style="background:rgba(142,100,239,0.45);border:1px solid #a78bfa;color:#fff;border-radius:8px;padding:4px 9px;font-size:11px;font-weight:800;cursor:pointer;">🚶 مشي</button>
+          <button type="button" data-lobby-pose="run" onclick="ScoreARHostView.setLobbyHeroesPose('run')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;padding:4px 9px;font-size:11px;font-weight:800;cursor:pointer;">🏃 جري</button>
+          <button type="button" data-lobby-pose="celebrate" onclick="ScoreARHostView.setLobbyHeroesPose('celebrate')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;padding:4px 9px;font-size:11px;font-weight:800;cursor:pointer;">🎉 احتفال</button>
+          <button type="button" data-lobby-pose="fly" onclick="ScoreARHostView.setLobbyHeroesPose('fly')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;padding:4px 9px;font-size:11px;font-weight:800;cursor:pointer;">🚀 طيران</button>
+          <button type="button" data-lobby-pose="idle" onclick="ScoreARHostView.setLobbyHeroesPose('idle')" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;padding:4px 9px;font-size:11px;font-weight:800;cursor:pointer;">🧍 وقوف</button>
+        </div>
       </div>`;
     attachLobbyAtlasLoaders(currentRoom);
   }
@@ -138,6 +168,9 @@
       idle: `${prefix}assets/characters/animated/${code}-idle.webp`,
       full: `${prefix}assets/characters/${code}.webp`,
       atlas: `${prefix}assets/characters/animated/${code}-atlas.webp`,
+      runAtlas: `${prefix}assets/characters/animated/${code}-run.webp`,
+      flyAtlas: `${prefix}assets/characters/animated/${code}-fly.webp`,
+      climbAtlas: `${prefix}assets/characters/animated/${code}-climb.webp`,
       fallback: `${prefix}assets/characters/char_01.webp`
     };
   }
@@ -209,10 +242,11 @@
           <span style="max-width:105px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;">${safeName}</span>
           <button onclick="${delAction}" style="background:none;border:0;color:#ef4444;font-size:12px;cursor:pointer;padding:0 0 0 3px;" title="حذف">✕</button>
         </div>
-        <div class="host-lobby-hero-figure" style="position:relative;width:140px;height:220px;display:flex;align-items:flex-end;justify-content:center;">
-          <div style="position:absolute;bottom:0;width:115px;height:16px;background:radial-gradient(ellipse at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 70%);border-radius:50%;pointer-events:none;"></div>
-          <span id="hostHeroSlot_${idx}" class="scorear-character" style="width:130px;height:180px;position:relative;display:flex;align-items:flex-end;justify-content:center;animation:character-walk-bob 1.8s ease-in-out infinite alternate;animation-delay:-${((idx * 0.37) % 1.05).toFixed(2)}s;transform-origin:bottom center;">
-            <img id="hostHeroImg_${idx}" class="host-hero-img" src="${urls.idle}" onerror="this.onerror=null;this.src='${urls.full}';this.onerror=function(){this.src='${urls.fallback}';};" alt="${safeName}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 15px 25px rgba(0,0,0,0.6));visibility:visible !important;display:block !important;opacity:1 !important;pointer-events:none;">
+        <div class="host-lobby-hero-figure" onclick="ScoreARHostView.cycleSingleHeroPose(${idx})" style="cursor:pointer;position:relative;width:145px;height:215px;display:flex;align-items:flex-end;justify-content:center;" title="انقر لتغيير حركة البطل">
+          <div style="position:absolute;bottom:2px;width:110px;height:18px;background:radial-gradient(ellipse at center, ${roleColor}66 0%, rgba(0,0,0,0.75) 55%, rgba(0,0,0,0) 75%);border-radius:50%;pointer-events:none;"></div>
+          <span id="hostHeroSlot_${idx}" class="scorear-character host-lobby-hero-char character-${currentLobbyPose}" style="--character-atlas:url('${urls.atlas}');--character-action-atlas:url('${currentLobbyPose === 'fly' ? urls.flyAtlas : currentLobbyPose === 'climb' ? urls.climbAtlas : urls.runAtlas}');width:136px;height:182px;position:relative;display:flex;align-items:flex-end;justify-content:center;animation-delay:-${((idx * 0.37) % 1.05).toFixed(2)}s;transform-origin:bottom center;filter:drop-shadow(0 14px 22px rgba(0,0,0,0.65));">
+            <img id="hostHeroImg_${idx}" class="host-hero-img" src="${urls.idle}" onerror="this.onerror=null;this.src='${urls.full}';this.onerror=function(){this.src='${urls.fallback}';};" alt="${safeName}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;">
+            <span class="character-frames" aria-hidden="true"></span>
           </span>
         </div>
       </div>`;
@@ -355,6 +389,8 @@
   }
 
   const ScoreARQuizHostView = {
+    setLobbyHeroesPose,
+    cycleSingleHeroPose,
     renderHostLobby,
     refreshLobbyUi,
     updateLobbyModeBadge,
@@ -366,6 +402,7 @@
   };
 
   global.ScoreARQuizHostView = ScoreARQuizHostView;
+  global.ScoreARHostView = ScoreARQuizHostView;
   try { if (typeof globalThis !== 'undefined') globalThis.ScoreARQuizHostView = ScoreARQuizHostView; } catch(e){}
   if (typeof module !== 'undefined' && module.exports) module.exports = ScoreARQuizHostView;
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

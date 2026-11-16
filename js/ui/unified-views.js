@@ -140,7 +140,15 @@
             <small style="color:#a78bfa;font-weight:800;letter-spacing:1px;display:block;margin-bottom:12px;">✦ البطل المختار حالياً ✦</small>
             <div id="studentCustomPreviewBox" style="width:200px;height:250px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;"></div>
             <div id="studentCustomPreviewTitle"><h3 style="font-family:Cairo,sans-serif;font-size:22px;color:#fff;margin:6px 0;"></h3></div>
-            <p id="studentCustomPreviewDesc" style="color:#c5c7de;font-size:13px;line-height:1.6;margin:8px 0 16px;"></p>
+            <p id="studentCustomPreviewDesc" style="color:#c5c7de;font-size:13px;line-height:1.6;margin:6px 0 10px;"></p>
+            <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:5px;margin-bottom:14px;">
+              <button type="button" data-character-pose="idle" onclick="ScoreARUnifiedViews.previewHeroPose('idle')" style="background:#262044;border:1px solid #8e64ef;color:#fff;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;">🧍 وقوف</button>
+              <button type="button" data-character-pose="walk" onclick="ScoreARUnifiedViews.previewHeroPose('walk')" style="background:#19192f;border:1px solid rgba(255,255,255,0.15);color:#d9d4ed;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">🚶 مشي</button>
+              <button type="button" data-character-pose="run" onclick="ScoreARUnifiedViews.previewHeroPose('run')" style="background:#19192f;border:1px solid rgba(255,255,255,0.15);color:#d9d4ed;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">🏃 جري</button>
+              <button type="button" data-character-pose="climb" onclick="ScoreARUnifiedViews.previewHeroPose('climb')" style="background:#19192f;border:1px solid rgba(255,255,255,0.15);color:#d9d4ed;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">🧗 تسلق</button>
+              <button type="button" data-character-pose="fly" onclick="ScoreARUnifiedViews.previewHeroPose('fly')" style="background:#19192f;border:1px solid rgba(255,255,255,0.15);color:#d9d4ed;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">🚀 طيران</button>
+              <button type="button" data-character-pose="celebrate" onclick="ScoreARUnifiedViews.previewHeroPose('celebrate')" style="background:#19192f;border:1px solid rgba(255,255,255,0.15);color:#d9d4ed;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">🎉 احتفال</button>
+            </div>
             <button type="button" id="btnSelectHero" onclick="ScoreARUnifiedViews.saveHeroChoice()" style="width:100%;background:linear-gradient(135deg,#7550ef,#582cd1);color:#fff;border:none;border-radius:14px;padding:12px;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 6px 20px rgba(117,80,239,0.4);font-family:inherit;">اعتماد هذا البطل لشخصيتي ⭐</button>
           </aside>
 
@@ -186,6 +194,13 @@
       renderHeroesGrid();
     });
     global.ScoreARCharacters.preview(global._unifiedHeroSelected || 1);
+  }
+
+  function previewHeroPose(pose) {
+    global._unifiedHeroPose = pose || 'idle';
+    if (global.ScoreARCharacters && typeof global.ScoreARCharacters.preview === 'function') {
+      global.ScoreARCharacters.preview(global._unifiedHeroSelected || 1, global._unifiedHeroPose);
+    }
   }
 
   function filterHeroes(cat) {
@@ -366,7 +381,7 @@
     closeView,
     isOpen,
     renderHeroesGrid,
-    filterHeroes,
+    filterHeroes, previewHeroPose,
     saveHeroChoice,
     simulatePodium,
     openPodiumView: () => openView('podium'),

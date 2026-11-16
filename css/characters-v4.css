@@ -2,7 +2,9 @@
 .scorear-character>img,.character-frames{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .character-frames{display:none;background-image:var(--character-atlas);background-size:400% 100%;background-repeat:no-repeat}
 .character-walk>img,.character-celebrate>img,.character-run>img,.character-climb>img,.character-fly>img{visibility:hidden}
-.host-lobby-hero-figure .scorear-character>img,.host-lobby-hero-slot img,.scorear-character>img.host-hero-img{visibility:visible!important;display:block!important;opacity:1!important}
+.host-lobby-hero-figure .scorear-character.character-idle>img{visibility:visible!important;display:block!important;opacity:1!important}
+.host-lobby-hero-figure .scorear-character:not(.character-idle)>img{visibility:hidden!important}
+.host-lobby-hero-figure .scorear-character:not(.character-idle)>.character-frames{display:block!important}
 .character-podium-hero .character-celebrate>img,.character-podium-hero .character-run>img,.character-podium-hero .character-climb>img,.character-podium-hero .character-fly>img{visibility:hidden!important}
 .character-podium-hero .character-celebrate>.character-frames,.character-podium-hero .character-run>.character-frames,.character-podium-hero .character-climb>.character-frames,.character-podium-hero .character-fly>.character-frames{display:block!important}
 .character-walk>.character-frames{display:block;animation:character-walk-frames 1.05s steps(1,end) infinite,character-walk-bob .525s ease-in-out infinite alternate;transform-origin:bottom center}

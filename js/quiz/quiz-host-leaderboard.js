@@ -83,6 +83,7 @@
     const worldId = (currentRoom.world && currentRoom.world.id) ? currentRoom.world.id : (currentRoom.worldId || 'royal');
     const theme = WORLD_RACE_THEMES[worldId] || WORLD_RACE_THEMES.royal;
     const top5 = sorted.slice(0, 5);
+    const maxLeaderScore = Math.max(100, Number(top5[0]?.score) || 100);
 
     // Compute rank shifts & biggest jumper
     let maxJump = 0, biggestJumperId = null;
@@ -200,6 +201,7 @@
             const cleanCode = p.avatarId ? (p.avatarId.startsWith('char_') ? p.avatarId : 'char_' + String(p.avatarId).padStart(2, '0')) : 'char_01';
             const actionType = (worldId === 'treasure') ? 'climb' : (worldId === 'magic') ? 'fly' : 'run';
             const actionAtlas = `assets/characters/animated/${cleanCode}-${actionType}.webp`;
+            const raceProgressPct = Math.min(86, Math.max(6, Math.round(((p.score || 0) / maxLeaderScore) * 82)));
 
             return `
               ${gapHtml}
@@ -219,12 +221,12 @@
                     <span style="margin-top:1px;">${arrowHtml}</span>
                   </div>
 
-                  <div style="position:relative;width:56px;height:58px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;">
-                    <div class="char-procedural-rig scorear-character character-${actionType}" style="--character-action-atlas:url('${actionAtlas}');--character-atlas:url('assets/characters/animated/${cleanCode}-atlas.webp');width:52px;height:52px;animation:charProceduralBounce 1.4s infinite ease-in-out;transform-origin:bottom center;">
-                      <div class="character-frames"></div>
-                      <img src="assets/characters/animated/${cleanCode}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(p.name)}" style="height:52px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6));display:block;">
+                  <div style="position:relative;width:66px;height:68px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;">
+                    <div class="char-procedural-rig scorear-character character-${actionType}" style="--character-action-atlas:url('${actionAtlas}');--character-atlas:url('assets/characters/animated/${cleanCode}-atlas.webp');width:62px;height:64px;animation:charProceduralBounce 1.1s infinite ease-in-out;transform-origin:bottom center;">
+                      <span class="character-frames" style="display:block !important;"></span>
+                      <img src="assets/characters/animated/${cleanCode}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(p.name)}" style="height:62px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6));visibility:hidden;">
                     </div>
-                    <div style="width:36px;height:7px;background:radial-gradient(ellipse at center, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 70%);border-radius:50%;margin-top:-3px;animation:shadowScale 1.4s infinite ease-in-out;"></div>
+                    <div style="width:42px;height:8px;background:radial-gradient(ellipse at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 70%);border-radius:50%;margin-top:-3px;animation:shadowScale 1.1s infinite ease-in-out;"></div>
                   </div>
 
                   <div>
@@ -233,8 +235,11 @@
                       <b style="font-size:16px;font-weight:900;color:#ffffff;max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;">${escapeHtml(p.name)}</b>
                       ${isTop1 ? '<span>👑</span>' : ''}
                     </div>
-                    <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap;">
                       ${badges.join('')}
+                    </div>
+                    <div style="margin-top:5px;width:min(340px, 42vw);height:7px;background:rgba(0,0,0,0.45);border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,0.14);display:flex;align-items:center;">
+                      <div style="width:${raceProgressPct}%;height:100%;background:linear-gradient(90deg, ${theme.accentColor}, ${theme.speedColor});border-radius:999px;transition:width 0.8s cubic-bezier(0.2,0.8,0.2,1);box-shadow:0 0 10px ${theme.speedColor};"></div>
                     </div>
                   </div>
                 </div>

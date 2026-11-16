@@ -113,7 +113,7 @@
 
       /* Screen width adaptations */
       @media (max-width: 767px) {
-        .scorear-desktop-nav { display: none !important; }
+        .scorear-dropdown-btn { padding: 6px 10px; font-size: 12px; }
       }
     `;
     document.head.appendChild(style);
@@ -221,6 +221,7 @@
         return;
       }
 
+      if (!e.target.closest('#scorearTopNavDropdown')) closeAllDropdowns();
       // Close when clicking outside of open sidebar
       if (isMenuOpen && !e.target.closest('#sidebar, [data-action="menu"], .mobile-menu, .launch-menu')) {
         closeSidebar();
@@ -261,6 +262,7 @@
     window.addEventListener('hashchange', () => {
       closeSidebar();
       updateActiveNavLinks();
+      mountTopbarNav();
     });
     window.addEventListener('popstate', () => {
       closeSidebar();
@@ -269,6 +271,7 @@
 
     // 4. Guarantee closed on startup
     closeSidebar();
+    mountTopbarNav();
   }
 
   function updateActiveNavLinks() {
@@ -309,6 +312,57 @@
     }
   }
 
+
+  function goBackOrHome() {
+    const curHash = (window.location && window.location.hash) || '#home';
+    if (curHash && curHash !== '#home' && curHash !== '#') {
+      window.location.hash = '#home';
+    }
+  }
+
+  function mountTopbarNav() {
+    if (typeof document === 'undefined') return;
+    ensureStylesInjected();
+    const topbarTitle = document.querySelector('.topbar .topbar-title');
+    if (!topbarTitle) return;
+
+    let navSlot = document.getElementById('scorearTopbarNavSlot');
+    if (!navSlot) {
+      navSlot = document.createElement('div');
+      navSlot.id = 'scorearTopbarNavSlot';
+      navSlot.style.cssText = 'display:inline-flex;align-items:center;gap:8px;margin-right:6px;flex-wrap:wrap;';
+      topbarTitle.appendChild(navSlot);
+    }
+
+    const currentHash = (window.location && window.location.hash) || '#home';
+    const isHome = !currentHash || currentHash === '#' || currentHash === '#home';
+    const cleanHash = currentHash.split('?')[0];
+    const activeItem = NAV_CONFIG.find(n => n.hash === cleanHash) || NAV_CONFIG[0];
+
+    navSlot.innerHTML = `
+      ${!isHome ? `
+        <button type="button" onclick="ScoreARNav.goBackOrHome()" style="background:rgba(142,100,239,0.2);border:1px solid rgba(142,100,239,0.45);color:#fff;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;" title="العودة للرئيسية">
+          <span>➔</span>
+          <span>رجوع للرئيسية</span>
+        </button>
+      ` : ''}
+      <div class="scorear-dropdown" id="scorearTopNavDropdown">
+        <button type="button" class="scorear-dropdown-btn" onclick="ScoreARNav.toggleDropdown('scorearTopNavDropdown')" aria-expanded="false" aria-haspopup="true">
+          <span>🧭 ${activeItem.title}</span>
+          <span style="font-size:10px;opacity:0.85;">▼</span>
+        </button>
+        <div class="scorear-dropdown-menu" role="menu">
+          ${NAV_CONFIG.map(item => `
+            <a href="${item.hash}" class="scorear-dropdown-item ${item.hash === cleanHash ? 'active' : ''}" role="menuitem" onclick="ScoreARNav.closeAllDropdowns()">
+              <span>${item.title}</span>
+              ${item.badge ? `<span style="background:rgba(142,100,239,0.3);color:#dcd2ff;font-size:10px;padding:1px 6px;border-radius:6px;">${item.badge}</span>` : ''}
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   function renderDesktopNavDropdown(containerId) {
     if (typeof document === 'undefined') return;
     const container = document.getElementById(containerId);
@@ -341,7 +395,7 @@
     closeSidebar,
     toggleSidebar,
     isSidebarOpen: () => isMenuOpen,
-    renderDesktopNavDropdown,
+    renderDesktopNavDropdown, mountTopbarNav, goBackOrHome,
     toggleDropdown,
     closeAllDropdowns,
     updateActiveNavLinks

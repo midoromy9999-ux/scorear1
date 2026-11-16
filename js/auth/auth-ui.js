@@ -215,11 +215,15 @@
           <button class="btn outline small" data-action="logout" style="font-size:11px;padding:6px 12px;border-color:rgba(255,107,107,0.4);color:#ff8a8a;cursor:pointer;">خروج</button>
         </div>`;
       } else if (isStudent) {
-        area.innerHTML = `<div style="display:flex;align-items:center;gap:10px;">
-          <a href="#journey" class="btn dark small" style="background:#132e27;color:#a7f3d0;border:1px solid #10b981;padding:6px 14px;border-radius:12px;font-size:12px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-            🎒 ${user.displayName || 'البطل'}
+        area.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button class="quiet join-top" data-action="join" style="padding:6px 10px;font-size:11.5px;">🔑 رمز قاعة</button>
+          <a href="#journey" class="btn dark small" style="background:#132e27;color:#a7f3d0;border:1px solid #10b981;padding:6px 12px;border-radius:12px;font-size:12px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+            🎒 رحلتي
           </a>
-          <button class="btn outline small" data-action="logout" style="font-size:11px;padding:6px 12px;border-color:rgba(255,107,107,0.4);color:#ff8a8a;cursor:pointer;">خروج</button>
+          <a href="#classrooms" class="btn dark small" style="background:#1e1b3a;color:#c4b5fd;border:1px solid #8e64ef;padding:6px 12px;border-radius:12px;font-size:12px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+            🏫 ملفي (${user.displayName || 'البطل'})
+          </a>
+          <button class="btn outline small" data-action="logout" style="font-size:11px;padding:6px 10px;border-color:rgba(255,107,107,0.4);color:#ff8a8a;cursor:pointer;">خروج</button>
         </div>`;
       } else {
         area.innerHTML = `<button class="quiet join-top" data-action="join"><i data-icon="key"></i> أدخل رمز القاعة</button><button class="btn dark small" data-action="teacher-login">دخول <i data-icon="arrow"></i></button>`;
