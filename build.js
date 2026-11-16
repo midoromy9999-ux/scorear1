@@ -41,6 +41,7 @@ fs.mkdirSync(publicDir,{recursive:true});
 // 1. Copy clean root metadata and standalone HTML pages to public/
 const rootFiles = [
   'cards.html', 'characters.html', 'podium.html',
+  '404.html',
   'cards.json', 'manifest.json', 'sw.js', 'robots.txt', 'sitemap.xml',
   'google65739e9df66ba15c.html', 'firebase-config.js'
 ];

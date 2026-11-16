@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   try {
     const { auth, db, user } = await authenticate(req, ['admin']);
     const { action, targetUid, newPassword, note = '', isActive } = req.body || {};
-    const actions = ['approve', 'reject', 'toggleTeacherStatus', 'resetStudentPassword', 'deleteStudentAccount'];
+    const actions = ['approve', 'reject', 'toggleTeacherStatus', 'deleteTeacher', 'toggleStudentStatus', 'resetStudentPassword', 'deleteStudentAccount'];
     if (!actions.includes(action) || !validKey(targetUid) || typeof note !== 'string' || note.length > 1000) return res.status(400).json({ error: 'إجراء أو بيانات غير صالحة.' });
     if (targetUid === user.uid) return res.status(403).json({ error: 'لا يمكن تعديل حسابك الإداري بهذه العملية.' });
     const target = await auth.getUser(targetUid);
@@ -16,6 +16,14 @@ export default async function handler(req, res) {
       await auth.setCustomUserClaims(targetUid, claims);
       await auth.revokeRefreshTokens(targetUid);
     };
+    if (action === 'deleteTeacher') {
+      await auth.deleteUser(targetUid).catch(() => {});
+      await db.ref().update({
+        [`scorear_account_requests/${targetUid}`]: null,
+        [`scorear_teachers_registry/${targetUid}`]: null
+      });
+      return res.status(200).json({ success: true, message: 'تم حذف حساب المعلم نهائياً.' });
+    }
     if (['approve', 'reject', 'toggleTeacherStatus'].includes(action)) {
       const request = (await db.ref(`scorear_account_requests/${targetUid}`).once('value')).val();
       if (!request && target.customClaims?.role !== 'teacher') return res.status(404).json({ error: 'طلب المعلم غير موجود.' });
@@ -41,6 +49,13 @@ export default async function handler(req, res) {
     }
     const student = (await db.ref(`scorear_students/${targetUid}`).once('value')).val();
     if (!student || target.customClaims?.role === 'teacher') return res.status(403).json({ error: 'العملية مخصصة لحساب طالب.' });
+    if (action === 'toggleStudentStatus') {
+      const makeActive = Boolean(isActive);
+      await auth.updateUser(targetUid, { disabled: !makeActive });
+      await auth.revokeRefreshTokens(targetUid);
+      await db.ref(`scorear_students/${targetUid}`).update({ isActive: makeActive, status: makeActive ? 'active' : 'suspended', updatedAt: now });
+      return res.status(200).json({ success: true, message: 'تم تحديث حالة حساب الطالب.' });
+    }
     if (action === 'resetStudentPassword') {
       if (typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 128) return res.status(400).json({ error: 'كلمة المرور يجب أن تكون من 8 إلى 128 حرفًا.' });
       await auth.updateUser(targetUid, { password: newPassword });

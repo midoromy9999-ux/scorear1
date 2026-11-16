@@ -12,7 +12,7 @@ function load(file,{claims={uid:'ordinary',role:'student'},env={},db={},auth:aut
 }
 const req=(body={},token='valid',origin)=>({method:'POST',headers:{authorization:'Bearer '+token,...(origin?{origin}:{})},body});
 test('ordinary user denied every administrative action',async()=>{
- const m=load('api/account-request.js');for(const action of ['approve','reject','toggleTeacherStatus','resetStudentPassword','deleteStudentAccount']){const res=response();await m.handler(req({action,targetUid:'target',isActive:true,newPassword:'password123'}),res);assert.equal(res.code,403);}
+ const m=load('api/account-request.js');for(const action of ['approve','reject','toggleTeacherStatus','deleteTeacher','toggleStudentStatus','resetStudentPassword','deleteStudentAccount']){const res=response();await m.handler(req({action,targetUid:'target',isActive:true,newPassword:'password123'}),res);assert.equal(res.code,403);}
  assert.equal(m.mutations.length,0);
 });
 test('invalid token never reaches privileged operations',async()=>{

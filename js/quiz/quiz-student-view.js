@@ -151,7 +151,7 @@
           ${currentStreak > 1 ? `<div style="font-size:11px;color:#f97316;font-weight:800;margin-top:3px;">🔥 سلسلة ${currentStreak} إجابات متتالية!</div>` : ''}
           <div style="background:#0e2a1d;border:2px solid #10b981;border-radius:12px;padding:8px 12px;margin-top:8px;text-align:center;">
             <span style="color:#6ee7b7;font-size:11px;font-weight:800;display:block;">✓ الإجابة النموذجية الصحيحة:</span>
-            <b style="color:#ffffff;font-size:15px;display:block;margin-top:2px;">${correctText}</b>
+            <b style="color:#ffffff;font-size:15px;display:block;margin-top:2px;">${escapeHtml(correctText)}</b>
           </div>
           ${(!isCorrect && myChoiceIdx !== null && myChoiceIdx >= 0 && opts[myChoiceIdx]) ? `<div style="font-size:11px;color:#fca5a5;margin-top:4px;font-weight:700;">إجابتك التي اخترتها: <b style="color:#fff;">${escapeHtml(opts[myChoiceIdx])}</b></div>` : ''}
         </div>
@@ -162,7 +162,7 @@
           else if (isThisChosen) { bg = 'rgba(239,68,68,0.3)'; border = '#ef4444'; badge = '<span style="background:#ef4444;color:#fff;font-size:10px;padding:2px 6px;border-radius:6px;font-weight:900;">✕ اختيارك</span>'; }
           return `<div style="background:${bg};border:1.5px solid ${border};border-radius:10px;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:800;color:#fff;"><span>${escapeHtml(opt)}</span>${badge}</div>`;
         }).join('')}</div>` : ''}
-        ${resData.why ? `<div style="background:rgba(16,185,129,0.12);border:1px dashed #10b981;border-radius:10px;padding:6px 12px;width:100%;max-width:360px;text-align:right;font-size:11px;color:#d1fae5;font-weight:700;">💡 <b>التفسير:</b> ${escapeHtml(resData.why)}</div>` : ''}
+        ${(resData.why || resData.explanation) ? `<div style="background:rgba(16,185,129,0.12);border:1px dashed #10b981;border-radius:10px;padding:6px 12px;width:100%;max-width:360px;text-align:right;font-size:11px;color:#d1fae5;font-weight:700;">💡 <b>التفسير:</b> ${escapeHtml(resData.why || resData.explanation)}</div>` : ''}
         <div style="background:rgba(18,19,41,0.85);border:1px solid rgba(142,100,239,0.3);border-radius:14px;padding:10px 16px;width:100%;max-width:360px;display:flex;justify-content:space-around;align-items:center;">
           <div><div style="font-size:11px;color:#a89bff;font-weight:700;">مجموع نقاطك</div><div class="student-live-score-val" style="font-size:17px;font-weight:900;color:#52d9ed;">${Number(myResult?.totalScore ?? currentScore)}</div></div>
           <div style="width:1px;height:24px;background:rgba(255,255,255,0.15);"></div>
@@ -177,8 +177,9 @@
   function renderStudentFinalPodium(stage, data, currentStudent, currentScore, currentWorldId) {
     const myId = String(currentStudent.uid);
     let myFinalRank = '-';
-    if (data.top3 && Array.isArray(data.top3)) {
-      const idx = data.top3.findIndex(p => String(p.id) === myId || p.name === currentStudent.name);
+    const rankSource = Array.isArray(data.leaderboard) ? data.leaderboard : (Array.isArray(data.podium) ? data.podium : (Array.isArray(data.top3) ? data.top3 : []));
+    if (rankSource.length) {
+      const idx = rankSource.findIndex(p => String(p?.id) === myId || p?.name === currentStudent.name);
       if (idx !== -1) myFinalRank = idx + 1;
     }
     stage.innerHTML = `
@@ -206,7 +207,7 @@
     // Inject "Save points & mistakes" card for unregistered guests
     let isGuest = true;
     try {
-      const u = (global.ScoreARAuth && global.ScoreARAuth.getCurrentUser) ? global.ScoreARAuth.getCurrentUser() : null;
+      const u = (global.ScoreARAuth && (global.ScoreARAuth.getUser || global.ScoreARAuth.getCurrentUser)) ? (global.ScoreARAuth.getUser || global.ScoreARAuth.getCurrentUser)() : null;
       if (u && !u.isAnonymous && u.role === 'student' && !String(u.uid).startsWith('guest_')) isGuest = false;
       const sess = JSON.parse(sessionStorage.getItem('scorear_student_session') || '{}');
       if (sess && sess.isRegistered && !sess.isAnonymous) isGuest = false;

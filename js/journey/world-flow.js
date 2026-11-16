@@ -123,7 +123,7 @@
           <button onclick="if(window.preview)window.preview('${world.id}');ScoreARWorldFlow.closeWorldModal();" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:12px;padding:12px 20px;font-weight:800;cursor:pointer;font-family:inherit;">
             🎬 معاينة الفيديو
           </button>
-          <button onclick="ScoreARWorldFlow.closeWorldModal();if(window.openTeacherLoginModal)window.openTeacherLoginModal();" style="background:linear-gradient(135deg, #8e64ef, #6d28d9);color:#fff;border:none;border-radius:12px;padding:12px 24px;font-weight:900;cursor:pointer;font-family:inherit;">
+          <button onclick="ScoreARWorldFlow.closeWorldModal();if(window.ScoreARAuthUI&&window.ScoreARAuthUI.openUnifiedLoginModal)window.ScoreARAuthUI.openUnifiedLoginModal();else if(window.openTeacherLoginModal)window.openTeacherLoginModal();" style="background:linear-gradient(135deg, #8e64ef, #6d28d9);color:#fff;border:none;border-radius:12px;padding:12px 24px;font-weight:900;cursor:pointer;font-family:inherit;">
             ادخل لتبدأ كمعلم 🚀
           </button>
         </div>

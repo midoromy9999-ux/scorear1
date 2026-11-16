@@ -24,9 +24,7 @@
   async function ensureAuthUser() {
     const auth = (global.firebase && global.firebase.auth) ? global.firebase.auth() : null;
     if (!auth) return null;
-    if (!auth.currentUser) {
-      try { await auth.signInAnonymously(); } catch (e) {}
-    }
+    // Question bank uses authenticated teacher UID when available
     currentUid = auth.currentUser ? auth.currentUser.uid : null;
     return currentUid;
   }

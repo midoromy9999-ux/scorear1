@@ -447,14 +447,15 @@
       if (global.toast) global.toast('لا يوجد فائز مسجل لهذه الجلسة.');
       return;
     }
-    if (global.ScoreARPodiumCapture && typeof global.ScoreARPodiumCapture.downloadWinnerCertificate === 'function') {
+    const dlFn = global.ScoreARPodiumCapture && (global.ScoreARPodiumCapture.downloadWinnerCertificate || global.ScoreARPodiumCapture.downloadCertificate);
+    if (typeof dlFn === 'function') {
       const winnerData = {
         name: top1.name || 'بطل سكور آر',
         score: top1.score || 0,
         avatarId: top1.avatarId || 'char_01',
         quizTitle: s.quizTitle || 'مسابقة سكور آر'
       };
-      global.ScoreARPodiumCapture.downloadWinnerCertificate(winnerData, 1, s.worldId || 'royal');
+      dlFn.call(global.ScoreARPodiumCapture, winnerData, 1, s.worldId || 'royal');
       if (global.toast) global.toast('جاري تنزيل شهادة التقدير الملكية للبطل الفائز 🌟');
     } else {
       if (global.toast) global.toast('محرك الشهادات غير محمل حالياً.');

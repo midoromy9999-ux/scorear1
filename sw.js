@@ -18,7 +18,7 @@ const STATIC_ASSETS = [
   './js/bundles/journey-ui.bundle.js',
   './assets/characters/animated/char_01-idle.webp',
   './assets/characters/char_01.webp',
-  './assets/characters/teacher_ahmed.jpg'
+  './assets/characters/teacher_ahmed.webp'
 ];
 
 self.addEventListener('install', (event) => {
@@ -53,6 +53,7 @@ self.addEventListener('fetch', (event) => {
   // Exclude real-time Firebase, Firestore, Gemini AI endpoints and external APIs from SW cache
   if (
     url.hostname.includes('firebaseio.com') ||
+    url.hostname.includes('firebasedatabase.app') ||
     url.hostname.includes('googleapis.com') ||
     url.hostname.includes('firestore.googleapis.com') ||
     url.pathname.includes('/api/') ||

@@ -47,7 +47,7 @@
     try {
       const raw = localStorage.getItem(GUEST_STORAGE_KEY);
       let payload = raw ? JSON.parse(raw) : { schemaVersion: 'scorear_v3', data: {} };
-      payload.schemaVersion = 'scorear_v3';
+      payload.schemaVersion = payload.schemaVersion || 'scorear_v2';
       payload.data = Object.assign({}, payload.data, data);
       payload.data.lastUpdated = Date.now();
       localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(payload));

@@ -409,7 +409,43 @@
     if (ev()) ev().renderHostLeaderboard(getOrCreateStage(), currentRoom, activeQuestions, currentQIndex, launchQuestion, renderHostPodium, closeHostSession);
   }
 
+  function saveCompletedSessionToCloud() {
+    try {
+      if (!currentRoom || currentRoom._sessionSaved) return;
+      const db = global.firebase?.database?.(), user = global.firebase?.auth?.()?.currentUser;
+      if (!db || !user || !user.uid) return;
+      currentRoom._sessionSaved = true;
+      const sorted = [...(currentRoom.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
+      const questionStats = (activeQuestions || []).map((q, qIdx) => {
+        const ansMap = (currentRoom.answers && currentRoom.answers[qIdx]) || {};
+        const entries = Object.values(ansMap);
+        const normQ = global.ScoreAREvaluator?.normalizeQuestion ? global.ScoreAREvaluator.normalizeQuestion(q) : q;
+        let correctAnswers = 0;
+        entries.forEach(a => {
+          const ok = global.ScoreAREvaluator?.isCorrect ? global.ScoreAREvaluator.isCorrect(normQ, a.chosenIndices ?? a.optionIndex) : false;
+          if (ok) correctAnswers++;
+        });
+        const totalAnswers = entries.length;
+        const wrongAnswers = Math.max(0, totalAnswers - correctAnswers);
+        const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+        return { questionText: q.text || q.q || ('سؤال ' + (qIdx + 1)), accuracy, correctAnswers, wrongAnswers, totalAnswers };
+      });
+      db.ref('scorear_completed_sessions').push({
+        ownerUid: user.uid,
+        createdAt: Date.now(),
+        quizTitle: currentRoom.quizTitle || 'مسابقة سكور آر التفاعلية',
+        pin: currentRoom.pin || '',
+        worldId: currentRoom.world?.id || 'royal',
+        totalStudents: sorted.length,
+        top3: sorted.slice(0, 3).map(p => ({ id: p.id, name: p.name, score: p.score || 0, avatarId: p.avatarId || 'char_01' })),
+        leaderboard: sorted.map(p => ({ id: p.id, name: p.name, score: p.score || 0, avatarId: p.avatarId || 'char_01' })),
+        questionStats
+      }).catch(e => console.warn('[ScoreAR Host] Session save warning:', e.message));
+    } catch (e) {}
+  }
+
   function renderHostPodium() {
+    saveCompletedSessionToCloud();
     const s = getOrCreateStage();
     if (global.ScoreARPodiumEffects?.renderHostPodium) global.ScoreARPodiumEffects.renderHostPodium(s, currentRoom, closeHostSession);
     else if (ev()) ev().renderHostPodium(s, currentRoom, closeHostSession);
@@ -435,7 +471,15 @@
     getPin: () => currentRoom ? currentRoom.pin : null,
     getPlayers: () => currentRoom ? currentRoom.players : [],
     isLocked: () => !!isRoomLocked,
-    getRoomStatus: () => currentRoom ? currentRoom.status : null
+    getRoomStatus: () => currentRoom ? currentRoom.status : null,
+    getWrongIndicesForCurrentQuestion: () => {
+      const q = activeQuestions && activeQuestions[currentQIndex];
+      if (!q) return [];
+      const opts = q.options || q.opts || [];
+      const cIdx = (global.ScoreAREvaluator?.getCorrectIndices) ? global.ScoreAREvaluator.getCorrectIndices(q) : [Number(q.correct?.[0] ?? q.answer ?? q.ans ?? 0)];
+      const cSet = new Set(cIdx);
+      return opts.map((_, i) => i).filter(i => !cSet.has(i)).slice(0, 2);
+    }
   };
 
   global.ScoreARQuizHost = ScoreARQuizHost;

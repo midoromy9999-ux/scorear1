@@ -11,4 +11,4 @@ Disallow: /admin
 Disallow: /dashboard
 
 # Sitemap location
-Sitemap: https://scorear-e4186.web.app/sitemap.xml
+Sitemap: https://scorear4.vercel.app/sitemap.xml

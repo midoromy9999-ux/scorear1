@@ -79,8 +79,8 @@
     if (student.isAnonymous) return true;
     const uidStr = String(student.uid || '');
     if (!uidStr || uidStr.startsWith('guest_') || uidStr.startsWith('s_')) return true;
-    if (global.ScoreARAuth && typeof global.ScoreARAuth.getCurrentUser === 'function') {
-      const cu = global.ScoreARAuth.getCurrentUser();
+    if (global.ScoreARAuth && typeof (global.ScoreARAuth.getUser || global.ScoreARAuth.getCurrentUser) === 'function') {
+      const cu = (global.ScoreARAuth.getUser || global.ScoreARAuth.getCurrentUser)();
       if (!cu || cu.isAnonymous || cu.role !== 'student') return true;
     }
     return false;
@@ -162,8 +162,8 @@
           const current = (typeof global.ScoreARJourney.getProgress === 'function')
             ? global.ScoreARJourney.getProgress()
             : {};
-          const updatedXp = (Number(current.totalXp) || 0) + gainedXp;
-          global.ScoreARJourney.saveProgress({ totalXp: updatedXp });
+          const updatedXp = (Number((current.xp ?? current.totalXp)) || 0) + gainedXp;
+          global.ScoreARJourney.saveProgress({ xp: updatedXp });
         } catch(e) {}
       }
 
@@ -352,8 +352,8 @@
       if (cache.gainedXp && global.ScoreARJourney?.saveProgress) {
         try {
           const cur = global.ScoreARJourney.getProgress ? global.ScoreARJourney.getProgress() : {};
-          const newXp = (Number(cur.totalXp) || 0) + Number(cache.gainedXp);
-          global.ScoreARJourney.saveProgress({ totalXp: newXp });
+          const newXp = (Number(cur.xp ?? cur.totalXp) || 0) + Number(cache.gainedXp);
+          global.ScoreARJourney.saveProgress({ xp: newXp });
         } catch(e) {}
       }
 
@@ -379,8 +379,8 @@
     setupLiveContestListeners();
 
     // Listen for Auth changes to sync profile and claim guest contest data immediately on login
-    if (global.ScoreARAuth && typeof global.ScoreARAuth.onAuthStateChange === 'function') {
-      global.ScoreARAuth.onAuthStateChange((user) => {
+    if (global.ScoreARAuth && typeof global.ScoreARAuth.onAuthStateChanged === 'function') {
+      global.ScoreARAuth.onAuthStateChanged((user) => {
         if (user && user.role === 'student' && user.uid) {
           syncStudentProfile(user.uid);
           claimGuestContestSummary();
@@ -411,18 +411,12 @@
     renderGuestSavePrompt,
     isGuestStudent,
     triggerStudentLogin: () => {
-      if (global.ScoreARAuthRegisterUI && typeof global.ScoreARAuthRegisterUI.openModal === 'function') {
-        global.ScoreARAuthRegisterUI.openModal('login');
-      } else if (global.ScoreARAuthUI && typeof global.ScoreARAuthUI.openModal === 'function') {
-        global.ScoreARAuthUI.openModal('student-login');
-      }
+      if (global.ScoreARAuthUI?.openUnifiedLoginModal) global.ScoreARAuthUI.openUnifiedLoginModal();
+      else if (global.ScoreARAuthUI?.openLoginModal) global.ScoreARAuthUI.openLoginModal();
     },
     triggerStudentRegister: () => {
-      if (global.ScoreARAuthRegisterUI && typeof global.ScoreARAuthRegisterUI.openModal === 'function') {
-        global.ScoreARAuthRegisterUI.openModal('register');
-      } else if (global.ScoreARAuthUI && typeof global.ScoreARAuthUI.openModal === 'function') {
-        global.ScoreARAuthUI.openModal('student-register');
-      }
+      if (global.ScoreARRegisterUI?.openStudentRegistrationModal) global.ScoreARRegisterUI.openStudentRegistrationModal();
+      else if (global.ScoreARAuthUI?.openUnifiedLoginModal) global.ScoreARAuthUI.openUnifiedLoginModal();
     }
   };
 

@@ -113,7 +113,7 @@
 
     try {
       const auth = window.firebase && window.firebase.auth ? window.firebase.auth() : null;
-      if (auth && !auth.currentUser) await auth.signInAnonymously();
+      // Teacher studio requires authenticated teacher session (no anonymous escalation)
       if (auth && auth.currentUser) currentQuiz.ownerUid = auth.currentUser.uid;
 
       const db = (window.ScoreARAuth && window.ScoreARAuth.getDb) ? window.ScoreARAuth.getDb() : (window.firebase && window.firebase.database ? window.firebase.database() : null);
@@ -467,7 +467,44 @@
   function addOption() { const q = currentQuiz?.questions[activeQIndex]; if (q && q.opts.length < 6) { q.opts.push('الخيار ' + (q.opts.length + 1)); scheduleAutoSave(); renderBuilderView(); } }
   function removeOption(oIdx) { const q = currentQuiz?.questions[activeQIndex]; if (q && q.opts.length > 2) { q.opts.splice(oIdx, 1); if (q.ans === oIdx) q.ans = 0; else if (q.ans > oIdx) q.ans--; scheduleAutoSave(); renderBuilderView(); } }
 
+
+  function addImportedQuestion(qObj) {
+    if (!currentQuiz) currentQuiz = createBlankQuiz();
+    const opts = Array.isArray(qObj?.opts) ? qObj.opts : (Array.isArray(qObj?.options) ? qObj.options : ['خيار 1', 'خيار 2', 'خيار 3', 'خيار 4']);
+    const ans = Number(qObj?.ans ?? qObj?.answer ?? (Array.isArray(qObj?.correct) ? qObj.correct[0] : 0)) || 0;
+    currentQuiz.questions.push({
+      id: qObj?.id || ('q_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+      q: qObj?.q || qObj?.text || '',
+      opts: [...opts],
+      ans,
+      time: Number(qObj?.time || qObj?.timeLimit) || 20,
+      points: Number(qObj?.points) || 100,
+      doublePoints: Boolean(qObj?.doublePoints),
+      explain: qObj?.explain || qObj?.explanation || qObj?.why || '',
+      skill: qObj?.skill || currentQuiz.subject || 'اللغة العربية',
+      image: qObj?.image || null,
+      imageAlt: qObj?.imageAlt || ''
+    });
+    activeQIndex = currentQuiz.questions.length - 1;
+    scheduleAutoSave();
+    if (document.getElementById('scorearBuilderModal')?.style.display === 'flex') renderBuilderView();
+  }
+
+  function importQuestions(list, meta = {}) {
+    if (!Array.isArray(list) || !list.length) return;
+    if (!currentQuiz) currentQuiz = createBlankQuiz();
+    if (meta.title) currentQuiz.title = meta.title;
+    if (meta.subject) currentQuiz.subject = meta.subject;
+    if (meta.grade) currentQuiz.grade = meta.grade;
+    if (currentQuiz.questions.length === 1 && !currentQuiz.questions[0].q.trim()) {
+      currentQuiz.questions = [];
+    }
+    list.forEach(item => addImportedQuestion(item));
+    openBuilder(currentQuiz);
+  }
+
   global.ScoreARQuizBuilder = {
+    addImportedQuestion, importQuestions, getQuiz: () => currentQuiz,
     openBuilder, resumeLastDraft, closeBuilder, addQuestion, duplicateQuestion,
     deleteQuestion, moveQuestion, selectQuestion, toggleDoublePoints,
     setQuestionTime, setQuestionPoints, handlePointsSelect, setQuestionImage,

@@ -33,3 +33,9 @@ test('all changed browser modules compile',()=>{
 test('canonical evaluator regression suite',()=>{
  const result=require('node:child_process').spawnSync(process.execPath,[path.join(__dirname,'test_pure_evaluator_regression.cjs')],{encoding:'utf8',windowsHide:true});assert.equal(result.status,0,result.stdout+result.stderr);
 });
+
+test('typed event subscription filters by event type',()=>{
+  const c=moduleContext('js/engines/realtime-engine.js');let received=null;
+  const unsub=c.ScoreARRealtime.subscribe('QUESTION_START',p=>{received=p;});
+  assert.equal(typeof unsub,'function');unsub();
+});

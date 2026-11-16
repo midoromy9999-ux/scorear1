@@ -362,25 +362,8 @@
     if (!confirm('هل تريد بالتأكيد اعتماد هذا المعلم وتفعيل صلاحيات الاستوديو له؟')) return;
     try {
       if (global.toast) global.toast('جاري معالجة الاعتماد... ⏳');
-      try {
-        await callApi({ action: 'approve', targetUid: uid });
-        if (global.toast) global.toast('✓ تم اعتماد حساب المعلم وضبط دوره بنجاح!');
-      } catch (apiErr) {
-        // Fallback: If serverless API is not available on current host, update RTDB directly
-        const db = getDb();
-        const user = getCurrentUser();
-        if (db && user && user.role === 'admin') {
-          await db.ref(`scorear_account_requests/${uid}`).update({
-            status: 'approved',
-            reviewedAt: Date.now(),
-            reviewedBy: user.uid,
-            reviewNote: 'تم الاعتماد من لوحة الإدارة.'
-          });
-          if (global.toast) global.toast('✓ تم تغيير حالة الطلب إلى معتمد في قاعدة البيانات!');
-        } else {
-          throw apiErr;
-        }
-      }
+      await callApi({ action: 'approve', targetUid: uid });
+      if (global.toast) global.toast('✓ تم اعتماد حساب المعلم وضبط دوره بنجاح!');
     } catch (e) {
       alert('خطأ في الاعتماد: ' + e.message);
     }

@@ -100,7 +100,7 @@
     return message;
   }
   const api = { init, cleanup, publish: (t, p) => { const request = publish(t, p); request.catch(e => console.warn('[ScoreAR send]', e.message)); return request; },
-    subscribe: fn => { if (typeof fn === 'function') subscribers.add(fn); return () => subscribers.delete(fn); },
+    subscribe: (typeOrFn, maybeFn) => { const fn = (typeof typeOrFn === 'string' && typeof maybeFn === 'function') ? (msg => { if (msg && msg.type === typeOrFn) maybeFn(msg.payload !== undefined ? msg.payload : msg); }) : typeOrFn; if (typeof fn === 'function') subscribers.add(fn); return () => subscribers.delete(fn); },
     generatePin: () => String(100000 + Math.floor(Math.random() * 900000)),
     isConnected: () => connected, getPin: () => pin, getRole: () => role, whenReady: () => ready };
   global.ScoreARRealtime = api;

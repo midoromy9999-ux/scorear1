@@ -97,7 +97,12 @@
       mistakes: Array.isArray(rawObj.mistakes) ? rawObj.mistakes : [],
       streak: (rawObj.streak && typeof rawObj.streak === 'object') ? rawObj.streak : def.streak,
       quietSessionsCount: Number(rawObj.quietSessionsCount) || 0,
-      contestSessionsCount: 0, lastUpdated: Number(rawObj.lastUpdated) || now
+      contestSessionsCount: Number(rawObj.contestSessionsCount) || 0,
+      ...(rawObj.stationsProgress && typeof rawObj.stationsProgress === 'object' ? { stationsProgress: rawObj.stationsProgress } : {}),
+      ...(rawObj.dailyChallenge && typeof rawObj.dailyChallenge === 'object' ? { dailyChallenge: rawObj.dailyChallenge } : {}),
+      ...(Array.isArray(rawObj.attempts) ? { attempts: rawObj.attempts } : {}),
+      ...(rawObj.companionId ? { companionId: rawObj.companionId } : {}),
+      lastUpdated: Number(rawObj.lastUpdated) || now
     };
   }
 
@@ -111,7 +116,7 @@
           saveState(migrated, now);
           return migrated;
         }
-        if (parsed.schemaVersion === SCHEMA_VERSION && parsed.data) {
+        if ((parsed.schemaVersion === SCHEMA_VERSION || parsed.schemaVersion === 'scorear_v3') && parsed.data) {
           return sanitizeV2(parsed.data, now);
         }
       }

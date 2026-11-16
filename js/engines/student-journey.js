@@ -86,6 +86,10 @@
       streak: (rawObj.streak && typeof rawObj.streak === 'object') ? rawObj.streak : def.streak,
       quietSessionsCount: Number(rawObj.quietSessionsCount) || 0,
       contestSessionsCount: Number(rawObj.contestSessionsCount) || 0,
+      ...(rawObj.stationsProgress && typeof rawObj.stationsProgress === 'object' ? { stationsProgress: rawObj.stationsProgress } : {}),
+      ...(rawObj.dailyChallenge && typeof rawObj.dailyChallenge === 'object' ? { dailyChallenge: rawObj.dailyChallenge } : {}),
+      ...(Array.isArray(rawObj.attempts) ? { attempts: rawObj.attempts } : {}),
+      ...(rawObj.companionId ? { companionId: rawObj.companionId } : {}),
       lastUpdated: Number(rawObj.lastUpdated) || Date.now()
     };
   }
@@ -96,7 +100,7 @@
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed) {
-          if (parsed.schemaVersion === SCHEMA_VERSION && parsed.data) {
+          if ((parsed.schemaVersion === SCHEMA_VERSION || parsed.schemaVersion === 'scorear_v3') && parsed.data) {
             memoryProgress = sanitizeProgress(parsed.data);
             return memoryProgress;
           }
@@ -133,7 +137,7 @@
     const track = PRACTICE_TRACKS.find(t => t.id === trackId) || PRACTICE_TRACKS[0];
     activeQuietSession = {
       trackId: track.id, trackTitle: track.title, questions: track.questions,
-      currentIndex: 0, correctCount: 0, xpGained: 0, hasAnswered: false, newMistakes: []
+      currentIndex: 0, correctCount: 0, xpGained: 0, hasAnswered: false, newMistakes: [], solvedIds: []
     };
     renderQuietSessionStage();
   }
@@ -213,8 +217,9 @@
     if (!s || s.hasAnswered) return;
     s.hasAnswered = true;
     const q = s.questions[s.currentIndex];
+    const normQ = (global.ScoreAREvaluator && global.ScoreAREvaluator.normalizeQuestion) ? global.ScoreAREvaluator.normalizeQuestion(q) : q;
     const isCorrect = (global.ScoreAREvaluator && global.ScoreAREvaluator.isCorrect)
-      ? global.ScoreAREvaluator.isCorrect(q, chosenIdx)
+      ? global.ScoreAREvaluator.isCorrect(normQ, chosenIdx)
       : (chosenIdx === q.answer);
     if (global.ScoreARStreak) global.ScoreARStreak.recordQuestionAnswered(q.id);
 
@@ -226,6 +231,7 @@
     let xpNote = '';
     if (isCorrect) {
       s.correctCount++;
+      if (Array.isArray(s.solvedIds) && q.id) s.solvedIds.push(q.id);
       if (!alreadySolved && isUnderCap) {
         s.xpGained += 15;
         xpNote = '👏 أحسنت صنعاً! إجابة دقيقة (+15 XP)';
@@ -289,7 +295,7 @@
     const sessionTotalXp = s.xpGained + pathBonus;
 
     const solvedMap = { ...(cur.solvedQuestionIds || {}) };
-    s.questions.forEach((q, idx) => { if (idx < s.correctCount) solvedMap[q.id] = true; });
+    (s.solvedIds || []).forEach(id => { solvedMap[id] = true; });
 
     const completedPaths = { ...(cur.completedPaths || {}) };
     completedPaths[s.trackId] = { completedAt: Date.now(), score: s.correctCount, total: s.questions.length, trackTitle: s.trackTitle };

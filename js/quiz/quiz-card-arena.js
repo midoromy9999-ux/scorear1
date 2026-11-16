@@ -151,6 +151,7 @@
       } else if (isAffected && !msg.blocked && (msg.targetId !== msg.sourceId || msg.reflected)) {
         triggerCardEffectOnMe(msg.cardId, msg.reflected ? 'مرآة القاضي (مرتد)' : (msg.sourceName || 'منافس'), msg.actionMessage);
       } else if (isSource) {
+        if (msg.cardId === 'ERASER_50_50' && Array.isArray(msg.wrongIndices)) applyEraserEffect(msg.wrongIndices);
         showStudentCardAlert(msg.actionMessage, Boolean(msg.blocked));
         sfx(msg.blocked ? 'wrong' : 'reveal');
       }
@@ -180,7 +181,7 @@
         global.ScoreARRealtime.publish('HOST_CARD_EFFECT', {
           actionMessage: ev.message, actionType: ev.type, sourceId: ev.sourcePlayer?.id, sourceName: ev.sourcePlayer?.name,
           targetId: ev.targetPlayer?.id, targetName: ev.targetPlayer?.name, affectedId: (ev.affectedPlayer || ev.targetPlayer)?.id,
-          cardId: ev.card?.id, cardNameAr: ev.card?.nameAr, trapNameAr: ev.trapCard?.nameAr || null,
+          cardId: ev.card?.id, cardNameAr: ev.card?.nameAr, trapNameAr: ev.trapCard?.nameAr || null, wrongIndices: (ev.card?.id === 'ERASER_50_50' && global.ScoreARQuizHost?.getWrongIndicesForCurrentQuestion) ? global.ScoreARQuizHost.getWrongIndicesForCurrentQuestion() : undefined,
           blocked: (ev.type === 'BLOCKED' || ev.type === 'REFLECTED'), reflected: (ev.type === 'REFLECTED'), roster
         });
       } else {
@@ -342,12 +343,15 @@
     showStudentCardAlert(`💨 ضباب الرؤية من ${sourceName}! امسح الشاشة لكشف الخيارات.`, true);
   }
 
-  function applyEraserEffect() {
+  function applyEraserEffect(wrongIndices = null) {
     const opts = document.querySelectorAll('.student-opt-btn');
-    if (opts.length >= 4) {
-      opts[0].style.opacity = '0.15'; opts[0].disabled = true; opts[0].style.pointerEvents = 'none';
-      opts[2].style.opacity = '0.15'; opts[2].disabled = true; opts[2].style.pointerEvents = 'none';
-      showStudentCardAlert('✂️ كارت 50/50: تم استبعاد خيارين!');
+    if (opts.length >= 2) {
+      let toDisable = Array.isArray(wrongIndices) && wrongIndices.length ? wrongIndices : (global.ScoreARQuizHost?.getWrongIndicesForCurrentQuestion?.() || []);
+      if (!toDisable.length) toDisable = opts.length >= 4 ? [0, 2] : [0];
+      toDisable.forEach(idx => {
+        if (opts[idx]) { opts[idx].style.opacity = '0.15'; opts[idx].disabled = true; opts[idx].style.pointerEvents = 'none'; }
+      });
+      showStudentCardAlert('✂️ كارت 50/50: تم استبعاد خيارين خاطئين!');
     }
   }
 

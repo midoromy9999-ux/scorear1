@@ -565,8 +565,9 @@ window.handleContestAnswer = function(selectedIndex, correctIndex, worldId){
   const text = document.getElementById('contestFeedbackText');
   const qData = contestQuestions[currentContestIndex];
 
+  const normQ = (window.ScoreAREvaluator && window.ScoreAREvaluator.normalizeQuestion) ? window.ScoreAREvaluator.normalizeQuestion(qData) : qData;
   const isAnsCorrect = (window.ScoreAREvaluator && window.ScoreAREvaluator.isCorrect)
-    ? window.ScoreAREvaluator.isCorrect(qData, selectedIndex)
+    ? window.ScoreAREvaluator.isCorrect(normQ, selectedIndex)
     : (selectedIndex >= 0 && selectedIndex === correctIndex);
 
   const correctIndices = (window.ScoreAREvaluator && window.ScoreAREvaluator.getCorrectIndices)
@@ -951,7 +952,7 @@ if (window.ScoreARAuth) {
   window.ScoreARAuth.onAuthStateChanged((user) => {
     if (user && (user.role === 'admin' || user.role === 'teacher')) {
       updateTopActionsTeacher(user);
-    } else {
+    } else if (!user || user.role !== 'student') {
       updateTopActionsTeacher(null);
     }
     if (location.hash === '#studio') {
