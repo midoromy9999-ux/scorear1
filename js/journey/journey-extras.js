@@ -153,6 +153,118 @@
     ];
   }
 
+
+  const RHETORIC_RANKS = [
+    { minXp: 0, title: '🌱 مستكشف الضاد', nextXp: 50 },
+    { minXp: 50, title: '⚔️ فارس النحو', nextXp: 150 },
+    { minXp: 150, title: '🦅 صقر البلاغة', nextXp: 300 },
+    { minXp: 300, title: '👑 أمير البيان', nextXp: 500 },
+    { minXp: 500, title: '🌟 حكيم العربية الأعلى', nextXp: 1000 }
+  ];
+
+  function computeRhetoricRank(xp = 0) {
+    const val = Math.max(0, Number(xp) || 0);
+    let current = RHETORIC_RANKS[0];
+    for (const r of RHETORIC_RANKS) {
+      if (val >= r.minXp) current = r;
+    }
+    const pct = Math.min(100, Math.round(((val - current.minXp) / Math.max(1, current.nextXp - current.minXp)) * 100));
+    return { ...current, xp: val, progressPct: pct };
+  }
+
+  function downloadParentCard() {
+    try {
+      const state = getExtrasState();
+      const rank = computeRhetoricRank(state.xp);
+      const badges = computeBadges(state);
+      const earnedBadges = badges.filter(b => b.earned).length;
+      const masteredCount = state.mistakes.filter(m => m.mastered && !m.archived).length;
+      const user = global.ScoreARAuth?.getUser ? global.ScoreARAuth.getUser() : null;
+      const studentName = user?.displayName || user?.name || 'بطل سكور آر';
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 640;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Royal Indigo & Gold Background
+      const grad = ctx.createLinearGradient(0, 0, 1080, 640);
+      grad.addColorStop(0, '#14122d');
+      grad.addColorStop(0.5, '#1e1646');
+      grad.addColorStop(1, '#0b0c1c');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1080, 640);
+
+      // Decorative Gold Frame
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(24, 24, 1032, 592);
+      ctx.strokeStyle = 'rgba(142,100,239,0.45)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(36, 36, 1008, 568);
+
+      ctx.direction = 'rtl';
+      ctx.textAlign = 'center';
+
+      // Header
+      ctx.fillStyle = '#52d9ed';
+      ctx.font = 'bold 22px Cairo, Tajawal, Arial';
+      ctx.fillText('✨ منصة سكور آر التعليمية (ScoreAR) — بطاقة التقدم والإنجاز لولي الأمر ✨', 540, 88);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 42px Cairo, Tajawal, Arial';
+      ctx.fillText(studentName, 540, 152);
+
+      ctx.fillStyle = '#fcd34d';
+      ctx.font = 'bold 26px Cairo, Tajawal, Arial';
+      ctx.fillText('الرتبة العلمية الحالية: ' + rank.title, 540, 198);
+
+      // 4 Metric Boxes
+      const stats = [
+        { label: 'رصيد الخبرة (XP)', val: state.xp + ' XP', color: '#a78bfa' },
+        { label: 'سلسلة الاستمرار', val: (state.streak?.count || 1) + ' أيام', color: '#52d9ed' },
+        { label: 'الأوسمة المكتسبة', val: earnedBadges + ' من 4', color: '#fcd34d' },
+        { label: 'قواعد تم إتقانها', val: masteredCount + ' قاعدة', color: '#34d399' }
+      ];
+
+      stats.forEach((st, idx) => {
+        const bx = 780 - idx * 240;
+        const by = 250;
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        ctx.fillRect(bx, by, 215, 160);
+        ctx.strokeStyle = st.color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(bx, by, 215, 160);
+
+        ctx.fillStyle = st.color;
+        ctx.font = '900 34px Cairo, Tajawal, Arial';
+        ctx.fillText(st.val, bx + 107, by + 78);
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = 'bold 19px Cairo, Tajawal, Arial';
+        ctx.fillText(st.label, bx + 107, by + 125);
+      });
+
+      // Footer
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = 'bold 20px Cairo, Tajawal, Arial';
+      ctx.fillText('تاريخ الإصدار: ' + state.todayKey + '  |  إشراف وتصميم: أ. أحمد صلاح رميح — معلم أول (أ) لغة عربية', 540, 515);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '16px Cairo, Tajawal, Arial';
+      ctx.fillText('https://scorear4.vercel.app — كل سؤال، بداية مغامرة تعليمية', 540, 560);
+
+      const link = document.createElement('a');
+      link.download = 'بطاقة_إنجاز_الطالب_ScoreAR.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      if (global.toast) global.toast('📲 تم تحميل بطاقة الإنجاز المصوّرة لولي الأمر بنجاح!');
+    } catch (e) {
+      console.warn('Parent card error:', e);
+    }
+  }
+
   function setCompanionId(charId) {
     const payload = readPayload();
     payload.data.companionId = charId;
@@ -282,6 +394,10 @@
           <span class="launch-pill"><span class="live-dot"></span> رحلة الطالب والتدريب الهادئ</span>
           <h1>مسارك الشخصي نحو <span class="gradient-text">الإتقان اللغوي</span></h1>
           <p>تحدٍ يومي بتوقيت القاهرة، خريطة محطات متدرجة، ودفتر ذكي يرسّخ أخطاءك السابقة بلا ضغط وقت.</p>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span style="background:rgba(245,158,11,0.16);border:1px solid rgba(245,158,11,0.45);color:#fcd34d;padding:5px 14px;border-radius:999px;font-size:12.5px;font-weight:900;">رتبتك البلاغية: ${computeRhetoricRank(state.xp).title} (${computeRhetoricRank(state.xp).progressPct}% للرتبة التالية)</span>
+            <button type="button" onclick="ScoreARJourneyExtras.downloadParentCard()" class="btn launch-outline" style="padding:6px 14px;font-size:12px;border-color:#52d9ed66;color:#befff2;">📲 بطاقة إنجازي لولي الأمر (PNG)</button>
+          </div>
         </div>
         <div class="scorear-floating-companion">
           <div class="scorear-hero-avatar"><img src="assets/characters/${escapeHtml(activeComp.id)}.webp" alt="${escapeHtml(activeComp.name)}" onerror="this.src='assets/characters/char_01.webp'"></div>
@@ -386,7 +502,7 @@
 
   const API = {
     getCairoDayKey, getDailyQuestions, completeDailyChallenge, recordAttempt, computeBadges,
-    getExtrasState, setCompanionId, startDailyChallenge, closeDailyStage, renderExtrasTopHtml, renderExtrasBottomHtml, mount
+    getExtrasState, computeRhetoricRank, downloadParentCard, setCompanionId, startDailyChallenge, closeDailyStage, renderExtrasTopHtml, renderExtrasBottomHtml, mount
   };
   global.ScoreARJourneyExtras = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;

@@ -444,10 +444,32 @@
               ${ui.icon('info', { size: 14 })} لماذا هذه هي الإجابة الصحيحة؟
             </div>
             <div style="font-size:14px;color:#d7ccea;line-height:1.7;">${curMistake.why}</div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <button type="button" onclick="ScoreARMistakeNotebook.showSmartTutorDiagnosis()" style="background:rgba(82,217,237,0.14);border:1px solid rgba(82,217,237,0.45);color:#7fe7ce;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:800;cursor:pointer;">🤖 تشخيص الفخ والقاعدة الذهبية (المُعلّم الذكي)</button>
+            </div>
+            <div id="smartTutorDiagnosisBox" style="display:none;margin-top:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.35);border-radius:12px;padding:12px 14px;font-size:13px;color:#e2e8f0;line-height:1.75;"></div>
           </div>
         </div>
       `;
     }
+  }
+
+
+  function showSmartTutorDiagnosis() {
+    const s = activeReviewSession;
+    const box = document.getElementById('smartTutorDiagnosisBox');
+    if (!s || !box) return;
+    const m = s.mistakesQueue[s.currentIndex];
+    if (!m) return;
+    const correctOpt = (Array.isArray(m.opts) && m.opts[m.answer] !== undefined) ? m.opts[m.answer] : 'الإجابة النموذجية';
+    const trapOpt = m.chosenOption || 'الخيار الخاطئ السابق';
+    box.style.display = 'block';
+    box.innerHTML = `
+      <div style="font-weight:900;color:#fcd34d;margin-bottom:6px;">🧭 تشخيص المُعلّم الذكي في مهارة (${m.skill || 'اللغة العربية'}):</div>
+      <div>• <b>الفخ الذي وقعت فيه سابقاً:</b> اختيار «<span style="color:#fca5a5;">${trapOpt}</span>» نتيجة التسرع قبل تحديد أركان الجملة.</div>
+      <div>• <b>المفتاح الذهبي للصواب:</b> الإجابة «<span style="color:#6ee7b7;font-weight:800;">${correctOpt}</span>» لأن: ${m.why || 'القاعدة تقتضي مطابقة الوظيفة الإعرابية والسياقية.'}</div>
+      <div style="margin-top:6px;color:#a7f3d0;font-size:12px;font-weight:700;">💡 نصيحة: اسأل نفسك دائماً عن علاقة الكلمة بما قبلها (أركان الجملة أو طرفي الصورة البيانية) قبل اختيار الإجابة!</div>
+    `;
   }
 
   function nextReviewQuestion() {
@@ -498,7 +520,7 @@
   global.ScoreARMistakeNotebook = {
     loadState, saveState, migrateV1ToV2, recordMistake, getActiveMistakes, getMasteredMistakes,
     isDueForReview, openNotebook, closeNotebook, startReviewSession, closeReviewSession,
-    handleReviewOptionClick, nextReviewQuestion, renderNotebookHtml, shuffleOptions, trainWithAI
+    handleReviewOptionClick, showSmartTutorDiagnosis, nextReviewQuestion, renderNotebookHtml, shuffleOptions, trainWithAI
   };
 
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

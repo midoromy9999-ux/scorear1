@@ -428,7 +428,7 @@
         const totalAnswers = entries.length;
         const wrongAnswers = Math.max(0, totalAnswers - correctAnswers);
         const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
-        return { questionText: q.text || q.q || ('سؤال ' + (qIdx + 1)), accuracy, correctAnswers, wrongAnswers, totalAnswers };
+        return { questionText: q.text || q.q || ('سؤال ' + (qIdx + 1)), opts: q.options || q.opts || ['أ','ب','ج','د'], ans: Number(normQ.correct?.[0] ?? 0), explain: q.explanation || q.why || '', skill: q.skill || 'مراجعة علاجية', accuracy, correctAnswers, wrongAnswers, totalAnswers };
       });
       db.ref('scorear_completed_sessions').push({
         ownerUid: user.uid,

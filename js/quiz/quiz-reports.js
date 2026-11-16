@@ -294,7 +294,8 @@
       <div style="display:flex;flex-direction:column;gap:14px;">
         <div style="background:#422337;border:1px solid #c38498;border-radius:14px;padding:12px 18px;color:#ffd3e5;font-size:12px;font-weight:800;display:flex;align-items:center;gap:10px;">
           ${ui.icon('alert', { size: 15 })}
-          <span>ودجت التنبيه: هذه الأسئلة حقق الطلاب فيها نسبة صواب أقل من 60%، مرتبة من الأضعف أولاً لمراجعتها وتعديلها.</span>
+          <span style="flex:1;">ودجت التنبيه: هذه الأسئلة حقق الطلاب فيها نسبة صواب أقل من 60%، مرتبة من الأضعف أولاً لمراجعتها وتعديلها.</span>
+          <button type="button" onclick="ScoreARQuizReports.createRemediationQuiz()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:7px 14px;font-size:11.5px;font-weight:900;cursor:pointer;white-space:nowrap;box-shadow:0 4px 12px rgba(16,185,129,0.35);">🎯 توليد مسابقة علاجية من الأسئلة الأضعف</button>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr;gap:12px;">
@@ -382,6 +383,28 @@
   }
 
   // --- 7. Actions ---
+
+  function createRemediationQuiz() {
+    const weak = getAttentionNeededQuestions();
+    if (!weak.length) {
+      if (global.toast) global.toast('لا توجد أسئلة ضعيفة حالياً لتوليد مسابقة علاجية.');
+      return;
+    }
+    const formatted = weak.slice(0, 12).map((q, i) => ({
+      id: 'rem_' + Date.now() + '_' + i,
+      q: q.questionText || ('سؤال علاجي ' + (i + 1)),
+      opts: Array.isArray(q.opts) && q.opts.length >= 2 ? q.opts : ['الخيار الأول', 'الخيار الثاني', 'الخيار الثالث', 'الخيار الرابع'],
+      ans: Number(q.ans) || 0,
+      explain: q.explain || ('سؤال علاجي (نسبة الصواب السابقة: ' + (q.accuracy || 0) + '%)'),
+      skill: q.skill || 'مراجعة علاجية مركزة'
+    }));
+    closeReportsHub();
+    if (global.ScoreARQuizBuilder && typeof global.ScoreARQuizBuilder.importQuestions === 'function') {
+      global.ScoreARQuizBuilder.importQuestions(formatted, { title: 'مسابقة علاجية مركزة — الأسئلة الأضعف 🎯', subject: 'مراجعة علاجية' });
+      if (global.toast) global.toast('🎯 تم توليد مسابقة علاجية من ' + formatted.length + ' أسئلة ضعيفة بنجاح!');
+    }
+  }
+
   function editWeakQuestion(qId) {
     closeReportsHub();
     if (global.ScoreARQuizBank && global.ScoreARQuizBank.openBankHub) {
@@ -466,6 +489,7 @@
     openReportsHub,
     closeReportsHub,
     switchTab: (t) => { currentTab = t; renderReportsView(); },
+    createRemediationQuiz,
     editWeakQuestion,
     resumeQuiz,
     exportSessionExcel,
