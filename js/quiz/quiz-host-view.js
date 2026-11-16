@@ -277,58 +277,77 @@
     const worldId = (currentRoom && currentRoom.world && currentRoom.world.id) ? currentRoom.world.id : 'royal';
     const wName = (currentRoom && currentRoom.world && currentRoom.world.name) ? currentRoom.world.name : 'القصر الملكي';
     const title = quizTitle || 'كأس التفوق — مسابقة سكور آر التفاعلية';
+    let finished = false;
+    const timers = [];
+    const finishNow = () => {
+      if (finished) return;
+      finished = true;
+      timers.forEach(t => clearTimeout(t));
+      if (typeof onDone === 'function') onDone();
+    };
+    global._skipScoreARIntro = finishNow;
 
-    // Stage 1: Brand Transfer Screen (1.3s)
+    // Stage 1: Brand Transfer Screen (2.8 seconds)
     stage.innerHTML = `
       <style>
-        @keyframes transferZoomIn { 0% { transform: scale(0.75); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        @keyframes diamondSpin { 0% { transform: rotate(0deg) scale(0.8); } 50% { transform: rotate(180deg) scale(1.08); } 100% { transform: rotate(360deg) scale(1); } }
+        @keyframes transferZoomIn { 0% { transform: scale(0.82); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes diamondSpinSlow { 0% { transform: rotate(0deg) scale(0.92); } 50% { transform: rotate(180deg) scale(1.06); } 100% { transform: rotate(360deg) scale(0.92); } }
+        @keyframes titleBarFill { 0% { width: 0%; } 100% { width: 100%; } }
       </style>
       <div style="position:fixed;inset:0;background:linear-gradient(135deg,#2e1065 0%,#4c1d95 50%,#0f172a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;direction:rtl;">
-        <div style="animation:transferZoomIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both;text-align:center;">
-          <div style="width:96px;height:96px;margin:0 auto 16px;border-radius:24px;background:#ffffff;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4px;padding:8px;box-shadow:0 20px 50px rgba(0,0,0,0.6);animation:diamondSpin 1.4s ease-in-out infinite;">
-            <div style="background:#e21b3c;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:16px;">▲</div>
-            <div style="background:#1368ce;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:16px;">◆</div>
-            <div style="background:#d89e00;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:16px;">●</div>
-            <div style="background:#26890c;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:16px;">■</div>
+        <button type="button" onclick="window._skipScoreARIntro && window._skipScoreARIntro()" style="position:absolute;top:22px;left:24px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;font-family:Cairo,sans-serif;">تخطي المقدمة ⏭</button>
+        <div style="animation:transferZoomIn 0.8s cubic-bezier(0.22,1,0.36,1) both;text-align:center;">
+          <div style="width:104px;height:104px;margin:0 auto 18px;border-radius:26px;background:#ffffff;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:5px;padding:9px;box-shadow:0 22px 55px rgba(0,0,0,0.65);animation:diamondSpinSlow 2.6s ease-in-out infinite;">
+            <div style="background:#e21b3c;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:18px;">▲</div>
+            <div style="background:#1368ce;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:18px;">◆</div>
+            <div style="background:#d89e00;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:18px;">●</div>
+            <div style="background:#26890c;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:18px;">■</div>
           </div>
-          <div style="font-size:56px;font-weight:900;color:#ffffff;font-family:Montserrat,Cairo,sans-serif;letter-spacing:1px;text-shadow:0 8px 30px rgba(0,0,0,0.6);">ScoreAR | سكور آر</div>
-          <div style="font-size:18px;font-weight:800;color:#c4b5fd;margin-top:6px;">الانتقال إلى قاعة الأسئلة المباشرة...</div>
+          <div style="font-size:58px;font-weight:900;color:#ffffff;font-family:Montserrat,Cairo,sans-serif;letter-spacing:1px;text-shadow:0 8px 30px rgba(0,0,0,0.6);">ScoreAR | سكور آر</div>
+          <div style="font-size:20px;font-weight:800;color:#c4b5fd;margin-top:8px;">الانتقال إلى قاعة الأسئلة المباشرة...</div>
         </div>
       </div>
     `;
 
-    // Stage 2: Quiz Title Showcase (after 1.25s)
-    setTimeout(() => {
+    // Stage 2: Main Quiz Title Showcase (4.2 seconds so students read it comfortably!)
+    timers.push(setTimeout(() => {
+      if (finished) return;
       stage.innerHTML = `
         <div style="position:fixed;inset:0;background:url('assets/worlds/${worldId}/question.jpg') center/cover no-repeat;">
-          <div style="position:absolute;inset:0;background:rgba(12,15,36,0.78);backdrop-filter:blur(10px);"></div>
+          <div style="position:absolute;inset:0;background:rgba(10,14,34,0.8);backdrop-filter:blur(10px);"></div>
         </div>
-        <div style="position:relative;z-index:20;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;direction:rtl;">
-          <span style="background:rgba(255,255,255,0.14);color:#fcd34d;font-size:14px;font-weight:900;padding:6px 20px;border-radius:999px;margin-bottom:14px;">🪐 عالم ${escapeHtml(wName)} · ${totalQuestions} أسئلة</span>
-          <div style="background:rgba(10,16,38,0.84);backdrop-filter:blur(18px);padding:34px 56px;border-radius:22px;box-shadow:0 24px 65px rgba(0,0,0,0.7);max-width:880px;">
-            <h1 style="font-size:42px;font-weight:900;color:#ffffff;margin:0;line-height:1.35;">${escapeHtml(title)}</h1>
+        <button type="button" onclick="window._skipScoreARIntro && window._skipScoreARIntro()" style="position:absolute;top:22px;left:24px;z-index:30;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;font-family:Cairo,sans-serif;">تخطي المقدمة ⏭</button>
+        <div style="position:relative;z-index:20;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;direction:rtl;">
+          <span style="background:rgba(255,255,255,0.14);color:#fcd34d;font-size:16px;font-weight:900;padding:8px 24px;border-radius:999px;margin-bottom:18px;box-shadow:0 6px 20px rgba(0,0,0,0.4);">🪐 عالم ${escapeHtml(wName)} · ${totalQuestions} أسئلة تفاعلية</span>
+          <div style="background:rgba(10,16,38,0.84);backdrop-filter:blur(18px);padding:42px 64px;border-radius:24px;box-shadow:0 24px 65px rgba(0,0,0,0.75);max-width:940px;width:92%;animation:transferZoomIn 0.7s cubic-bezier(0.22,1,0.36,1) both;">
+            <div style="font-size:15px;font-weight:800;color:#38bdf8;margin-bottom:10px;">🏆 عنوان المسابقة</div>
+            <h1 style="font-size:44px;font-weight:900;color:#ffffff;margin:0;line-height:1.4;">${escapeHtml(title)}</h1>
+            <div style="margin-top:26px;width:100%;height:6px;background:rgba(255,255,255,0.12);border-radius:999px;overflow:hidden;">
+              <div style="height:100%;background:linear-gradient(90deg,#38bdf8,#8e64ef,#fbbf24);animation:titleBarFill 4.0s linear forwards;"></div>
+            </div>
           </div>
         </div>
       `;
-    }, 1200);
+    }, 2800));
 
-    // Stage 3: Student Attention Countdown (after 2.7s)
-    setTimeout(() => {
+    // Stage 3: Student Attention Countdown (3.6 seconds: 1.2s per number)
+    timers.push(setTimeout(() => {
+      if (finished) return;
       stage.innerHTML = `
         <div style="position:fixed;inset:0;background:url('assets/worlds/${worldId}/question.jpg') center/cover no-repeat;">
-          <div style="position:absolute;inset:0;background:rgba(12,15,36,0.82);backdrop-filter:blur(12px);"></div>
+          <div style="position:absolute;inset:0;background:rgba(10,14,34,0.84);backdrop-filter:blur(12px);"></div>
         </div>
+        <button type="button" onclick="window._skipScoreARIntro && window._skipScoreARIntro()" style="position:absolute;top:22px;left:24px;z-index:30;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;font-family:Cairo,sans-serif;">تخطي ⏭</button>
         <div style="position:relative;z-index:20;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;direction:rtl;">
-          <div style="font-size:28px;font-weight:900;color:#fcd34d;margin-bottom:12px;">🔔 انتباه يا أبطال!</div>
-          <h2 style="font-size:44px;font-weight:900;color:#ffffff;margin:0 0 20px;">المسابقة تبدأ الآن... استعدوا!</h2>
-          <div id="introReadyCount" style="width:120px;height:120px;border-radius:50%;background:#3b147a;color:#ffffff;font-size:58px;font-weight:900;display:grid;place-items:center;box-shadow:0 16px 45px rgba(0,0,0,0.6);font-family:Montserrat,monospace;">3</div>
+          <div style="font-size:30px;font-weight:900;color:#fcd34d;margin-bottom:14px;">🔔 انتباه يا أبطال!</div>
+          <h2 style="font-size:44px;font-weight:900;color:#ffffff;margin:0 0 24px;">المسابقة تبدأ الآن... استعدوا!</h2>
+          <div id="introReadyCount" style="width:132px;height:132px;border-radius:50%;background:#3b147a;border:4px solid rgba(255,255,255,0.28);color:#ffffff;font-size:64px;font-weight:900;display:grid;place-items:center;box-shadow:0 18px 50px rgba(0,0,0,0.65);font-family:Montserrat,monospace;">3</div>
         </div>
       `;
-      setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '2'; }, 550);
-      setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '1'; }, 1100);
-      setTimeout(() => { if (typeof onDone === 'function') onDone(); }, 1650);
-    }, 2650);
+      timers.push(setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '2'; }, 1200));
+      timers.push(setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '1'; }, 2400));
+      timers.push(setTimeout(() => finishNow(), 3600));
+    }, 7000));
   }
 
   /* ── 3. KAHOOT QUESTION READING & ANSWERING STAGE (Screenshots 5 & 3) ── */

@@ -136,8 +136,10 @@
         p.cardMultiplier = 1;
         const mult = ((qData.isDouble || qData.multiplier === 2) ? 2 : (Number(qData.multiplier) || 1)) * cardMult;
         const tf = (0.5 + 0.5 * (derivedTimeRemaining / (totalTime || 20)));
-        earned = Math.round(base * tf * mult);
-        scoreFormula = `${base} × ${tf.toFixed(2)} × ${mult} = ${earned}`;
+        const nextStreak = (p.streak || 0) + 1;
+        const streakBonus = nextStreak >= 2 ? Math.min(300, (nextStreak - 1) * 100) : 0;
+        earned = Math.round(base * tf * mult) + streakBonus;
+        scoreFormula = `${base} × ${tf.toFixed(2)} × ${mult}${streakBonus ? ' + 🔥' + streakBonus : ''} = ${earned}`;
 
         const numericResp = parseFloat(respTime);
         if (numericResp < minTimeSec) {
