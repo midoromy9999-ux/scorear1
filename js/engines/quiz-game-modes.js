@@ -149,7 +149,7 @@
       </header>
 
       <main style="position:relative;z-index:10;max-width:1140px;width:94%;margin:2px auto 18px;flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:16px;">
-        <div style="background:#0c1d36;border:1px solid rgba(255,255,255,0.14);border-radius:16px;padding:24px 30px;box-shadow:0 24px 60px rgba(0,0,0,0.75);display:grid;grid-template-columns:1.22fr 1fr;gap:26px;align-items:center;">
+        <div class="mode-select-primary-grid" style="background:#0c1d36;border:1px solid rgba(255,255,255,0.14);border-radius:16px;padding:24px 30px;box-shadow:0 24px 60px rgba(0,0,0,0.75);display:grid;grid-template-columns:1.22fr 1fr;gap:26px;align-items:center;">
           
           <div style="display:flex;flex-direction:column;gap:11px;text-align:right;">
             <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;">
@@ -206,7 +206,7 @@
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:18px;">
+          <div class="mode-select-cards-grid" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:18px;">
             ${Object.values(MODES_CONFIG).filter(item => activeFilter === 'ALL' || item.cat === activeFilter).map(item => {
               const isSel = item.id === selectedMode;
               return `

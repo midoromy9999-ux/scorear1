@@ -40,81 +40,41 @@
     const style = document.createElement('style');
     style.id = 'scorearNavStyles';
     style.textContent = `
-      /* Desktop & Tablet Top Nav Dropdown (>= 768px) */
-      .scorear-dropdown {
-        position: relative;
-        display: inline-block;
-      }
-      .scorear-dropdown-btn {
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.14);
-        color: #ddd8ff;
-        border-radius: 12px;
-        padding: 8px 14px;
-        font-size: 13px;
-        font-weight: 700;
+      .scorear-back-home-btn {
+        background: rgba(142, 100, 239, 0.2);
+        border: 1px solid rgba(142, 100, 239, 0.45);
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 800;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 5px;
         font-family: inherit;
-        transition: all 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: background 0.18s ease, border-color 0.18s ease;
       }
-      .scorear-dropdown-btn:hover, .scorear-dropdown-btn[aria-expanded="true"] {
-        background: rgba(142, 100, 239, 0.22);
-        border-color: #8e64ef;
-        color: #ffffff;
+      .scorear-back-home-btn:hover {
+        background: rgba(142, 100, 239, 0.34);
+        border-color: #a89bff;
       }
-      .scorear-dropdown-menu {
-        display: none;
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        min-width: 220px;
-        background: #14162e;
-        border: 1.5px solid rgba(142, 100, 239, 0.35);
-        border-radius: 16px;
-        padding: 8px;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-        z-index: var(--z-dropdown, 200);
-        direction: rtl;
-        text-align: right;
+      @media (max-width: 640px) {
+        .scorear-back-home-btn {
+          padding: 5px 8px;
+          font-size: 11px;
+          gap: 4px;
+          border-radius: 9px;
+        }
       }
-      .scorear-dropdown-menu.show {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        animation: scorearDropdownFade 0.15s ease-out;
-      }
-      @keyframes scorearDropdownFade {
-        from { opacity: 0; transform: translateY(-6px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .scorear-dropdown-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 14px;
-        color: #ddd8ff;
-        text-decoration: none;
-        font-size: 13px;
-        font-weight: 700;
-        border-radius: 10px;
-        transition: background 0.15s, color 0.15s;
-      }
-      .scorear-dropdown-item:hover, .scorear-dropdown-item:focus {
-        background: rgba(142, 100, 239, 0.18);
-        color: #ffffff;
-        outline: none;
-      }
-      .scorear-dropdown-item.active {
-        background: rgba(142, 100, 239, 0.3);
-        color: #fcd34d;
-      }
-
-      /* Screen width adaptations */
-      @media (max-width: 767px) {
-        .scorear-dropdown-btn { padding: 6px 10px; font-size: 12px; }
+      @media (max-width: 380px) {
+        .scorear-back-home-btn {
+          padding: 4px 7px;
+          font-size: 10.5px;
+          gap: 3px;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -393,7 +353,7 @@
     if (!navSlot) {
       navSlot = document.createElement('div');
       navSlot.id = 'scorearTopbarNavSlot';
-      navSlot.style.cssText = 'display:inline-flex;align-items:center;gap:8px;margin-right:6px;flex-wrap:wrap;flex-shrink:0;';
+      navSlot.style.cssText = 'display:inline-flex;align-items:center;gap:6px;flex-shrink:0;';
       if (typeof topbarTitle.insertAdjacentElement === 'function' && topbarTitle.parentElement) {
         topbarTitle.insertAdjacentElement('afterend', navSlot);
       } else {
@@ -406,30 +366,19 @@
     const standalone = isStandalonePage();
     const currentHash = (window.location && window.location.hash) || '#home';
     const isHome = !standalone && (!currentHash || currentHash === '#' || currentHash === '#home');
-    const activeTarget = getActiveNavTarget();
-    const activeItem = NAV_CONFIG.find(n => n.hash === activeTarget) || NAV_CONFIG[0];
 
+    if (isHome) {
+      navSlot.innerHTML = '';
+      navSlot.style.display = 'none';
+      return;
+    }
+
+    navSlot.style.display = 'inline-flex';
     navSlot.innerHTML = `
-      ${!isHome ? `
-        <button type="button" onclick="ScoreARNav.goBackOrHome()" style="background:rgba(142,100,239,0.2);border:1px solid rgba(142,100,239,0.45);color:#fff;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;" title="العودة للرئيسية">
-          <span>➔</span>
-          <span>رجوع للرئيسية</span>
-        </button>
-      ` : ''}
-      <div class="scorear-dropdown" id="scorearTopNavDropdown">
-        <button type="button" class="scorear-dropdown-btn" onclick="ScoreARNav.toggleDropdown('scorearTopNavDropdown')" aria-expanded="false" aria-haspopup="true">
-          <span>🧭 ${activeItem.title}</span>
-          <span style="font-size:10px;opacity:0.85;">▼</span>
-        </button>
-        <div class="scorear-dropdown-menu" role="menu">
-          ${NAV_CONFIG.map(item => `
-            <a href="${resolveNavHref(item.hash)}" class="scorear-dropdown-item ${item.hash === activeTarget ? 'active' : ''}" role="menuitem" onclick="ScoreARNav.closeAllDropdowns()">
-              <span>${item.title}</span>
-              ${item.badge ? `<span style="background:rgba(142,100,239,0.3);color:#dcd2ff;font-size:10px;padding:1px 6px;border-radius:6px;">${item.badge}</span>` : ''}
-            </a>
-          `).join('')}
-        </div>
-      </div>
+      <button type="button" class="scorear-back-home-btn" onclick="ScoreARNav.goBackOrHome()" title="العودة للرئيسية">
+        <span>➔</span>
+        <span>رجوع للرئيسية</span>
+      </button>
     `;
   }
 
@@ -437,26 +386,7 @@
     if (typeof document === 'undefined') return;
     const container = document.getElementById(containerId);
     if (!container) return;
-
-    const activeTarget = getActiveNavTarget();
-    const activeItem = NAV_CONFIG.find(n => n.hash === activeTarget) || NAV_CONFIG[0];
-
-    container.innerHTML = `
-      <div class="scorear-dropdown scorear-desktop-nav" id="scorearTopNavDropdown">
-        <button class="scorear-dropdown-btn" onclick="ScoreARNav.toggleDropdown('scorearTopNavDropdown')" aria-expanded="false" aria-haspopup="true">
-          <span>🧭 ${activeItem.title}</span>
-          <span style="font-size:10px;">▼</span>
-        </button>
-        <div class="scorear-dropdown-menu" role="menu">
-          ${NAV_CONFIG.map(item => `
-            <a href="${resolveNavHref(item.hash)}" class="scorear-dropdown-item ${item.hash === activeTarget ? 'active' : ''}" role="menuitem" onclick="ScoreARNav.closeAllDropdowns()">
-              <span>${item.title}</span>
-              ${item.badge ? `<span style="background:rgba(142,100,239,0.3);color:#dcd2ff;font-size:10px;padding:1px 6px;border-radius:6px;">${item.badge}</span>` : ''}
-            </a>
-          `).join('')}
-        </div>
-      </div>
-    `;
+    container.innerHTML = '';
   }
 
   const NavAPI = {

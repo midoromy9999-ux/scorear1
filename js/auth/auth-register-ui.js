@@ -135,7 +135,7 @@
           <!-- Hero Selection Preview -->
           <div>
             <label style="display:block;color:#ddd8ff;font-size:12px;font-weight:700;margin-bottom:6px;">اختر بطلك المفضل:</label>
-            <div style="display:grid;grid-template-columns:repeat(6, 1fr);gap:6px;">
+            <div class="scorear-hero-register-grid" style="display:grid;grid-template-columns:repeat(6, 1fr);gap:6px;">
               ${heroes.map((h, i) => `
                 <button type="button" class="avatar-card-picker ${i===0?'selected':''}" onclick="ScoreARRegisterUI.selectStudentAvatar('${h.id}', this)" style="background:#16182e;border:2px solid ${i===0?'#a855f7':'rgba(255,255,255,0.1)'};border-radius:10px;padding:4px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;">
                   <img src="assets/characters/animated/${h.id}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${h.name}" style="height:36px;object-fit:contain;">

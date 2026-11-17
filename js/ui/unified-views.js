@@ -27,6 +27,8 @@
         'background:radial-gradient(ellipse at 20% 0, rgba(48,35,79,0.7), transparent 55%), #0c0d1d',
         'color:#eceeff',
         'overflow-y:auto',
+        'overflow-x:hidden',
+        'max-width:100vw',
         '-webkit-overflow-scrolling:touch',
         'display:none',
         'font-family:Tajawal,Arial,sans-serif',
@@ -44,27 +46,29 @@
     const isPodium = activeType === 'podium';
 
     return `
-      <header class="gallery-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px 20px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(12,13,29,0.92);backdrop-filter:blur(16px);position:sticky;top:0;z-index:100;">
-        <div style="display:flex;align-items:center;gap:14px;">
-          <button type="button" class="btn-gallery-back" onclick="ScoreARUnifiedViews.closeView()" style="display:inline-flex;align-items:center;gap:8px;background:rgba(142,100,239,0.22);border:1px solid rgba(142,100,239,0.45);color:#fff;border-radius:12px;padding:8px 18px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit;transition:all 0.2s;" aria-label="الرجوع الفوري">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            <span>عودة</span>
-          </button>
-          <div class="gallery-brand" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:#ffffff;">
-            <img src="assets/mark.svg" alt="" width="36" height="36" style="filter:drop-shadow(0 0 10px rgba(117,80,239,0.5));">
-            <div>
-              <b style="font-family:Cairo,sans-serif;font-size:20px;font-weight:900;display:block;line-height:1.1;">سكور آر<span style="color:#f59e0b;">.</span></b>
-              <small style="display:block;font-size:8px;letter-spacing:2px;color:#a1a4be;">LEARN. PLAY. BECOME.</small>
+      <header class="gallery-header scorear-unified-header">
+        <div class="scorear-unified-head-main">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <button type="button" class="btn-gallery-back" onclick="ScoreARUnifiedViews.closeView()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(142,100,239,0.22);border:1px solid rgba(142,100,239,0.45);color:#fff;border-radius:10px;padding:7px 14px;font-size:12.5px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;" aria-label="الرجوع الفوري">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              <span>عودة</span>
+            </button>
+            <div class="gallery-brand" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:#ffffff;min-width:0;">
+              <img src="assets/mark.svg" alt="" width="30" height="30" style="filter:drop-shadow(0 0 10px rgba(117,80,239,0.5));flex-shrink:0;">
+              <div>
+                <b style="font-family:Cairo,sans-serif;font-size:17px;font-weight:900;display:block;line-height:1.1;white-space:nowrap;">سكور آر<span style="color:#f59e0b;">.</span></b>
+                <small style="display:block;font-size:7.5px;letter-spacing:1.6px;color:#a1a4be;white-space:nowrap;">LEARN. PLAY. BECOME.</small>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="gallery-desktop-actions" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <button type="button" onclick="ScoreARUnifiedViews.openView('cards')" style="display:inline-flex;align-items:center;gap:6px;background:${isCards ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'rgba(255,255,255,0.08)'};border:1px solid ${isCards ? '#f59e0b' : 'rgba(255,255,255,0.15)'};color:#fff;border-radius:12px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">🃏 قاعة الكروت (٢٠)</button>
-          <button type="button" onclick="ScoreARUnifiedViews.openView('heroes')" style="display:inline-flex;align-items:center;gap:6px;background:${isHeroes ? 'linear-gradient(135deg,#7550ef,#582cd1)' : 'rgba(255,255,255,0.08)'};border:1px solid ${isHeroes ? '#7550ef' : 'rgba(255,255,255,0.15)'};color:#fff;border-radius:12px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">✨ قاعة الأبطال (٢٠)</button>
-          <button type="button" onclick="ScoreARUnifiedViews.openView('podium')" style="display:inline-flex;align-items:center;gap:6px;background:${isPodium ? 'linear-gradient(135deg,#10b981,#059669)' : 'rgba(255,255,255,0.08)'};border:1px solid ${isPodium ? '#10b981' : 'rgba(255,255,255,0.15)'};color:#fff;border-radius:12px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">👑 منصة التتويج</button>
-          <button type="button" onclick="ScoreARUnifiedViews.closeView()" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;" title="إغلاق العرض المدمج">✕ إغلاق</button>
+        <div class="scorear-unified-actions">
+          <button type="button" class="scorear-unified-action-btn ${isCards ? 'is-active-cards' : ''}" onclick="ScoreARUnifiedViews.openView('cards')">🃏 الكروت (٢٠)</button>
+          <button type="button" class="scorear-unified-action-btn ${isHeroes ? 'is-active-heroes' : ''}" onclick="ScoreARUnifiedViews.openView('heroes')">✨ الأبطال (٢٠)</button>
+          <button type="button" class="scorear-unified-action-btn ${isPodium ? 'is-active-podium' : ''}" onclick="ScoreARUnifiedViews.openView('podium')">👑 التتويج</button>
         </div>
+        <button type="button" class="scorear-unified-close-btn" onclick="ScoreARUnifiedViews.closeView()" title="إغلاق العرض المدمج">✕ إغلاق</button>
       </header>
     `;
   }
@@ -72,16 +76,16 @@
   function renderCardsView(container) {
     container.innerHTML = `
       ${getUnifiedHeaderHtml('cards', 'قاعة الكروت التكتيكية', '٢٠ كارت ذكاء استراتيجي يقلب موازين القاعة')}
-      <main class="character-gallery-page" style="max-width:1240px;margin:0 auto;padding:24px 20px 60px;">
-        <div class="gallery-title-area" style="margin:20px 0 24px;">
+      <main class="character-gallery-page">
+        <div class="gallery-title-area" style="margin:14px 0 20px;">
           <div class="eyebrow" style="margin-bottom:8px;color:#f59e0b;font-weight:900;">🃏 موسوعة حرب الكروت التكتيكية</div>
-          <h1 style="font-family:Cairo,sans-serif;font-size:clamp(26px, 3.6vw, 40px);font-weight:900;margin:8px 0;color:#ffffff;">ترسانة الـ ٢٠ كارت.. ذكاء تكتيكي يقلب موازين القاعة.</h1>
-          <p style="color:#b1a2e9;font-size:14px;max-width:740px;line-height:1.8;margin:0;">تعرّف على أسرار كل كارت في طور حرب الكروت (Card Arena): من انقلاب المراكز بالكامل وسرقة النقاط، إلى فخاخ مرآة القاضي والصد العكسي التلقائي والدروع الذهبية ومساعدات الـ 50/50.</p>
+          <h1 style="font-family:Cairo,sans-serif;font-size:clamp(22px, 3.6vw, 40px);font-weight:900;margin:8px 0;color:#ffffff;line-height:1.3;">ترسانة الـ ٢٠ كارت.. ذكاء تكتيكي يقلب موازين القاعة.</h1>
+          <p style="color:#b1a2e9;font-size:13.5px;max-width:740px;line-height:1.75;margin:0;">تعرّف على أسرار كل كارت في طور حرب الكروت (Card Arena): من انقلاب المراكز بالكامل وسرقة النقاط، إلى فخاخ مرآة القاضي والصد العكسي التلقائي والدروع الذهبية ومساعدات الـ 50/50.</p>
         </div>
 
-        <div class="character-picker cards-picker-layout" style="display:grid;grid-template-columns:320px minmax(0,1fr);gap:24px;align-items:start;">
+        <div class="character-picker cards-picker-layout">
           <!-- ASIDE PREVIEW -->
-          <aside class="character-stage" aria-label="معاينة الكارت التفاعلي" style="width:100%;box-sizing:border-box;background:radial-gradient(ellipse at 50% 50%, rgba(142, 100, 239, 0.25), transparent 70%), linear-gradient(160deg, #1d1a36, #111326);border:1px solid rgba(142, 100, 239, 0.3);border-radius:24px;box-shadow:0 15px 40px rgba(0,0,0,0.5);padding:24px 20px;">
+          <aside class="character-stage" aria-label="معاينة الكارت التفاعلي" style="width:100%;box-sizing:border-box;">
             <small style="color:#fcd34d;font-weight:900;letter-spacing:1px;display:block;margin-bottom:12px;text-align:center;">✦ الكارت التكتيكي المختار ✦</small>
             <div id="cardPreviewBox" style="width:100%;display:flex;align-items:center;justify-content:center;margin-bottom:16px;"></div>
             <div id="cardPreviewInfo" aria-live="polite"></div>
@@ -89,20 +93,20 @@
 
           <!-- COLLECTION & TABS -->
           <div class="character-collection" style="min-width:0;width:100%;">
-            <div class="character-section-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-              <h4 style="font-size:20px;font-weight:900;color:#ffffff;margin:0;">ترسانة الكروت الرسمية</h4>
-              <span style="background:rgba(245,158,11,0.2);color:#fcd34d;border:1px solid rgba(245,158,11,0.4);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:900;">٢٠ كارت تكتيكي متوازن</span>
+            <div class="character-section-head">
+              <h4>ترسانة الكروت الرسمية</h4>
+              <span>٢٠ كارت تكتيكي متوازن</span>
             </div>
 
-            <div class="character-tabs" aria-label="فئات الكروت" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-              <button type="button" id="cardTab-all" onclick="ScoreARCardsGallery.filterCards('all')" aria-pressed="true" style="background:#181930;border:1px solid rgba(255,255,255,0.1);color:#b5b1cf;border-radius:12px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">الكل · ٢٠</button>
-              <button type="button" id="cardTab-game_changer" onclick="ScoreARCardsGallery.filterCards('game_changer')" aria-pressed="false" style="background:#181930;border:1px solid rgba(255,255,255,0.1);color:#b5b1cf;border-radius:12px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">نقاط وانقلاب · ٥</button>
-              <button type="button" id="cardTab-attack" onclick="ScoreARCardsGallery.filterCards('attack')" aria-pressed="false" style="background:#181930;border:1px solid rgba(255,255,255,0.1);color:#b5b1cf;border-radius:12px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">هجوم وتعطيل · ٥</button>
-              <button type="button" id="cardTab-defense" onclick="ScoreARCardsGallery.filterCards('defense')" aria-pressed="false" style="background:#181930;border:1px solid rgba(255,255,255,0.1);color:#b5b1cf;border-radius:12px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">دروع وفخاخ · ٥</button>
-              <button type="button" id="cardTab-boost" onclick="ScoreARCardsGallery.filterCards('boost')" aria-pressed="false" style="background:#181930;border:1px solid rgba(255,255,255,0.1);color:#b5b1cf;border-radius:12px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">تعزيز ومكافآت · ٥</button>
+            <div class="character-tabs" aria-label="فئات الكروت">
+              <button type="button" id="cardTab-all" onclick="ScoreARCardsGallery.filterCards('all')" aria-pressed="true">الكل · ٢٠</button>
+              <button type="button" id="cardTab-game_changer" onclick="ScoreARCardsGallery.filterCards('game_changer')" aria-pressed="false">نقاط وانقلاب · ٥</button>
+              <button type="button" id="cardTab-attack" onclick="ScoreARCardsGallery.filterCards('attack')" aria-pressed="false">هجوم وتعطيل · ٥</button>
+              <button type="button" id="cardTab-defense" onclick="ScoreARCardsGallery.filterCards('defense')" aria-pressed="false">دروع وفخاخ · ٥</button>
+              <button type="button" id="cardTab-boost" onclick="ScoreARCardsGallery.filterCards('boost')" aria-pressed="false">تعزيز ومكافآت · ٥</button>
             </div>
 
-            <div id="cardsGrid" class="cards-grid-layout" role="region" aria-label="شبكة كروت اللعبة" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:14px;"></div>
+            <div id="cardsGrid" class="cards-grid-layout" role="region" aria-label="شبكة كروت اللعبة"></div>
           </div>
         </div>
       </main>
@@ -127,46 +131,46 @@
 
     container.innerHTML = `
       ${getUnifiedHeaderHtml('heroes', 'قاعة أبطال سكور آر', '٢٠ رفيقاً كرتونياً للمغامرة والتعلم')}
-      <main class="character-gallery-page" style="max-width:1200px;margin:0 auto;padding:24px 20px 60px;">
-        <div class="gallery-title-area" style="margin:20px 0 24px;">
+      <main class="character-gallery-page heroes-page">
+        <div class="gallery-title-area" style="margin:14px 0 20px;">
           <div class="eyebrow" style="margin-bottom:8px;color:#52d9ed;font-weight:900;">✨ مستودع الأبطال الرسمي</div>
-          <h1 style="font-family:Cairo,sans-serif;font-size:clamp(26px, 3.6vw, 42px);font-weight:900;margin:8px 0;color:#ffffff;">أبطال سكور آر.. ٢٠ رفيقاً كرتونياً للمغامرة والتعلم.</h1>
-          <p style="color:#b1a2e9;font-size:14px;max-width:720px;line-height:1.8;margin:0;">اختر رفيقك في الحصص الحية والمنافسات اليومية. يملك كل بطل حركة تنفس مشوقة وتأثيرات تتويج فريدة تميزك داخل القاعة.</p>
+          <h1 style="font-family:Cairo,sans-serif;font-size:clamp(22px, 3.6vw, 42px);font-weight:900;margin:8px 0;color:#ffffff;line-height:1.3;">أبطال سكور آر.. ٢٠ رفيقاً كرتونياً للمغامرة والتعلم.</h1>
+          <p style="color:#b1a2e9;font-size:13.5px;max-width:720px;line-height:1.75;margin:0;">اختر رفيقك في الحصص الحية والمنافسات اليومية. يملك كل بطل حركة تنفس مشوقة وتأثيرات تتويج فريدة تميزك داخل القاعة.</p>
         </div>
 
-        <div class="character-picker" style="display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:start;">
+        <div class="character-picker">
           <!-- PREVIEW ASIDE -->
-          <aside class="character-stage" aria-label="معاينة البطل التفاعلي" style="background:radial-gradient(ellipse at 50% 50%, rgba(142, 100, 239, 0.25), transparent 70%), linear-gradient(160deg, #1d1a36, #111326);border:1px solid rgba(142, 100, 239, 0.3);border-radius:24px;box-shadow:0 15px 40px rgba(0,0,0,0.5);padding:24px 20px;text-align:center;">
-            <small style="color:#a78bfa;font-weight:800;letter-spacing:1px;display:block;margin-bottom:12px;">✦ البطل المختار حالياً ✦</small>
-            <div id="studentCustomPreviewBox" style="width:200px;height:250px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;"></div>
-            <div id="studentCustomPreviewTitle"><h3 style="font-family:Cairo,sans-serif;font-size:22px;color:#fff;margin:6px 0;"></h3></div>
+          <aside class="character-stage" aria-label="معاينة البطل التفاعلي">
+            <small>✦ البطل المختار حالياً ✦</small>
+            <div id="studentCustomPreviewBox"></div>
+            <div id="studentCustomPreviewTitle"><h3></h3></div>
             <p id="studentCustomPreviewDesc" style="color:#c5c7de;font-size:13px;line-height:1.6;margin:6px 0 10px;"></p>
-            <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:5px;margin-bottom:14px;">
-              <button type="button" data-character-pose="idle" onclick="ScoreARUnifiedViews.previewHeroPose('idle')" style="background:#262044;border:1px solid #8e64ef;color:#fff;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;">🧍 وقوف</button>
-              <button type="button" data-character-pose="walk" onclick="ScoreARUnifiedViews.previewHeroPose('walk')" style="background:#19192f;border:1px solid rgba(255,255,255,0.15);color:#d9d4ed;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">🚶 مشي</button>
-              <button type="button" data-character-pose="run" onclick="ScoreARUnifiedViews.previewHeroPose('run')" style="background:#19192f;border:1px solid rgba(255,255,255,0.15);color:#d9d4ed;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">🏃 جري</button>
-              <button type="button" data-character-pose="climb" onclick="ScoreARUnifiedViews.previewHeroPose('climb')" style="background:#19192f;border:1px solid rgba(255,255,255,0.15);color:#d9d4ed;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">🧗 تسلق</button>
-              <button type="button" data-character-pose="fly" onclick="ScoreARUnifiedViews.previewHeroPose('fly')" style="background:#19192f;border:1px solid rgba(255,255,255,0.15);color:#d9d4ed;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">🚀 طيران</button>
-              <button type="button" data-character-pose="celebrate" onclick="ScoreARUnifiedViews.previewHeroPose('celebrate')" style="background:#19192f;border:1px solid rgba(255,255,255,0.15);color:#d9d4ed;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">🎉 احتفال</button>
+            <div class="character-controls" style="margin-bottom:14px;">
+              <button type="button" data-character-pose="idle" aria-pressed="true" onclick="ScoreARUnifiedViews.previewHeroPose('idle')">🧍 وقوف</button>
+              <button type="button" data-character-pose="walk" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('walk')">🚶 مشي</button>
+              <button type="button" data-character-pose="run" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('run')">🏃 جري</button>
+              <button type="button" data-character-pose="climb" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('climb')">🧗 تسلق</button>
+              <button type="button" data-character-pose="fly" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('fly')">🚀 طيران</button>
+              <button type="button" data-character-pose="celebrate" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('celebrate')">🎉 احتفال</button>
             </div>
             <button type="button" id="btnSelectHero" onclick="ScoreARUnifiedViews.saveHeroChoice()" style="width:100%;background:linear-gradient(135deg,#7550ef,#582cd1);color:#fff;border:none;border-radius:14px;padding:12px;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 6px 20px rgba(117,80,239,0.4);font-family:inherit;">اعتماد هذا البطل لشخصيتي ⭐</button>
           </aside>
 
           <!-- GRID -->
           <div class="character-collection" style="min-width:0;width:100%;">
-            <div class="character-section-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-              <h4 style="font-size:20px;font-weight:900;color:#ffffff;margin:0;">قائمة الأبطال الـ ٢٠</h4>
-              <span style="background:rgba(117,80,239,0.25);color:#c4b5fd;border:1px solid rgba(117,80,239,0.4);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:800;">جاهزون للحصص الحية</span>
+            <div class="character-section-head">
+              <h4>قائمة الأبطال الـ ٢٠</h4>
+              <span>جاهزون للحصص الحية</span>
             </div>
 
-            <div class="character-tabs" aria-label="فئات الأبطال" style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-              <button type="button" id="charTab-all" onclick="ScoreARUnifiedViews.filterHeroes('all')" aria-pressed="true" style="background:#181930;border:1px solid rgba(255,255,255,0.1);color:#b5b1cf;border-radius:12px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">الكل · ٢٠</button>
-              <button type="button" id="charTab-human" onclick="ScoreARUnifiedViews.filterHeroes('human')" aria-pressed="false" style="background:#181930;border:1px solid rgba(255,255,255,0.1);color:#b5b1cf;border-radius:12px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">البشر · ٨</button>
-              <button type="button" id="charTab-animal" onclick="ScoreARUnifiedViews.filterHeroes('animal')" aria-pressed="false" style="background:#181930;border:1px solid rgba(255,255,255,0.1);color:#b5b1cf;border-radius:12px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">الحيوانات · ٦</button>
-              <button type="button" id="charTab-fantasy" onclick="ScoreARUnifiedViews.filterHeroes('fantasy')" aria-pressed="false" style="background:#181930;border:1px solid rgba(255,255,255,0.1);color:#b5b1cf;border-radius:12px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">الخياليون · ٦</button>
+            <div class="character-tabs" aria-label="فئات الأبطال">
+              <button type="button" id="charTab-all" onclick="ScoreARUnifiedViews.filterHeroes('all')" aria-pressed="true">الكل · ٢٠</button>
+              <button type="button" id="charTab-human" onclick="ScoreARUnifiedViews.filterHeroes('human')" aria-pressed="false">البشر · ٨</button>
+              <button type="button" id="charTab-animal" onclick="ScoreARUnifiedViews.filterHeroes('animal')" aria-pressed="false">الحيوانات · ٦</button>
+              <button type="button" id="charTab-fantasy" onclick="ScoreARUnifiedViews.filterHeroes('fantasy')" aria-pressed="false">الخياليون · ٦</button>
             </div>
 
-            <div id="avatarsGrid" class="character-grid" role="region" aria-label="أبطال سكور آر" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;"></div>
+            <div id="avatarsGrid" class="character-grid" role="region" aria-label="أبطال سكور آر"></div>
           </div>
         </div>
       </main>
@@ -205,8 +209,9 @@
 
   function filterHeroes(cat) {
     global._unifiedHeroCategory = cat;
+    const scope = stageElement || document;
     ['all', 'human', 'animal', 'fantasy'].forEach(c => {
-      const btn = document.getElementById('charTab-' + c);
+      const btn = scope.querySelector('#charTab-' + c) || document.getElementById('charTab-' + c);
       if (btn) btn.setAttribute('aria-pressed', String(c === cat));
     });
     renderHeroesGrid();
@@ -214,46 +219,47 @@
 
   function saveHeroChoice() {
     if (!global._unifiedHeroSelected || !global.ScoreARCharacters) return;
-    const hero = global.ScoreARCharacters.all().find(h => h.id === global._unifiedHeroSelected);
+    const hero = (typeof global.ScoreARCharacters.get === 'function' ? global.ScoreARCharacters.get(global._unifiedHeroSelected) : null)
+      || (Array.isArray(global.ScoreARCharacters.list) ? global.ScoreARCharacters.list.find(h => h.id === global._unifiedHeroSelected) : null);
     if (!hero) return;
     try {
       const profile = JSON.parse(localStorage.getItem('scorear_student_profile_v1') || '{}');
       profile.avatarId = hero.code;
       localStorage.setItem('scorear_student_profile_v1', JSON.stringify(profile));
-      if (global.toast) global.toast(`✨ تم اعتماد البطل (${hero.nameAr}) بنجاح!`);
+      if (global.toast) global.toast(`✨ تم اعتماد البطل (${hero.name || hero.nameAr || hero.code}) بنجاح!`);
     } catch(e){}
   }
 
   function renderPodiumView(container) {
     container.innerHTML = `
       ${getUnifiedHeaderHtml('podium', 'منصة التتويج الاحتفالية الكبرى 👑', 'المحاكاة الاحتفالية للتتويج وتكريم الأبطال')}
-      <div style="padding:14px 20px;background:rgba(18,20,42,0.95);border-bottom:1px solid rgba(142,100,239,0.3);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="font-weight:900;color:#fcd34d;font-size:14px;">🎬 محاكاة التتويج:</span>
-          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium('cinematic')" style="background:linear-gradient(135deg,#8b5cf6,#4f46e5);color:#fff;border:none;border-radius:10px;padding:7px 14px;font-weight:900;cursor:pointer;font-family:inherit;">🎬 عرض سينمائي</button>
-          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium(3)" style="background:#b45309;color:#fff;border:none;border-radius:10px;padding:7px 14px;font-weight:800;cursor:pointer;font-family:inherit;">🥉 المركز الثالث</button>
-          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium(2)" style="background:#475569;color:#fff;border:none;border-radius:10px;padding:7px 14px;font-weight:800;cursor:pointer;font-family:inherit;">🥈 المركز الثاني</button>
-          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium(1)" style="background:#d97706;color:#fff;border:none;border-radius:10px;padding:7px 14px;font-weight:800;cursor:pointer;font-family:inherit;">🥇 المركز الأول</button>
-          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium('all')" style="background:#7550ef;color:#fff;border:none;border-radius:10px;padding:7px 14px;font-weight:800;cursor:pointer;font-family:inherit;">⚡ كشف الكل</button>
-        </div>
-        <div>
-          <button type="button" onclick="ScoreARPodiumEffects?.toggleAudioMute?.()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:6px 12px;border-radius:10px;font-size:13px;cursor:pointer;">🔊 الصوت</button>
+      <div class="unified-podium-sim-bar">
+        <div class="unified-podium-sim-scroll">
+          <span style="font-weight:900;color:#fcd34d;font-size:12px;white-space:nowrap;">🎬 محاكاة:</span>
+          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium('cinematic')" style="background:linear-gradient(135deg,#8b5cf6,#4f46e5);color:#fff;border:none;border-radius:9px;padding:5px 10px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap;">🎬 سينمائي</button>
+          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium(3)" style="background:#b45309;color:#fff;border:none;border-radius:9px;padding:5px 10px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">🥉 الثالث</button>
+          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium(2)" style="background:#475569;color:#fff;border:none;border-radius:9px;padding:5px 10px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">🥈 الثاني</button>
+          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium(1)" style="background:#d97706;color:#fff;border:none;border-radius:9px;padding:5px 10px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">🥇 الأول</button>
+          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium('all')" style="background:#7550ef;color:#fff;border:none;border-radius:9px;padding:5px 10px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">⚡ كشف الكل</button>
+          <button type="button" onclick="ScoreARPodiumEffects?.toggleAudioMute?.()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:5px 10px;border-radius:9px;font-size:11.5px;cursor:pointer;white-space:nowrap;">🔊 الصوت</button>
         </div>
       </div>
       <style>
-        #unifiedPodiumStage { position:relative;width:100%;height:max(530px, calc(100dvh - 118px));min-height:530px;background:#080914;overflow:hidden;display:flex;flex-direction:column; }
-        #unifiedPodiumStage #podiumCameraRig { transform: scale(0.84); transform-origin: bottom center; }
-        @media (max-height: 780px) and (min-width: 901px) {
-          .scorear-unified-stage .gallery-header { padding: 10px 20px !important; }
-          #unifiedPodiumStage { height: max(510px, calc(100dvh - 114px)); min-height: 510px; }
-          #unifiedPodiumStage #podiumCameraRig { transform: scale(0.64); transform-origin: bottom center; }
+        .unified-podium-sim-bar { padding:7px 14px;background:rgba(18,20,42,0.95);border-bottom:1px solid rgba(142,100,239,0.3);flex-shrink:0; }
+        .unified-podium-sim-scroll { display:flex;align-items:center;gap:6px;flex-wrap:wrap; }
+        #unifiedPodiumStage { position:relative;width:100%;flex:1 1 0;min-height:0;background:#080914;overflow:hidden;display:flex;flex-direction:column; }
+        @media (min-width: 721px) {
+          #unifiedPodiumStage #podiumCameraRig { transform: scale(0.84); transform-origin: bottom center; }
         }
-        @media (max-width: 640px) {
-          .scorear-unified-stage .gallery-header { padding: 10px 14px !important; position: relative !important; }
-          .scorear-unified-stage .gallery-header h1, .scorear-unified-stage .gallery-header h2 { font-size: 16px !important; }
-          #unifiedPodiumStage { height: auto !important; min-height: 700px !important; }
-          #unifiedPodiumStage #podiumStageRoot main { min-height: 360px !important; }
-          #unifiedPodiumStage #podiumCameraRig { transform: scale(0.56) !important; transform-origin: bottom center !important; }
+        @media (max-height: 780px) and (min-width: 721px) {
+          #unifiedPodiumStage #podiumCameraRig { transform: scale(0.70); transform-origin: bottom center; }
+        }
+        @media (max-width: 720px) {
+          .scorear-unified-stage .gallery-header { position: relative !important; padding: 8px 10px !important; }
+          .unified-podium-sim-bar { padding: 4px 8px; }
+          .unified-podium-sim-scroll { flex-wrap: wrap; justify-content: center; gap: 4px; overflow: visible; }
+          .unified-podium-sim-scroll button { padding: 4px 7px !important; font-size: 10px !important; border-radius: 7px !important; }
+          #unifiedPodiumStage { flex: 1 1 0 !important; min-height: 0 !important; }
         }
       </style>
       <div id="unifiedPodiumStage">
@@ -291,6 +297,10 @@
 
   function openView(type, options = {}) {
     const stage = ensureStageElement();
+    const bgMain = document.getElementById('main');
+    if (bgMain && bgMain.querySelector('#avatarsGrid')) {
+      bgMain.innerHTML = '';
+    }
     const prevH = window.location.hash || '#home';
     if (!['#cards', '#heroes', '#characters', '#podium'].includes(prevH)) {
       returnHash = prevH;
@@ -298,7 +308,8 @@
 
     currentView = type;
     document.body.style.overflow = 'hidden';
-    stage.style.display = 'block';
+    stage.style.display = type === 'podium' ? 'flex' : 'block';
+    stage.style.flexDirection = type === 'podium' ? 'column' : '';
     stage.scrollTop = 0;
 
     if (type === 'cards') {
@@ -325,6 +336,8 @@
   function closeView() {
     if (!stageElement || stageElement.style.display === 'none') return;
     stageElement.style.display = 'none';
+    stageElement.style.flexDirection = '';
+    stageElement.innerHTML = '';
     currentView = null;
     document.body.style.overflow = '';
     const targetH = returnHash && returnHash !== '#cards' && returnHash !== '#characters' && returnHash !== '#podium' ? returnHash : '#home';
@@ -386,11 +399,11 @@
     // Check initial hash
     const initialH = window.location.hash;
     if (initialH === '#cards') {
-      setTimeout(() => openView('cards'), 60);
+      setTimeout(() => { if (!isOpen() || currentView !== 'cards') openView('cards'); }, 60);
     } else if (initialH === '#characters' || initialH === '#heroes') {
-      setTimeout(() => openView('heroes'), 60);
+      setTimeout(() => { if (!isOpen() || currentView !== 'heroes') openView('heroes'); }, 60);
     } else if (initialH === '#podium') {
-      setTimeout(() => openView('podium'), 60);
+      setTimeout(() => { if (!isOpen() || currentView !== 'podium') openView('podium'); }, 60);
     }
   }
 
@@ -404,6 +417,7 @@
     openView,
     closeView,
     isOpen,
+    getCurrentView: () => currentView,
     renderHeroesGrid,
     filterHeroes, previewHeroPose,
     saveHeroChoice,

@@ -139,8 +139,31 @@
 
     stage.innerHTML = `
 <style>
-  #podiumStageRoot{position:absolute;inset:0;display:flex;flex-direction:column;font-family:Cairo,Tajawal,Arial,sans-serif;background:#1a0b3b;overflow:hidden;}
-#podiumStageRoot main{max-width:none;margin:0;padding:6px 14px 8px;}
+  #podiumStageRoot{--pod-dx:245px;--pod-recede:260px;--pod-s:1;position:absolute;inset:0;display:flex;flex-direction:column;font-family:Cairo,Tajawal,Arial,sans-serif;background:#1a0b3b;overflow:hidden;box-sizing:border-box;}
+#podiumStageRoot main{max-width:none;margin:0;padding:4px 12px 6px;}
+  #podiumStageRoot .podium-col{transform-origin:bottom center;}
+  #podiumStageRoot .podium-footer-bar button{padding:7px 12px !important;font-size:11.5px !important;}
+  @media (max-height:760px) and (min-width:721px){
+    #podiumStageRoot #podiumCameraRig{height:385px !important;}
+    #podiumStageRoot{--pod-s:0.86;}
+    #podiumStageRoot .podium-header-bar{padding:6px 14px !important;}
+    #podiumStageRoot .podium-footer-bar{padding:7px 14px !important;gap:6px !important;}
+  }
+  @media (max-width:720px){
+    #podiumStageRoot{--pod-dx:100px;--pod-recede:112px;--pod-s:0.48;}
+    #podiumStageRoot main{padding:2px 6px 4px !important;min-height:245px !important;}
+    #podiumStageRoot #podiumCameraRig{height:242px !important;}
+    #podiumStageRoot .podium-header-bar{padding:5px 8px !important;gap:4px !important;justify-content:space-between !important;}
+    #podiumStageRoot .podium-title-text{font-size:12.5px !important;}
+    #podiumStageRoot .podium-themes-strip{flex-wrap:wrap !important;justify-content:center !important;overflow:visible !important;width:100%;max-width:100%;gap:4px !important;}
+    #podiumStageRoot .podium-themes-strip button{white-space:nowrap;font-size:9.8px !important;padding:3px 6px !important;}
+    #podiumStageRoot .podium-footer-bar{padding:5px 8px !important;gap:4px !important;justify-content:center !important;}
+    #podiumStageRoot .podium-footer-actions,#podiumStageRoot .podium-motion-strip{flex-wrap:wrap !important;justify-content:center !important;overflow:visible !important;max-width:100%;width:100%;gap:4px !important;padding:3px 6px !important;}
+    #podiumStageRoot .podium-motion-extra{display:none !important;}
+    #podiumStageRoot .podium-motion-label{font-size:10px !important;}
+    #podiumStageRoot .podium-footer-bar button{white-space:nowrap;padding:4px 7px !important;font-size:9.8px !important;border-radius:7px !important;}
+    #podiumStageRoot #scExport{flex-wrap:wrap !important;justify-content:center !important;gap:4px !important;width:100%;}
+  }
   @keyframes crownDrop{0%{transform:translateY(-36px) scale(0.4);opacity:0;}70%{transform:translateY(4px) scale(1.12);opacity:1;}100%{transform:translateY(0) scale(1);opacity:1;}}
   @keyframes floatUp{0%{transform:translateY(0);opacity:1;}100%{transform:translateY(-220px);opacity:0;}}
   @keyframes heroPopIn{0%{opacity:0;transform:translateY(32px) scale(0.72);}100%{opacity:1;transform:translateY(0) scale(1);}}
@@ -171,8 +194,8 @@
       <button onclick="ScoreARQuizHost.closeHostSession?.()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:5px 12px;border-radius:6px;font-weight:800;font-size:12px;cursor:pointer;font-family:inherit;">✕ إنهاء</button>
       <button id="scAudioBtn" class="scorear-audio-btn" onclick="ScoreARPodiumEffects.toggleAudioMute()" style="background:none;border:none;color:#fff;font-size:15px;cursor:pointer;">🔊</button>
     </div>
-    <div style="font-size:19px;font-weight:900;color:#ffffff;font-family:Montserrat,Cairo,sans-serif;">ScoreAR! — منصة التتويج</div>
-    <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+    <div class="podium-title-text" style="font-size:19px;font-weight:900;color:#ffffff;font-family:Montserrat,Cairo,sans-serif;">ScoreAR! — منصة التتويج</div>
+    <div class="podium-themes-strip" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
       ${[
         { id: 'chests', lbl: '💎 خزائن الكنز' },
         { id: 'cards', lbl: '🃏 بطاقات الأساطير' },
@@ -189,7 +212,7 @@
       <div id="climax${wid.charAt(0).toUpperCase() + wid.slice(1)}" style="display:none;position:absolute;inset:0;pointer-events:none;z-index:7;"></div>
 
       <!-- 2nd Place Column (Starts hidden below center, rises in center on Step 2, moves Left on Step 3) -->
-      <div id="col_2" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(0.85);opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
+      <div id="col_2" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.85 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
         <div id="podiumHeroArea_2" style="display:none;flex-direction:column;align-items:center;animation:heroPopIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both;">
           <div style="font-size:26px;font-weight:900;color:#ffffff;text-shadow:0 4px 16px rgba(0,0,0,0.85);margin-bottom:4px;">${esc(p2.name)}</div>
           <div id="hm_2" style="height:200px;width:160px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p2.avatarId, p2.name, 'celebrate')}</div>
@@ -198,7 +221,7 @@
       </div>
 
       <!-- 1st Place Column (Starts hidden below center, rises in center on Step 3 with Spotlight) -->
-      <div id="col_1" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(0.85);opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;z-index:30;">
+      <div id="col_1" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.85 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;z-index:30;">
         <div id="podiumHeroArea_1" style="display:none;flex-direction:column;align-items:center;position:relative;animation:heroPopIn 0.65s cubic-bezier(0.34,1.56,0.64,1) both;">
           <span id="championCrownEl" style="font-size:40px;visibility:hidden;animation:crownDrop 0.8s cubic-bezier(0.34,1.56,0.64,1);filter:drop-shadow(0 0 24px #fef08a);margin-bottom:-6px;">👑<span id="scCrown" style="display:none;"></span></span>
           <div style="font-size:32px;font-weight:900;color:#fef08a;text-shadow:0 4px 18px rgba(0,0,0,0.9);margin-bottom:4px;">${esc(p1.name)}</div>
@@ -208,7 +231,7 @@
       </div>
 
       <!-- 3rd Place Column (Rises in exact center on Step 1, recedes right & hides on Step 2, returns on Right on Step 3) -->
-      <div id="col_3" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(0.85);opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
+      <div id="col_3" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.85 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
         <div id="podiumHeroArea_3" style="display:none;flex-direction:column;align-items:center;animation:heroPopIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">
           <div style="font-size:25px;font-weight:900;color:#ffffff;text-shadow:0 4px 16px rgba(0,0,0,0.85);margin-bottom:4px;">${esc(p3.name)}</div>
           <div id="hm_3" style="height:185px;width:150px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p3.avatarId, p3.name, 'celebrate')}</div>
@@ -232,7 +255,7 @@
 
   <!-- Control & 3-Motion Bar (الوقوف / المشي / القفز) -->
   <footer class="podium-footer-bar" style="position:relative;z-index:40;background:rgba(8,8,24,0.94);border-top:1px solid rgba(255,255,255,0.1);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;flex-shrink:0;">
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <div class="podium-footer-actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <button id="scRevBtn" onclick="ScoreARPodiumEffects.advanceReveal()" style="background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;font-size:13px;font-weight:900;border:1px solid #fef08a;border-radius:10px;padding:9px 20px;cursor:pointer;font-family:inherit;">🥉 كشف المركز الثالث</button>
       <button id="scCinBtn" onclick="ScoreARPodiumEffects.startCinematicShow()" style="background:linear-gradient(135deg,#8b5cf6,#4f46e5);color:#fff;font-size:12px;font-weight:900;border:1px solid rgba(196,181,253,0.4);border-radius:10px;padding:9px 16px;cursor:pointer;font-family:inherit;">🎬 عرض سينمائي تلقائي</button>
       <button onclick="ScoreARPodiumEffects.revealAll()" style="background:rgba(255,255,255,0.1);color:#f1f5f9;font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:8px 16px;cursor:pointer;font-family:inherit;">⚡ كشف الكل فوراً</button>
@@ -244,8 +267,8 @@
         <button type="button" onclick="ScoreARPodiumEffects.navigateAfterPodium('#journey')" style="background:rgba(16,185,129,0.18);color:#a7f3d0;border:1px solid rgba(16,185,129,0.45);font-size:11px;font-weight:900;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;">📓 دفتر الأخطاء ورحلتي</button>
       </div>
     </div>
-    <div style="display:flex;gap:6px;align-items:center;background:rgba(15,15,38,0.92);padding:4px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.14);">
-      <span style="font-size:11.5px;font-weight:900;color:#cbd5e1;white-space:nowrap;">حركة الأبطال (٣ حركات):</span>
+    <div class="podium-motion-strip" style="display:flex;gap:6px;align-items:center;background:rgba(15,15,38,0.92);padding:4px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.14);">
+      <span class="podium-motion-label" style="font-size:11.5px;font-weight:900;color:#cbd5e1;white-space:nowrap;">حركة الأبطال<span class="podium-motion-extra"> (٣ حركات)</span>:</span>
       <button data-podium-motion="idle"      onclick="ScoreARPodiumEffects.setHeroPose('idle')"      style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);color:#fff;padding:4px 10px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">🧍 الوقوف</button>
       <button data-podium-motion="walk"      onclick="ScoreARPodiumEffects.setHeroPose('walk')"      style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);color:#fff;padding:4px 10px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">🚶 المشي</button>
       <button data-podium-motion="celebrate" onclick="ScoreARPodiumEffects.setHeroPose('celebrate')" style="background:rgba(82,217,237,0.22);border:1px solid #52d9ed;color:#fff;padding:4px 10px;border-radius:8px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;">🦘 القفز</button>
@@ -280,7 +303,7 @@
         c3.style.pointerEvents = 'auto';
         c3.style.zIndex = '25';
         c3.style.opacity = '1';
-        c3.style.transform = 'translate(-50%, 0) scale(1.08)';
+        c3.style.transform = 'translate(-50%, 0) scale(calc(1.08 * var(--pod-s, 1)))';
       }
       setTimeout(() => {
         const h3 = $('podiumHeroArea_3');
@@ -296,7 +319,7 @@
       if (sc) runSpotlights(sc, wid, 2);
       if (c3) {
         c3.style.zIndex = '5';
-        c3.style.transform = 'translate(calc(-50% + 260px), 35px) scale(0.75)';
+        c3.style.transform = 'translate(calc(-50% + var(--pod-recede, 260px)), 35px) scale(calc(0.75 * var(--pod-s, 1)))';
         c3.style.opacity = '0';
         c3.style.pointerEvents = 'none';
       }
@@ -306,7 +329,7 @@
           c2.style.pointerEvents = 'auto';
           c2.style.zIndex = '25';
           c2.style.opacity = '1';
-          c2.style.transform = 'translate(-50%, 0) scale(1.08)';
+          c2.style.transform = 'translate(-50%, 0) scale(calc(1.08 * var(--pod-s, 1)))';
         }
         setTimeout(() => {
           const h2 = $('podiumHeroArea_2');
@@ -324,7 +347,7 @@
       sfx('whoosh');
       if (c2) {
         c2.style.zIndex = '6';
-        c2.style.transform = 'translate(calc(-50% - 250px), 30px) scale(0.78)';
+        c2.style.transform = 'translate(calc(-50% - var(--pod-recede, 250px)), 30px) scale(calc(0.78 * var(--pod-s, 1)))';
         c2.style.opacity = '0';
       }
 
@@ -334,12 +357,12 @@
         if (dark) dark.style.opacity = '1';
         // 2. Position 2nd on Left, 3rd on Right (dimmed during spotlight), and 1st Pedestal in Center
         if (c2) {
-          c2.style.transform = 'translate(calc(-50% - 245px), 16px) scale(0.86)';
+          c2.style.transform = 'translate(calc(-50% - var(--pod-dx, 245px)), 16px) scale(calc(0.86 * var(--pod-s, 1)))';
           c2.style.opacity = '0.28';
           c2.style.filter = 'brightness(0.55)';
         }
         if (c3) {
-          c3.style.transform = 'translate(calc(-50% + 245px), 22px) scale(0.82)';
+          c3.style.transform = 'translate(calc(-50% + var(--pod-dx, 245px)), 22px) scale(calc(0.82 * var(--pod-s, 1)))';
           c3.style.opacity = '0.28';
           c3.style.filter = 'brightness(0.55)';
         }
@@ -347,7 +370,7 @@
           c1.style.pointerEvents = 'auto';
           c1.style.zIndex = '30';
           c1.style.opacity = '1';
-          c1.style.transform = 'translate(-50%, 0) scale(1.06)';
+          c1.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))';
         }
         // 3. Roving Theatrical Spotlight sweeps around 1st Place for 1.85s
         if (roving) {
@@ -406,9 +429,9 @@
     revealStep = 3;
     const c1 = $('col_1'), c2 = $('col_2'), c3 = $('col_3'), dark = $('scDarknessOverlay');
     if (dark) dark.style.opacity = '0';
-    if (c2) { c2.style.opacity = '1'; c2.style.filter = 'brightness(1)'; c2.style.transform = 'translate(calc(-50% - 245px), 16px) scale(0.86)'; }
-    if (c3) { c3.style.opacity = '1'; c3.style.filter = 'brightness(1)'; c3.style.transform = 'translate(calc(-50% + 245px), 22px) scale(0.82)'; }
-    if (c1) { c1.style.opacity = '1'; c1.style.transform = 'translate(-50%, 0) scale(1.06)'; }
+    if (c2) { c2.style.opacity = '1'; c2.style.filter = 'brightness(1)'; c2.style.transform = 'translate(calc(-50% - var(--pod-dx, 245px)), 16px) scale(calc(0.86 * var(--pod-s, 1)))'; }
+    if (c3) { c3.style.opacity = '1'; c3.style.filter = 'brightness(1)'; c3.style.transform = 'translate(calc(-50% + var(--pod-dx, 245px)), 22px) scale(calc(0.82 * var(--pod-s, 1)))'; }
+    if (c1) { c1.style.opacity = '1'; c1.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))'; }
     [3, 2, 1].forEach(r => {
       const h = $(`podiumHeroArea_${r}`), hm = $(`hm_${r}`), pl = players[r === 1 ? 0 : r === 2 ? 1 : 2];
       if (h) h.style.display = 'flex';

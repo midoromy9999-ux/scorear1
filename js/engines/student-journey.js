@@ -320,7 +320,7 @@
         <div style="font-size:54px;">🎉</div>
         <h2 style="font-size:26px;font-weight:900;color:#ffffff;margin:0;">بارك الله في همتك! أتممت المسار</h2>
         <p style="color:#c9baff;font-size:15px;margin:0;">أتممت تدريب <strong>«${s.trackTitle}»</strong> بهدوء وتركيز.</p>
-        <div style="background:rgba(21,23,49,0.9);border:2px solid #7550ef;border-radius:22px;padding:24px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="scorear-two-col-mobile-stack" style="background:rgba(21,23,49,0.9);border:2px solid #7550ef;border-radius:22px;padding:24px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
           <div style="background:#13152c;padding:16px;border-radius:14px;">
             <div style="font-size:12px;color:#a89bff;">الإجابات الصحيحة</div>
             <div style="font-size:28px;font-weight:900;color:#34d399;">${s.correctCount} / ${s.questions.length}</div>

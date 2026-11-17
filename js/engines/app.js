@@ -828,6 +828,28 @@ function render(){
     return;
   }
 
+  if (['heroes', 'characters', 'cards', 'podium'].includes(p) && window.ScoreARUnifiedViews) {
+    const mainEl = document.getElementById('main');
+    if (mainEl && (!mainEl.innerHTML.trim() || mainEl.querySelector('#avatarsGrid'))) {
+      mainEl.innerHTML = home();
+      hydrate();
+      if (window.initLaunch) window.initLaunch('home');
+    }
+    const navKey = p === 'characters' ? 'heroes' : p;
+    document.querySelectorAll('[data-nav]').forEach(a => { a.classList.toggle('active', a.dataset.nav === navKey); });
+    $('#breadcrumb').textContent = ({ heroes: 'مساحتك / قاعة الأبطال', characters: 'مساحتك / قاعة الأبطال', cards: 'مساحتك / قاعة الكروت', podium: 'مساحتك / منصة التتويج' })[p] || 'سكور آر';
+    syncSidebar();
+    const viewMap = { heroes: 'heroes', characters: 'heroes', cards: 'cards', podium: 'podium' };
+    const wantView = viewMap[p];
+    if (!window.ScoreARUnifiedViews.isOpen() || window.ScoreARUnifiedViews.getCurrentView?.() !== wantView) {
+      window.ScoreARUnifiedViews.openView(wantView);
+    }
+    if (window.ScoreARAuth && window.updateTopActionsTeacher) {
+      window.updateTopActionsTeacher(window.ScoreARAuth.getUser());
+    }
+    return;
+  }
+
   const renders={home,studio,worlds:worldPage,heroes:renderHeroesPage,cards:()=>{window.location.href='cards.html';return '';},classrooms:()=>{window.ScoreARClassrooms?.openView?.();return '';},journey,library,about,academy:()=>window.renderAcademy()};
   const mainEl = document.getElementById('main');
   if (mainEl && renders[p]) mainEl.innerHTML=renders[p]();

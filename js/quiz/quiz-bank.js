@@ -73,7 +73,7 @@
         </div>
         <span class="scorear-panel-index">02 — QUIZ & BANK HUB</span>
       </header>
-      <div class="scorear-stat-ribbon" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:12px;">
+      <div class="scorear-stat-ribbon scorear-stat-ribbon--three" style="margin-bottom:12px;">
         <div class="scorear-ribbon-item scorear-bank-stat-pill">
           ${iconBox('book', { size: 'sm', tone: 'violet' })}
           <div><b>${allQuizzes.length}</b><span>مسابقة (${publishedCount} منشورة)</span></div>

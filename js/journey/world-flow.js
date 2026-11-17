@@ -197,7 +197,7 @@
       bodyHtml = `
         <div style="margin-bottom:20px;">
           <h4 style="font-size:16px;font-weight:900;color:#fff;margin:0 0 12px 0;">جاهز للانطلاق! راجع إعدادات القاعة:</h4>
-          <div style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(142,100,239,0.3);border-radius:18px;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div class="scorear-two-col-mobile-stack" style="background:rgba(255,255,255,0.04);border:1.5px solid rgba(142,100,239,0.3);border-radius:18px;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
             <div>
               <div style="font-size:12px;color:#a89bff;">العالم المختار:</div>
               <div style="font-size:16px;font-weight:900;color:#fff;margin-top:2px;">🪐 ${curWorld.name}</div>
