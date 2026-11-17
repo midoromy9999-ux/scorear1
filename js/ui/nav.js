@@ -327,7 +327,9 @@
       menu.classList.add('show');
       btn.setAttribute('aria-expanded', 'true');
       const firstItem = menu.querySelector('a');
-      if (firstItem) firstItem.focus();
+      if (firstItem) {
+        try { firstItem.focus({ preventScroll: true }); } catch (_) { firstItem.focus(); }
+      }
     }
   }
 
@@ -364,6 +366,23 @@
     }
   }
 
+  function getActiveNavTarget() {
+    const standalone = isStandalonePage();
+    const pageFile = getCurrentPageFile();
+    if (standalone) return pageFile;
+    const rawHash = (window.location && window.location.hash) || '#home';
+    const cleanHash = rawHash.split('?')[0];
+    const hashAliases = {
+      '': '#home',
+      '#': '#home',
+      '#podium': 'podium.html',
+      '#cards': 'cards.html',
+      '#heroes': 'characters.html',
+      '#characters': 'characters.html'
+    };
+    return hashAliases[cleanHash] || cleanHash;
+  }
+
   function mountTopbarNav() {
     if (typeof document === 'undefined') return;
     ensureStylesInjected();
@@ -374,16 +393,20 @@
     if (!navSlot) {
       navSlot = document.createElement('div');
       navSlot.id = 'scorearTopbarNavSlot';
-      navSlot.style.cssText = 'display:inline-flex;align-items:center;gap:8px;margin-right:6px;flex-wrap:wrap;';
-      topbarTitle.appendChild(navSlot);
+      navSlot.style.cssText = 'display:inline-flex;align-items:center;gap:8px;margin-right:6px;flex-wrap:wrap;flex-shrink:0;';
+      if (typeof topbarTitle.insertAdjacentElement === 'function' && topbarTitle.parentElement) {
+        topbarTitle.insertAdjacentElement('afterend', navSlot);
+      } else {
+        topbarTitle.appendChild(navSlot);
+      }
+    } else if (navSlot.parentElement === topbarTitle && typeof topbarTitle.insertAdjacentElement === 'function' && topbarTitle.parentElement) {
+      topbarTitle.insertAdjacentElement('afterend', navSlot);
     }
 
     const standalone = isStandalonePage();
-    const pageFile = getCurrentPageFile();
     const currentHash = (window.location && window.location.hash) || '#home';
     const isHome = !standalone && (!currentHash || currentHash === '#' || currentHash === '#home');
-    const cleanHash = currentHash.split('?')[0];
-    const activeTarget = standalone ? pageFile : cleanHash;
+    const activeTarget = getActiveNavTarget();
     const activeItem = NAV_CONFIG.find(n => n.hash === activeTarget) || NAV_CONFIG[0];
 
     navSlot.innerHTML = `
@@ -415,10 +438,7 @@
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const standalone = isStandalonePage();
-    const pageFile = getCurrentPageFile();
-    const currentHash = ((window.location && window.location.hash) || '#home').split('?')[0];
-    const activeTarget = standalone ? pageFile : currentHash;
+    const activeTarget = getActiveNavTarget();
     const activeItem = NAV_CONFIG.find(n => n.hash === activeTarget) || NAV_CONFIG[0];
 
     container.innerHTML = `

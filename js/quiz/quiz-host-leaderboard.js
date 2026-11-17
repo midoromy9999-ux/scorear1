@@ -200,7 +200,9 @@
 
             const cleanCode = p.avatarId ? (p.avatarId.startsWith('char_') ? p.avatarId : 'char_' + String(p.avatarId).padStart(2, '0')) : 'char_01';
             const actionType = (worldId === 'treasure') ? 'climb' : (worldId === 'magic') ? 'fly' : 'run';
-            const actionAtlas = `assets/characters/animated/${cleanCode}-${actionType}.webp`;
+            const resolveAsset = (rel) => (typeof document !== 'undefined' && document.baseURI) ? new URL(rel, document.baseURI).href : rel;
+            const actionAtlas = resolveAsset(`assets/characters/animated/${cleanCode}-${actionType}.webp`);
+            const baseAtlas = resolveAsset(`assets/characters/animated/${cleanCode}-atlas.webp`);
             const raceProgressPct = Math.min(86, Math.max(6, Math.round(((p.score || 0) / maxLeaderScore) * 82)));
 
             return `
@@ -222,8 +224,8 @@
                   </div>
 
                   <div style="position:relative;width:66px;height:68px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;">
-                    <div class="char-procedural-rig scorear-character character-${actionType}" style="--character-action-atlas:url('${actionAtlas}');--character-atlas:url('assets/characters/animated/${cleanCode}-atlas.webp');width:62px;height:64px;animation:charProceduralBounce 1.1s infinite ease-in-out;transform-origin:bottom center;">
-                      <span class="character-frames" style="display:block !important;"></span>
+                    <div class="char-procedural-rig scorear-character character-${actionType}" style="--character-action-atlas:url('${actionAtlas}');--character-atlas:url('${baseAtlas}');width:62px;height:64px;animation:charProceduralBounce 1.1s infinite ease-in-out;transform-origin:bottom center;">
+                      <span class="character-frames" style="display:block !important;background-image:url('${actionAtlas}');"></span>
                       <img src="assets/characters/animated/${cleanCode}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(p.name)}" style="height:62px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6));visibility:hidden;">
                     </div>
                     <div style="width:42px;height:8px;background:radial-gradient(ellipse at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 70%);border-radius:50%;margin-top:-3px;animation:shadowScale 1.1s infinite ease-in-out;"></div>

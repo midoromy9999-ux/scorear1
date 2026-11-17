@@ -317,7 +317,7 @@ function renderLiveLobby(worldId='royal', pin=null, bypassPicker=false, bypassMo
             <button onclick="removeHeroIndex(${idx}, '${w.id}', '${pin}')" style="background:none;border:0;color:#ef4444;font-size:12px;cursor:pointer;padding:0 0 0 4px;" title="حذف">✕</button>
           </div>
           <div style="position:relative;width:150px;height:240px;display:flex;align-items:flex-end;justify-content:center;">
-            <span class="scorear-character character-walk" style="--character-atlas:url('assets/characters/animated/${p.avatarId || 'char_01'}-atlas.webp');width:140px;height:190px;">
+            <span class="scorear-character character-walk" style="--character-atlas:url('${new URL('assets/characters/animated/' + (p.avatarId || 'char_01') + '-atlas.webp', document.baseURI).href}');width:140px;height:190px;">
               <img src="assets/characters/animated/${p.avatarId || 'char_01'}-idle.webp" alt="${esc(p.name)}" style="object-fit:contain;filter:drop-shadow(0 15px 25px rgba(0,0,0,0.6));">
               <span class="character-frames" aria-hidden="true"></span>
             </span>
@@ -618,12 +618,12 @@ function renderContestPodium(worldId){
   }
 
   stage.innerHTML = `
-    <div style="position:absolute;inset:0;background:url('assets/${w.image}.webp') center/cover no-repeat;filter:brightness(0.35);z-index:1;"></div>
-    <video src="assets/videos/worlds/${w.id}.mp4?v=20261106_smooth" poster="assets/${w.image}.webp" autoplay loop muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;opacity:1;filter:brightness(0.4) saturate(1.1);"></video>
-    <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:30px;z-index:20;color:#fff;">
-      <div style="font-size:64px;margin-bottom:8px;">🏆</div>
-      <div style="margin:12px auto;width:150px;height:190px;position:relative;">
-        <span class="scorear-character character-celebrate" style="--character-atlas:url('assets/characters/animated/char_01-atlas.webp');width:140px;height:190px;">
+    <div style="position:fixed;inset:0;background:url('assets/worlds/${w.id}/podium.jpg'),url('assets/${w.image}.webp') center/cover no-repeat;background-size:cover;background-position:center;filter:brightness(0.42);z-index:1;pointer-events:none;"></div>
+    <video src="assets/videos/worlds/${w.id}.mp4?v=20261106_smooth" poster="assets/${w.image}.webp" autoplay loop muted playsinline style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;opacity:1;filter:brightness(0.4) saturate(1.1);pointer-events:none;"></video>
+    <div style="position:relative;min-height:100%;width:100%;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;padding:18px 20px 28px;z-index:20;color:#fff;box-sizing:border-box;">
+      <div style="font-size:clamp(36px, 5vw, 52px);margin:auto 0 4px;">🏆</div>
+      <div style="margin:6px auto;width:136px;height:166px;position:relative;">
+        <span class="scorear-character character-celebrate" style="--character-atlas:url('${new URL('assets/characters/animated/char_01-atlas.webp', document.baseURI).href}');width:132px;height:166px;margin:0 auto;">
           <img src="assets/characters/animated/char_01-idle.webp" alt="الفائز" style="object-fit:contain;filter:drop-shadow(0 15px 30px rgba(0,0,0,0.7));">
           <span class="character-frames" aria-hidden="true"></span>
         </span>
@@ -637,7 +637,7 @@ function renderContestPodium(worldId){
         <div style="font-size:52px;font-weight:900;color:#f5c518;">${contestScore} XP</div>
       </div>
 
-      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:auto;">
         <button class="btn dark" onclick="startActiveContest('${worldId}')" style="font-weight:900;padding:14px 28px;font-size:15px;">🔁 إعادة المسابقة وتحدٍ جديد</button>
         <button class="btn light" onclick="closeActiveContest()" style="font-weight:800;padding:14px 24px;">✕ العودة إلى المنصة</button>
       </div>

@@ -240,7 +240,23 @@
           <button type="button" onclick="ScoreARPodiumEffects?.toggleAudioMute?.()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:6px 12px;border-radius:10px;font-size:13px;cursor:pointer;">🔊 الصوت</button>
         </div>
       </div>
-      <div id="unifiedPodiumStage" style="position:relative;width:100%;height:calc(100vh - 140px);min-height:520px;background:#080914;overflow:hidden;display:flex;flex-direction:column;">
+      <style>
+        #unifiedPodiumStage { position:relative;width:100%;height:max(530px, calc(100dvh - 118px));min-height:530px;background:#080914;overflow:hidden;display:flex;flex-direction:column; }
+        #unifiedPodiumStage #podiumCameraRig { transform: scale(0.84); transform-origin: bottom center; }
+        @media (max-height: 780px) and (min-width: 901px) {
+          .scorear-unified-stage .gallery-header { padding: 10px 20px !important; }
+          #unifiedPodiumStage { height: max(510px, calc(100dvh - 114px)); min-height: 510px; }
+          #unifiedPodiumStage #podiumCameraRig { transform: scale(0.64); transform-origin: bottom center; }
+        }
+        @media (max-width: 640px) {
+          .scorear-unified-stage .gallery-header { padding: 10px 14px !important; position: relative !important; }
+          .scorear-unified-stage .gallery-header h1, .scorear-unified-stage .gallery-header h2 { font-size: 16px !important; }
+          #unifiedPodiumStage { height: auto !important; min-height: 700px !important; }
+          #unifiedPodiumStage #podiumStageRoot main { min-height: 360px !important; }
+          #unifiedPodiumStage #podiumCameraRig { transform: scale(0.56) !important; transform-origin: bottom center !important; }
+        }
+      </style>
+      <div id="unifiedPodiumStage">
         <div id="podiumHostStage" class="podium-canvas-area" style="position:relative;width:100%;height:100%;flex:1;display:flex;flex-direction:column;"></div>
       </div>
     `;
@@ -301,6 +317,9 @@
         history.replaceState(null, '', '#podium');
       }
     }
+    if (global.ScoreARNav && typeof global.ScoreARNav.mountTopbarNav === 'function') {
+      global.ScoreARNav.mountTopbarNav();
+    }
   }
 
   function closeView() {
@@ -310,8 +329,13 @@
     document.body.style.overflow = '';
     const targetH = returnHash && returnHash !== '#cards' && returnHash !== '#characters' && returnHash !== '#podium' ? returnHash : '#home';
     history.replaceState(null, '', targetH);
-    if (global.ScoreARApp && typeof global.ScoreARApp.route === 'function') {
+    if (typeof global.render === 'function') {
+      global.render();
+    } else if (global.ScoreARApp && typeof global.ScoreARApp.route === 'function') {
       global.ScoreARApp.route();
+    }
+    if (global.ScoreARNav && typeof global.ScoreARNav.mountTopbarNav === 'function') {
+      global.ScoreARNav.mountTopbarNav();
     }
   }
 

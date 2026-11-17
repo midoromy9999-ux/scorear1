@@ -25,10 +25,12 @@
   function heroImg(avatarId, name, pose = 'celebrate') {
     const code = charCode(avatarId);
     const charName = global.ScoreARCharacters?.get?.(parseInt(code.replace('char_', ''), 10))?.name || name || 'البطل';
-    const atlas = `assets/characters/animated/${code}-atlas.webp`;
+    const atlas = (typeof document !== 'undefined' && document.baseURI)
+      ? new URL(`assets/characters/animated/${code}-atlas.webp`, document.baseURI).href
+      : `assets/characters/animated/${code}-atlas.webp`;
     return `<div class="scorear-character character-${pose}" role="img" aria-label="${esc(charName)}"
       style="width:100%;height:100%;display:flex;align-items:flex-end;justify-content:center;--character-atlas:url('${atlas}');">
-      <span class="character-frames" aria-hidden="true" data-atlas="${atlas}"></span>
+      <span class="character-frames" aria-hidden="true" data-atlas="${atlas}" style="background-image:url('${atlas}');"></span>
       <img src="assets/characters/animated/${code}-idle.webp"
            onerror="this.src='assets/characters/animated/char_01-idle.webp'"
            alt="${esc(charName)}"
@@ -138,6 +140,7 @@
     stage.innerHTML = `
 <style>
   #podiumStageRoot{position:absolute;inset:0;display:flex;flex-direction:column;font-family:Cairo,Tajawal,Arial,sans-serif;background:#1a0b3b;overflow:hidden;}
+#podiumStageRoot main{max-width:none;margin:0;padding:6px 14px 8px;}
   @keyframes crownDrop{0%{transform:translateY(-36px) scale(0.4);opacity:0;}70%{transform:translateY(4px) scale(1.12);opacity:1;}100%{transform:translateY(0) scale(1);opacity:1;}}
   @keyframes floatUp{0%{transform:translateY(0);opacity:1;}100%{transform:translateY(-220px);opacity:0;}}
   @keyframes heroPopIn{0%{opacity:0;transform:translateY(32px) scale(0.72);}100%{opacity:1;transform:translateY(0) scale(1);}}
