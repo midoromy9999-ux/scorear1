@@ -1,0 +1,41 @@
+/* =========================================================================
+   ScoreAR Unified Design Tokens (css/tokens.css)
+   Colors, Typography, Transitions, and 5-Level Z-Index Scale
+   ========================================================================= */
+:root {
+  /* Palette */
+  --ink: #eceeff;
+  --muted: #a1a4be;
+  --line: rgba(255, 255, 255, 0.08);
+  --paper: #0c0d1d;
+  --paper-card: #15172a;
+  --paper-dark: #111225;
+  --paper-elevated: #1a1c36;
+  --primary: #7550ef;
+  --primary-hover: #8e64ef;
+  --primary-glow: rgba(117, 80, 239, 0.45);
+  --lilac: #b1a2e9;
+  --cyan: #52d9ed;
+  --emerald: #10b981;
+  --rose: #ef4444;
+  --gold: #f5c518;
+
+  /* Typography & Motion */
+  --font-heading: 'Cairo', 'Tajawal', Arial, sans-serif;
+  --font-body: 'Tajawal', Arial, sans-serif;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* Standard 5-Level Z-Index Hierarchy */
+  --z-base: 1;
+  --z-topbar: 100;
+  --z-sidebar: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+
+  /* Compatible Aliases Mapped Strictly to the 5 Levels */
+  --z-sticky: var(--z-topbar);
+  --z-dropdown: var(--z-sidebar);
+  --z-sidebar-mobile: var(--z-sidebar);
+  --z-modal-backdrop: var(--z-modal);
+  --z-tooltip: var(--z-toast);
+}

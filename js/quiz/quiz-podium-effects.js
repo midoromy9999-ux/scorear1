@@ -236,6 +236,9 @@
       <div id="scExport" style="display:none;gap:6px;flex-wrap:wrap;">
         <button onclick="ScoreARPodiumEffects.triggerSnapshot()" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;font-size:11px;font-weight:900;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;">📸 صورة المنصة</button>
         <button onclick="ScoreARPodiumEffects.triggerCertificates()" style="background:linear-gradient(135deg,#10b981,#047857);color:#fff;font-size:11px;font-weight:900;border:none;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;">🎓 الشهادات</button>
+        <button type="button" onclick="ScoreARPodiumEffects.navigateAfterPodium('#worlds')" style="background:rgba(142,100,239,0.22);color:#e9d5ff;border:1px solid rgba(142,100,239,0.45);font-size:11px;font-weight:900;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;">🚀 قاعة المنافسات</button>
+        <button type="button" onclick="ScoreARPodiumEffects.navigateAfterPodium('#studio')" style="background:rgba(245,158,11,0.18);color:#fde68a;border:1px solid rgba(245,158,11,0.45);font-size:11px;font-weight:900;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;">📊 الاستوديو والتقارير</button>
+        <button type="button" onclick="ScoreARPodiumEffects.navigateAfterPodium('#journey')" style="background:rgba(16,185,129,0.18);color:#a7f3d0;border:1px solid rgba(16,185,129,0.45);font-size:11px;font-weight:900;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;">📓 دفتر الأخطاء ورحلتي</button>
       </div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;background:rgba(15,15,38,0.92);padding:4px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.14);">
@@ -454,7 +457,20 @@
     renderHostPodium(c, { worldId: opts.worldId || 'royal', world: { id: opts.worldId || 'royal' }, players: p }, opts.onComplete || opts.onClose);
   }
 
-  const ScoreARPodiumEffects = { renderHostPodium, startPodiumShow, renderHero, advanceReveal, startCinematicShow, revealAll, setHeroPose, switchCeremonyTheme: applyCreativeCeremonyTheme, toggleAudioMute, triggerSnapshot, triggerCertificates, handleStudentReaction, mountHeroMotion: mountHero };
+  function navigateAfterPodium(targetHash) {
+    const clean = targetHash && targetHash.startsWith('#') ? targetHash : '#worlds';
+    const path = (global.location?.pathname || '').toLowerCase();
+    if (path.includes('podium')) {
+      global.location.href = `index.html${clean}`;
+      return;
+    }
+    if (global.ScoreARQuizHost?.closeHostSession) global.ScoreARQuizHost.closeHostSession();
+    if (global.ScoreARUnifiedViews?.isOpen?.()) global.ScoreARUnifiedViews.closeView();
+    if (global.location) global.location.hash = clean;
+    if (typeof global.render === 'function') global.render();
+  }
+
+  const ScoreARPodiumEffects = { renderHostPodium, startPodiumShow, renderHero, advanceReveal, startCinematicShow, revealAll, setHeroPose, switchCeremonyTheme: applyCreativeCeremonyTheme, toggleAudioMute, triggerSnapshot, triggerCertificates, navigateAfterPodium, handleStudentReaction, mountHeroMotion: mountHero };
   global.ScoreARPodiumEffects = ScoreARPodiumEffects;
   try { if (typeof globalThis !== 'undefined') globalThis.ScoreARPodiumEffects = ScoreARPodiumEffects; } catch(e){}
   if (typeof module !== 'undefined' && module.exports) module.exports = ScoreARPodiumEffects;

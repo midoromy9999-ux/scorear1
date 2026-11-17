@@ -31,6 +31,22 @@
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  // Helper: load optional heavy vendor scripts on demand in browser contexts
+  const _loadedScripts = new Set();
+  function loadScriptOnce(src) {
+    if (typeof document === 'undefined' || _loadedScripts.has(src)) return Promise.resolve();
+    const existing = Array.from(document.scripts || []).find(s => (s.getAttribute('src') || '').includes(src));
+    if (existing) { _loadedScripts.add(src); return Promise.resolve(); }
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.defer = true;
+      s.onload = () => { _loadedScripts.add(src); resolve(); };
+      s.onerror = () => reject(new Error(`تعذر تحميل المكتبة: ${src}`));
+      document.head.appendChild(s);
+    });
+  }
+
   // --- 1. PDF Extractor (Streaming Page-by-Page) ---
   async function extractPdf(fileOrBuffer, options = {}, token, onProgress) {
     let pdfjs = global.pdfjsLib;
@@ -137,6 +153,12 @@
     let mammoth = global.mammoth;
     if (!mammoth) {
       try {
+        await loadScriptOnce('vendor/mammoth.browser.min.js');
+        mammoth = global.mammoth;
+      } catch (e) {}
+    }
+    if (!mammoth) {
+      try {
         const mod = await import('mammoth');
         mammoth = mod.default || mod;
       } catch (e) {
@@ -207,6 +229,12 @@
   // --- 3. PowerPoint Extractor (.pptx via JSZip) ---
   async function extractPptx(fileOrBuffer, options = {}, token, onProgress) {
     let JSZip = global.JSZip;
+    if (!JSZip) {
+      try {
+        await loadScriptOnce('vendor/jszip.min.js');
+        JSZip = global.JSZip;
+      } catch (e) {}
+    }
     if (!JSZip) {
       try {
         const mod = await import('jszip');

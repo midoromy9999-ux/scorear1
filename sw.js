@@ -4,10 +4,13 @@
  * Ensures resilient classroom gameplay on slow or intermittent school networks.
  */
 
-const CACHE_NAME = 'scorear-v16-lobby-heroes-cache';
+const CACHE_NAME = 'scorear-v17-p1-cache';
 const STATIC_ASSETS = [
   './',
   './index.html',
+  './characters.html',
+  './cards.html',
+  './podium.html',
   './manifest.json',
   './cards.json',
   './css/scorear-styles.bundle.css',
@@ -74,15 +77,32 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       })
-      .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
+      .catch(async () => {
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        if (event.request.mode === 'navigate') {
+          const pathname = url.pathname || '/';
+          const candidates = [];
+          if (pathname === '/' || pathname === '/index.html') {
+            candidates.push('./index.html');
+          } else {
+            const cleanPath = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+            const fileName = cleanPath.split('/').pop() || '';
+            if (fileName) {
+              const htmlName = fileName.endsWith('.html') ? fileName : `${fileName}.html`;
+              candidates.push(`./${htmlName}`, cleanPath, `./${fileName}`);
+            }
           }
-          if (event.request.mode === 'navigate') {
-            return caches.match('./index.html');
+          for (const candidate of candidates) {
+            const matched = await caches.match(candidate, { ignoreSearch: true });
+            if (matched) {
+              return matched;
+            }
           }
-        });
+          return caches.match('./index.html');
+        }
       })
   );
 });

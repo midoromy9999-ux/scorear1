@@ -469,7 +469,7 @@
 
 
   function addImportedQuestion(qObj) {
-    if (!currentQuiz) currentQuiz = createBlankQuiz();
+    if (!currentQuiz) currentQuiz = { ...createDefaultQuiz(), questions: [] };
     const opts = Array.isArray(qObj?.opts) ? qObj.opts : (Array.isArray(qObj?.options) ? qObj.options : ['خيار 1', 'خيار 2', 'خيار 3', 'خيار 4']);
     const ans = Number(qObj?.ans ?? qObj?.answer ?? (Array.isArray(qObj?.correct) ? qObj.correct[0] : 0)) || 0;
     currentQuiz.questions.push({
@@ -487,12 +487,16 @@
     });
     activeQIndex = currentQuiz.questions.length - 1;
     scheduleAutoSave();
-    if (document.getElementById('scorearBuilderModal')?.style.display === 'flex') renderBuilderView();
+    const builderStage = document.getElementById('scorearQuizBuilderStage');
+    const appModal = document.getElementById('modal');
+    if (builderStage?.style.display === 'flex' || (appModal?.open && builderStage && builderStage.style.display !== 'none')) {
+      renderBuilderView();
+    }
   }
 
   function importQuestions(list, meta = {}) {
     if (!Array.isArray(list) || !list.length) return;
-    if (!currentQuiz) currentQuiz = createBlankQuiz();
+    if (!currentQuiz) currentQuiz = { ...createDefaultQuiz(), questions: [] };
     if (meta.title) currentQuiz.title = meta.title;
     if (meta.subject) currentQuiz.subject = meta.subject;
     if (meta.grade) currentQuiz.grade = meta.grade;

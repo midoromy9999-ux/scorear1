@@ -469,7 +469,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 99990;
+  z-index: var(--z-modal, 300);
 }
 .scorear-classrooms-view #review-dialog.open {
   display: block;
@@ -494,7 +494,7 @@
   border-radius: 24px;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
   padding: 26px 28px;
-  z-index: 99992;
+  z-index: var(--z-modal, 300);
   box-sizing: border-box;
   direction: rtl;
   text-align: right;

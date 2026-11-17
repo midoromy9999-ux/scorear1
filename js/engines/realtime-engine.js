@@ -32,6 +32,8 @@
     generation++;
     listeners.splice(0).forEach(off => off());
     connected = false; sessionId = null; seen.clear(); subscribers.clear(); latestPhaseTs = 0;
+    const badge = global.document?.getElementById('connectionStatusText');
+    if (badge) { badge.textContent = ''; badge.removeAttribute('data-state'); }
   }
   function init(a, b, callback) {
     cleanup();
@@ -53,7 +55,10 @@
       listen(db.ref('.info/connected'), 'value', s => {
         connected = !!s.val();
         const badge = global.document?.getElementById('connectionStatusText');
-        if (badge) badge.textContent = connected ? 'متصل بالغرفة' : 'جارٍ الاتصال…';
+        if (badge) {
+          badge.textContent = connected ? 'متصل بالغرفة' : 'جارٍ الاتصال…';
+          badge.setAttribute('data-state', connected ? 'connected' : 'connecting');
+        }
       });
       if (role === 'host') {
         listen(db.ref(`scorear_student_events/${pin}`), 'child_added', student => {

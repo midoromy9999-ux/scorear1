@@ -828,12 +828,12 @@ function render(){
     return;
   }
 
-  const renders={home,studio,worlds:worldPage,heroes:renderHeroesPage,cards:()=>{window.location.href='cards.html';return '';},journey,library,about,academy:()=>window.renderAcademy()};
+  const renders={home,studio,worlds:worldPage,heroes:renderHeroesPage,cards:()=>{window.location.href='cards.html';return '';},classrooms:()=>{window.ScoreARClassrooms?.openView?.();return '';},journey,library,about,academy:()=>window.renderAcademy()};
   const mainEl = document.getElementById('main');
   if (mainEl && renders[p]) mainEl.innerHTML=renders[p]();
   
   document.querySelectorAll('[data-nav]').forEach(a=>{let active=a.dataset.nav===p;a.classList.toggle('active',active);});
-  $('#breadcrumb').textContent=({home:'مساحة للتعلّم. عالم للاكتشاف.',studio:'مساحتك / استوديو المعلم',worlds:'مساحتك / قاعة المنافسات',journey:'مساحتك / رحلتي التعليمية',library:'مساحتك / مكتبة المحتوى',about:'مساحتك / عن سكور آر'})[p]||'سكور آر';
+  $('#breadcrumb').textContent=({home:'مساحة للتعلّم. عالم للاكتشاف.',studio:'مساحتك / استوديو المعلم',worlds:'مساحتك / قاعة المنافسات',classrooms:'مساحتك / ملفي وصفوفي',journey:'مساحتك / رحلتي التعليمية',library:'مساحتك / مكتبة المحتوى',about:'مساحتك / عن سكور آر'})[p]||'سكور آر';
   
   syncSidebar();hydrate();
   if(window.initLaunch) window.initLaunch(p);

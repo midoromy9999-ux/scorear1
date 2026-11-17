@@ -11,12 +11,11 @@
   if (!window.firebase.apps.length) {
     const config = (global.ScoreARFirebaseConfig && typeof global.ScoreARFirebaseConfig.getActiveConfig === 'function')
       ? global.ScoreARFirebaseConfig.getActiveConfig()
-      : {
-          projectId: 'scorear-staging-test',
-          apiKey: 'AIzaSyStagingTestDummyKeyForIsolatedTesting987',
-          authDomain: 'scorear-staging-test.firebaseapp.com',
-          databaseURL: 'https://scorear-staging-test-default-rtdb.firebaseio.com'
-        };
+      : null;
+    if (!config) {
+      console.error('[ScoreAR Auth] تعذر العثور على إعدادات البيئة من firebase-config.js');
+      return;
+    }
     window.firebase.initializeApp(config);
   }
 

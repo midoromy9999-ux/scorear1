@@ -55,15 +55,31 @@
   let selectedId = 'SWAP_STUDENT';
   let activeCat = 'all';
 
+  const CARD_ICONS = {
+    SWAP_STUDENT: '🔄', POINT_LEECH: '🧲', MULTIPLIER_2X: '⚡', ASK_QUESTION: '❓', SCORE_EQUALIZER: '⚖️',
+    PIN_STUDENT: '❄️', MINUS_50: '💥', SCREEN_FOG: '🌫️', TIME_SLICER: '⏳', BLOCK_DRAW: '🚫',
+    REVERSE_JUDGE: '🪞', STOP_SWAP: '🛡️', UNPIN_STUDENT: '🔓', IMMUNITY_SHIELD: '🔰', STREAK_SAVER: '🔥',
+    PLUS_50: '⭐', ERASER_50_50: '✂️', FREE_GIFT: '🎁', DRAW_ALL: '🎴', BETTER_LUCK: '🍀'
+  };
+
+  function getCardIcon(id) {
+    return CARD_ICONS[id] || '🃏';
+  }
+
   function renderGrid(container, cat = 'all', selId = 'SWAP_STUDENT') {
     if (!container) return;
     const cards = getCards(cat);
     container.innerHTML = cards.map(c => {
       const isSel = (c.id === selId);
+      const icon = getCardIcon(c.id);
       return `
         <article class="character-card scorear-card-thumb ${isSel ? 'active' : ''}" onclick="ScoreARCardsGallery.selectCard('${c.id}')" aria-pressed="${isSel}" style="cursor:pointer;position:relative;background:linear-gradient(160deg,#1b1a32,#131427);border:1.5px solid ${isSel ? c.color : 'rgba(255,255,255,0.08)'};border-radius:20px;padding:12px;transition:all 0.2s cubic-bezier(0.2,0.8,0.2,1);transform:${isSel ? 'translateY(-4px)' : 'none'};box-shadow:${isSel ? `0 10px 28px ${c.color}40` : 'none'};text-align:right;">
-          <div style="position:relative;width:100%;height:130px;border-radius:14px;overflow:hidden;margin-bottom:10px;background:#0d0e1d;">
-            <img src="${c.img}" alt="${c.nameAr}" loading="lazy" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.opacity='0.25'">
+          <div style="position:relative;width:100%;height:130px;border-radius:14px;overflow:hidden;margin-bottom:10px;background:radial-gradient(circle at 50% 35%, ${c.color}30, #0d0e1d 78%);">
+            <div class="scorear-card-fallback" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;text-align:center;">
+              <span style="font-size:34px;line-height:1;filter:drop-shadow(0 4px 12px ${c.color}55);">${icon}</span>
+              <span style="font-size:10px;font-weight:900;color:${c.color};letter-spacing:0.6px;">${c.titleEn}</span>
+            </div>
+            <img src="${c.img}" alt="${c.nameAr}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.onerror=null;this.style.display='none';var fb=this.previousElementSibling;if(fb)fb.style.display='flex';">
             <span style="position:absolute;top:8px;right:8px;background:${c.color};color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.5);">${c.typeAr.split(' ')[0]}</span>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
@@ -79,11 +95,15 @@
 
   function renderPreview(stageBox, titleBox, cardId) {
     const card = getCardById(cardId);
+    const icon = getCardIcon(card.id);
     if (stageBox) {
       stageBox.innerHTML = `
         <div style="perspective:1000px;display:flex;flex-direction:column;align-items:center;">
-          <div id="hologramCardWrapper" style="width:220px;height:300px;border-radius:20px;overflow:hidden;border:2px solid ${card.color};box-shadow:0 15px 45px ${card.color}40, 0 0 25px ${card.color}25;transition:transform 0.15s ease-out;background:#0d0e1f;position:relative;cursor:pointer;">
-            <img src="${card.img}" alt="${card.nameAr}" style="width:100%;height:100%;object-fit:cover;display:block;">
+          <div id="hologramCardWrapper" style="width:220px;height:300px;border-radius:20px;overflow:hidden;border:2px solid ${card.color};box-shadow:0 15px 45px ${card.color}40, 0 0 25px ${card.color}25;transition:transform 0.15s ease-out;background:radial-gradient(circle at 50% 35%, ${card.color}35, #0d0e1f 75%);position:relative;cursor:pointer;">
+            <div class="scorear-card-fallback" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;padding-bottom:58px;">
+              <span style="font-size:58px;line-height:1;filter:drop-shadow(0 8px 20px ${card.color}66);">${icon}</span>
+            </div>
+            <img src="${card.img}" alt="${card.nameAr}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.onerror=null;this.style.display='none';var fb=this.previousElementSibling;if(fb)fb.style.display='flex';">
             <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(12,13,29,0.92) 0%, transparent 60%);"></div>
             <div style="position:absolute;bottom:12px;right:14px;left:14px;text-align:right;">
               <span style="background:${card.color};color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:6px;display:inline-block;margin-bottom:4px;">${card.typeAr}</span>

@@ -9,26 +9,29 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Tajawal:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css?v=20261115_p2_tokens">
 <link rel="stylesheet" href="css/styles.css?v=20261112_v12_organized">
 <link rel="stylesheet" href="css/characters-v4.css?v=20261112_v12_organized">
 <link rel="stylesheet" href="css/cartoon-motion.css?v=20261112_v12_organized">
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script src="js/engines/ScoreARMotionEngine.js?v=20261112_v12_organized"></script>
-<script src="js/engines/characters-v4.js?v=20261112_v12_organized"></script>
-<script src="js/quiz/quiz-audio.js?v=20261112_v12_organized"></script>
-<script src="js/quiz/quiz-podium-effects.js?v=20261112_v12_organized"></script>
-<script src="js/quiz/quiz-podium-capture.js?v=20261112_v12_organized"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
+<script src="js/engines/ScoreARMotionEngine.js?v=20261112_v12_organized" defer></script>
+<script src="js/engines/characters-v4.js?v=20261112_v12_organized" defer></script>
+<script src="js/quiz/quiz-audio.js?v=20261112_v12_organized" defer></script>
+<script src="js/quiz/quiz-podium-effects.js?v=20261112_v12_organized" defer></script>
+<script src="js/quiz/quiz-podium-capture.js?v=20261112_v12_organized" defer></script>
+<script src="js/ui/nav.js?v=20261112_v12_organized" defer></script>
 <style>
   html, body {
     margin: 0;
     padding: 0;
-    height: 100vh;
+    min-height: 100dvh;
     background: #0c0d1d;
     color: #eceeff;
     font-family: Tajawal, Arial, sans-serif;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
   .podium-tester-bar {
     background: rgba(18, 20, 42, 0.95);
@@ -44,12 +47,34 @@
   .podium-stage-viewport {
     position: relative;
     flex: 1;
-    height: 100%;
-    min-height: 0;
+    min-height: calc(100dvh - 38px);
     display: flex;
     flex-direction: column;
     background: #080914;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  @media (max-width: 768px) {
+    .podium-tester-bar {
+      height: auto !important;
+      flex-wrap: wrap !important;
+      padding: 6px 10px !important;
+    }
+    .podium-tester-bar > div {
+      flex-wrap: wrap !important;
+      max-width: 100%;
+    }
+    .podium-stage-viewport {
+      min-height: 540px;
+    }
+    #podiumStageRoot {
+      position: relative !important;
+      inset: auto !important;
+      flex: 1 !important;
+      min-height: 100% !important;
+      overflow-x: hidden !important;
+      overflow-y: visible !important;
+    }
   }
   .test-btn {
     background: rgba(255,255,255,0.08);
@@ -72,16 +97,60 @@
     border-color: #fbbf24;
     box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
   }
+  .sidebar {
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 260px;
+    z-index: var(--z-sidebar, 200);
+    box-shadow: none;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    display: flex;
+    box-shadow: -20px 0 80px rgba(0, 0, 0, 0.85);
+  }
 </style>
 </head>
 <body>
 
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a class="brand" href="index.html#home" aria-label="سكور آر الرئيسية">
+      <img src="assets/mark.svg" alt="" width="43" height="43">
+      <span><b>سكور آر<span class="brand-dot">.</span></b><small>تعلّم · العب · تميّز</small></span>
+    </a>
+    <button type="button" class="sidebar-close-btn" data-action="close-sidebar" aria-label="إغلاق القائمة">✕</button>
+  </div>
+  <div class="side-label">مساحتك، بطريقتك</div>
+  <nav aria-label="القائمة الرئيسية">
+    <a href="index.html#home" data-nav="home"><i data-icon="home"></i><span>الرئيسية</span></a>
+    <a href="index.html#studio" data-nav="studio"><i data-icon="grid"></i><span>استوديو المعلم</span></a>
+    <a href="index.html#classrooms" data-nav="classrooms"><i data-icon="book"></i><span>ملفي وصفوفي 🏫</span></a>
+    <a href="index.html#worlds" data-nav="worlds"><i data-icon="planet"></i><span>قاعة المنافسات</span></a>
+    <a href="characters.html" data-nav="heroes"><i data-icon="spark"></i><span>قاعة الأبطال (٢٠)</span></a>
+    <a href="cards.html" data-nav="cards"><i data-icon="spark"></i><span>قاعة الكروت (٢٠)</span></a>
+    <a href="podium.html" data-nav="podium" class="active"><i data-icon="crown"></i><span>منصة التتويج الاحتفالية 👑</span></a>
+    <a href="index.html#journey" data-nav="journey"><i data-icon="route"></i><span>رحلتي التعليمية</span></a>
+    <a href="index.html#library" data-nav="library"><i data-icon="book"></i><span>مكتبة المحتوى</span></a>
+  </nav>
+  <div class="side-bottom">
+    <a class="quiet" href="index.html#about"><i data-icon="info"></i><span>عن سكور آر</span></a>
+    <div class="maker">بفكرة وإشراف <b>أ. أحمد رميح</b></div>
+  </div>
+</aside>
+
 <div class="podium-tester-bar" style="background:rgba(18,20,42,0.98);border-bottom:1px solid rgba(142,100,239,0.3);padding:2px 12px;height:38px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap;overflow-x:auto;z-index:50;flex-shrink:0;">
   <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-    <a href="cards.html" class="test-btn" style="text-decoration:none;padding:3px 8px;font-size:11px;">🃏 الكروت</a>
-    <a href="characters.html" class="test-btn" style="text-decoration:none;padding:3px 8px;font-size:11px;">✨ الأبطال</a>
-    <a href="index.html#worlds" class="test-btn" style="text-decoration:none;padding:3px 8px;font-size:11px;">🚀 العوالم</a>
+    <button type="button" class="test-btn mobile-menu" data-action="menu" aria-label="فتح القائمة" aria-expanded="false" style="padding:3px 8px;font-size:12px;">☰</button>
     <a href="index.html#home" class="test-btn" style="text-decoration:none;padding:3px 8px;font-size:11px;">🏠 الرئيسية</a>
+    <a href="index.html#worlds" class="test-btn" style="text-decoration:none;padding:3px 8px;font-size:11px;">🚀 العوالم</a>
+    <a href="index.html#classrooms" class="test-btn" style="text-decoration:none;padding:3px 8px;font-size:11px;">🏫 الصفوف</a>
+    <a href="characters.html" class="test-btn" style="text-decoration:none;padding:3px 8px;font-size:11px;">✨ الأبطال</a>
+    <a href="cards.html" class="test-btn" style="text-decoration:none;padding:3px 8px;font-size:11px;">🃏 الكروت</a>
     <span style="font-weight:900;color:#fef08a;font-size:12px;white-space:nowrap;">👑 منصة التتويج</span>
   </div>
 

@@ -62,14 +62,16 @@
     hostname === ''
   );
 
-  const isLiveProductionHost = Boolean(
-    hostname === 'scorear1.web.app' ||
-    hostname === 'scorear1.firebaseapp.com' ||
-    hostname === 'scorear2.web.app' ||
-    hostname === 'scorear2.firebaseapp.com' ||
-    hostname.endsWith('.vercel.app') ||
-    hostname === 'scorear.vercel.app'
-  );
+  const PRODUCTION_HOSTS = [
+    'scorear1.web.app',
+    'scorear1.firebaseapp.com',
+    'scorear2.web.app',
+    'scorear2.firebaseapp.com',
+    'scorear4.vercel.app',
+    'scorear.vercel.app'
+  ];
+
+  const isLiveProductionHost = PRODUCTION_HOSTS.includes(hostname);
 
   // 2. Determine Base Environment by Hostname
   let activeEnvKey = 'staging';

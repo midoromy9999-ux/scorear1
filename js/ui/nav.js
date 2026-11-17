@@ -23,6 +23,7 @@
     { id: 'worlds', hash: '#worlds', title: 'قاعة المنافسات', icon: 'planet', desc: 'مسارات / قاعات المنافسة', badge: 'حي' },
     { id: 'heroes', hash: 'characters.html', title: 'قاعة الأبطال (20)', icon: 'spark', desc: 'مستودع أبطال سكور آر' },
     { id: 'cards', hash: 'cards.html', title: 'قاعة الكروت (20)', icon: 'spark', desc: 'موسوعة الـ 20 كارت التكتيكي', badge: 'جديد' },
+    { id: 'podium', hash: 'podium.html', title: 'منصة التتويج 👑', icon: 'crown', desc: 'منصة التتويج الاحتفالية للفائزين' },
     { id: 'studio', hash: '#studio', title: 'استوديو المعلم', icon: 'grid', desc: 'مساحة المعلم وإدارة المسابقات' },
     { id: 'classrooms', hash: '#classrooms', title: 'ملفي وصفوفي 🏫', icon: 'book', desc: 'إدارة الصفوف والملف التعليمي وطلبات الانضمام' },
     { id: 'journey', hash: '#journey', title: 'رحلتي التعليمية', icon: 'route', desc: 'مسار التحدي الفردي والمهارات' },
@@ -217,6 +218,10 @@
       // Auto-close when clicking any link inside sidebar (proceed naturally with navigation)
       const navLink = e.target.closest('#sidebar a, #sidebar [data-nav]');
       if (navLink) {
+        const href = navLink.getAttribute('href');
+        if (href && href.startsWith('#') && isStandalonePage()) {
+          navLink.setAttribute('href', resolveNavHref(href));
+        }
         closeSidebar();
         return;
       }
@@ -270,16 +275,30 @@
     });
 
     // 4. Guarantee closed on startup
+    if (isStandalonePage()) {
+      document.querySelectorAll('#sidebar a[href^="#"]').forEach(a => {
+        a.setAttribute('href', resolveNavHref(a.getAttribute('href')));
+      });
+    }
+    updateActiveNavLinks();
     closeSidebar();
     mountTopbarNav();
   }
 
   function updateActiveNavLinks() {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const standalone = isStandalonePage();
+    const pageFile = getCurrentPageFile();
     const curHash = (window.location && window.location.hash) || '#home';
-    const cleanId = curHash.replace('#', '') || 'home';
+    const cleanId = standalone
+      ? pageFile.replace('.html', '')
+      : (curHash.split('?')[0].replace('#', '') || 'home');
     document.querySelectorAll('[data-nav]').forEach(el => {
-      const match = el.getAttribute('data-nav') === cleanId || el.getAttribute('href') === curHash;
+      const navId = el.getAttribute('data-nav');
+      const href = el.getAttribute('href') || '';
+      const match = standalone
+        ? (navId === cleanId || href === pageFile || (pageFile === 'characters.html' && navId === 'heroes'))
+        : (navId === cleanId || href === curHash);
       el.classList.toggle('active', match);
     });
   }
@@ -313,7 +332,32 @@
   }
 
 
+  function getCurrentPageFile() {
+    if (typeof window === 'undefined' || !window.location) return 'index.html';
+    const seg = (window.location.pathname || '').split('/').filter(Boolean).pop()?.toLowerCase() || 'index.html';
+    if (seg === 'characters' || seg === 'characters.html') return 'characters.html';
+    if (seg === 'cards' || seg === 'cards.html') return 'cards.html';
+    if (seg === 'podium' || seg === 'podium.html') return 'podium.html';
+    return seg.endsWith('.html') ? seg : 'index.html';
+  }
+
+  function isStandalonePage() {
+    return getCurrentPageFile() !== 'index.html';
+  }
+
+  function resolveNavHref(hashOrPath) {
+    if (!hashOrPath) return isStandalonePage() ? 'index.html#home' : '#home';
+    if (hashOrPath.startsWith('#') && isStandalonePage()) {
+      return `index.html${hashOrPath}`;
+    }
+    return hashOrPath;
+  }
+
   function goBackOrHome() {
+    if (isStandalonePage()) {
+      window.location.href = 'index.html#home';
+      return;
+    }
     const curHash = (window.location && window.location.hash) || '#home';
     if (curHash && curHash !== '#home' && curHash !== '#') {
       window.location.hash = '#home';
@@ -334,10 +378,13 @@
       topbarTitle.appendChild(navSlot);
     }
 
+    const standalone = isStandalonePage();
+    const pageFile = getCurrentPageFile();
     const currentHash = (window.location && window.location.hash) || '#home';
-    const isHome = !currentHash || currentHash === '#' || currentHash === '#home';
+    const isHome = !standalone && (!currentHash || currentHash === '#' || currentHash === '#home');
     const cleanHash = currentHash.split('?')[0];
-    const activeItem = NAV_CONFIG.find(n => n.hash === cleanHash) || NAV_CONFIG[0];
+    const activeTarget = standalone ? pageFile : cleanHash;
+    const activeItem = NAV_CONFIG.find(n => n.hash === activeTarget) || NAV_CONFIG[0];
 
     navSlot.innerHTML = `
       ${!isHome ? `
@@ -353,7 +400,7 @@
         </button>
         <div class="scorear-dropdown-menu" role="menu">
           ${NAV_CONFIG.map(item => `
-            <a href="${item.hash}" class="scorear-dropdown-item ${item.hash === cleanHash ? 'active' : ''}" role="menuitem" onclick="ScoreARNav.closeAllDropdowns()">
+            <a href="${resolveNavHref(item.hash)}" class="scorear-dropdown-item ${item.hash === activeTarget ? 'active' : ''}" role="menuitem" onclick="ScoreARNav.closeAllDropdowns()">
               <span>${item.title}</span>
               ${item.badge ? `<span style="background:rgba(142,100,239,0.3);color:#dcd2ff;font-size:10px;padding:1px 6px;border-radius:6px;">${item.badge}</span>` : ''}
             </a>
@@ -368,8 +415,11 @@
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const currentHash = (window.location && window.location.hash) || '#home';
-    const activeItem = NAV_CONFIG.find(n => n.hash === currentHash) || NAV_CONFIG[0];
+    const standalone = isStandalonePage();
+    const pageFile = getCurrentPageFile();
+    const currentHash = ((window.location && window.location.hash) || '#home').split('?')[0];
+    const activeTarget = standalone ? pageFile : currentHash;
+    const activeItem = NAV_CONFIG.find(n => n.hash === activeTarget) || NAV_CONFIG[0];
 
     container.innerHTML = `
       <div class="scorear-dropdown scorear-desktop-nav" id="scorearTopNavDropdown">
@@ -379,7 +429,7 @@
         </button>
         <div class="scorear-dropdown-menu" role="menu">
           ${NAV_CONFIG.map(item => `
-            <a href="${item.hash}" class="scorear-dropdown-item ${item.hash === currentHash ? 'active' : ''}" role="menuitem" onclick="ScoreARNav.closeAllDropdowns()">
+            <a href="${resolveNavHref(item.hash)}" class="scorear-dropdown-item ${item.hash === activeTarget ? 'active' : ''}" role="menuitem" onclick="ScoreARNav.closeAllDropdowns()">
               <span>${item.title}</span>
               ${item.badge ? `<span style="background:rgba(142,100,239,0.3);color:#dcd2ff;font-size:10px;padding:1px 6px;border-radius:6px;">${item.badge}</span>` : ''}
             </a>

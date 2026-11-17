@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=Tajawal:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css?v=20261115_p2_tokens">
 <link rel="stylesheet" href="css/styles.css?v=20261112_v12_organized">
 <link rel="stylesheet" href="css/characters-v4.css?v=20261112_v12_organized">
 <script src="js/ui/cards-gallery.js?v=20261112_v12_organized"></script>
@@ -188,13 +189,18 @@
     right: 0;
     bottom: 0;
     width: 260px;
-    z-index: 1000;
+    z-index: var(--z-sidebar, 200);
     box-shadow: none;
   }
   .sidebar.open {
     transform: translateX(0) !important;
     display: flex !important;
     box-shadow: -20px 0 80px rgba(0, 0, 0, 0.85) !important;
+  }
+  .scorear-card-fallback {
+    user-select: none;
+    pointer-events: none;
+    background: radial-gradient(circle at 50% 35%, rgba(142, 100, 239, 0.16), transparent 72%);
   }
 </style>
 </head>
@@ -204,7 +210,7 @@
   <div class="sidebar-header">
     <a class="brand" href="index.html#home" aria-label="سكور آر الرئيسية">
       <img src="assets/mark.svg" alt="" width="43" height="43">
-      <span><b>سكور آر<span class="brand-dot">.</span></b><small>LEARN. PLAY. BECOME.</small></span>
+      <span><b>سكور آر<span class="brand-dot">.</span></b><small>تعلّم · العب · تميّز</small></span>
     </a>
     <button type="button" class="sidebar-close-btn" data-action="close-sidebar" aria-label="إغلاق القائمة">✕</button>
   </div>
@@ -212,10 +218,11 @@
   <nav aria-label="القائمة الرئيسية">
     <a href="index.html#home" data-nav="home"><i data-icon="home"></i><span>الرئيسية</span></a>
     <a href="index.html#studio" data-nav="studio"><i data-icon="grid"></i><span>استوديو المعلم</span></a>
+    <a href="index.html#classrooms" data-nav="classrooms"><i data-icon="book"></i><span>ملفي وصفوفي 🏫</span></a>
     <a href="index.html#worlds" data-nav="worlds"><i data-icon="planet"></i><span>قاعة المنافسات</span></a>
     <a href="characters.html" data-nav="heroes"><i data-icon="spark"></i><span>قاعة الأبطال (٢٠)</span></a>
     <a href="cards.html" data-nav="cards" class="active"><i data-icon="spark"></i><span>قاعة الكروت (٢٠)</span></a>
-    <a href="podium.html"><i data-icon="crown"></i><span>منصة التتويج الاحتفالية 👑</span></a>
+    <a href="podium.html" data-nav="podium"><i data-icon="crown"></i><span>منصة التتويج الاحتفالية 👑</span></a>
     <a href="index.html#journey" data-nav="journey"><i data-icon="route"></i><span>رحلتي التعليمية</span></a>
     <a href="index.html#library" data-nav="library"><i data-icon="book"></i><span>مكتبة المحتوى</span></a>
   </nav>
@@ -236,7 +243,7 @@
         <img src="assets/mark.svg" alt="" width="38" height="38">
         <div>
           <b>سكور آر<span>.</span></b>
-          <small>LEARN. PLAY. BECOME.</small>
+          <small>تعلّم · العب · تميّز</small>
         </div>
       </a>
     </div>

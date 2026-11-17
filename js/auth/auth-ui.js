@@ -7,6 +7,16 @@
 
   const $ = selector => document.querySelector(selector);
 
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch]));
+  }
+
   const ScoreARAuthUI = {
     togglePassword: function() {
       const input = $('#loginPassword');
@@ -119,7 +129,7 @@
       } finally {
         if (btn) {
           btn.disabled = false;
-          btn.innerHTML = 'دخول 🚀';
+          btn.textContent = 'دخول 🚀';
         }
       }
     },
@@ -210,7 +220,7 @@
       if (isTeacher) {
         area.innerHTML = `<div style="display:flex;align-items:center;gap:10px;">
           <a href="#studio" class="btn dark small" style="background:#272044;color:#c9baff;border:1px solid #8e64ef;padding:6px 14px;border-radius:12px;font-size:12px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-            👨‍🏫 ${user.displayName || 'أ. أحمد رميح'} (الاستوديو)
+            👨‍🏫 ${escapeHtml(user.displayName || 'أ. أحمد رميح')} (الاستوديو)
           </a>
           <button class="btn outline small" data-action="logout" style="font-size:11px;padding:6px 12px;border-color:rgba(255,107,107,0.4);color:#ff8a8a;cursor:pointer;">خروج</button>
         </div>`;
@@ -221,7 +231,7 @@
             🎒 رحلتي
           </a>
           <a href="#classrooms" class="btn dark small" style="background:#1e1b3a;color:#c4b5fd;border:1px solid #8e64ef;padding:6px 12px;border-radius:12px;font-size:12px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-            🏫 ملفي (${user.displayName || 'البطل'})
+            🏫 ملفي (${escapeHtml(user.displayName || 'البطل')})
           </a>
           <button class="btn outline small" data-action="logout" style="font-size:11px;padding:6px 10px;border-color:rgba(255,107,107,0.4);color:#ff8a8a;cursor:pointer;">خروج</button>
         </div>`;
@@ -284,6 +294,7 @@
     }
   });
 
+  ScoreARAuthUI.escapeHtml = escapeHtml;
   ScoreARAuthUI.openAuthModal = openAuthModal;
   ScoreARAuthUI.updateTopActionsTeacher = updateTopActionsTeacher;
   global.ScoreARAuthUI = ScoreARAuthUI;

@@ -78,6 +78,7 @@ const BUNDLE_DEFINITIONS = [
     type: 'css',
     outPath: 'css/scorear-styles.bundle.css',
     files: [
+      'css/tokens.css',
       'css/styles.css',
       'css/launch.css',
       'css/workspace.css',
@@ -197,8 +198,8 @@ for (const b of BUNDLE_DEFINITIONS) {
 console.log('⚡ Generating optimized public/index.html...');
 const rootIndexHtml = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
-// Replace 6 CSS links with 1 CSS bundle link
-const cssRegex = /<link rel="stylesheet" href="css\/styles\.css[^"]*">[\s\S]*?<link rel="stylesheet" href="css\/classrooms\.css[^"]*">/;
+// Replace 7 CSS links with 1 CSS bundle link
+const cssRegex = /<link rel="stylesheet" href="css\/(?:tokens|styles)\.css[^"]*">[\s\S]*?<link rel="stylesheet" href="css\/classrooms\.css[^"]*">/;
 const bundledCss = '<link rel="stylesheet" href="css/scorear-styles.bundle.css?v=20261114_v18_05b2">';
 let bundledIndexHtml = rootIndexHtml.replace(cssRegex, bundledCss);
 
@@ -240,15 +241,26 @@ const extraViewsRegex = /\s*<script src="js\/ui\/cards-gallery\.js[^"]*" defer><
 if (!extraViewsRegex.test(bundledIndexHtml)) throw new Error('Build marker missing: extraViewsRegex');
 bundledIndexHtml = bundledIndexHtml.replace(extraViewsRegex, '');
 
-bundledIndexHtml = bundledIndexHtml.replace(/((?:src|href)="(?:js|css)\/[^"?]+)(?:\?[^" ]*)?"/g, (match, prefix) => {
-  const file = path.join(publicDir, prefix.split('="')[1]);
-  if (!fs.existsSync(file)) throw new Error('Missing generated asset: '+file);
-  return prefix + '?v=' + createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0,12) + '"';
-});
+function injectCacheBusters(html) {
+  return html.replace(/((?:src|href)="(?:js|css)\/[^"?]+)(?:\?[^" ]*)?"/g, (match, prefix) => {
+    const file = path.join(publicDir, prefix.split('="')[1]);
+    if (!fs.existsSync(file)) throw new Error('Missing generated asset: ' + file);
+    return prefix + '?v=' + createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0, 12) + '"';
+  });
+}
+
+bundledIndexHtml = injectCacheBusters(bundledIndexHtml);
 targets.forEach(target => {
   fs.writeFileSync(path.join(target, 'index.html'), bundledIndexHtml, 'utf8');
+  for (const page of ['characters.html', 'cards.html', 'podium.html']) {
+    const pagePath = path.join(target, page);
+    if (fs.existsSync(pagePath)) {
+      const updated = injectCacheBusters(fs.readFileSync(pagePath, 'utf8'));
+      fs.writeFileSync(pagePath, updated, 'utf8');
+    }
+  }
 });
-console.log('✅ Generated production index.html in public/ (saved 33 network requests!)');
+console.log('✅ Generated production index.html and cache-busted standalone HTML pages in public/ (saved 33 network requests!)');
 
 fs.copyFileSync(path.join(__dirname, 'js/auth/firebase-config.js'), path.join(publicDir, 'firebase-config.js'));
 console.log('ScoreAR build completed: one public output, one assets tree.');

@@ -17,16 +17,17 @@
   --gold: #f5c518;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
-  /* Unified Layer System (Z-Index Hierarchy) */
+  /* Unified Layer System (Standard 5-Level Z-Index Hierarchy) */
   --z-base: 1;
-  --z-sticky: 100;
-  --z-dropdown: 200;
-  --z-topbar: 300;
-  --z-sidebar-mobile: 500;
-  --z-modal-backdrop: 800;
-  --z-modal: 900;
-  --z-toast: 1000;
-  --z-tooltip: 1100;
+  --z-topbar: 100;
+  --z-sidebar: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+  --z-sticky: var(--z-topbar);
+  --z-dropdown: var(--z-sidebar);
+  --z-sidebar-mobile: var(--z-sidebar);
+  --z-modal-backdrop: var(--z-modal);
+  --z-tooltip: var(--z-toast);
 }
 
 * { box-sizing: border-box; }
@@ -75,7 +76,7 @@ a { color: inherit; text-decoration: none; }
   background: #111225 !important;
   border-left: 1px solid var(--line) !important;
   padding: 20px 18px 20px;
-  z-index: 1000;
+  z-index: var(--z-sidebar, 200);
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
@@ -282,7 +283,7 @@ a { color: inherit; text-decoration: none; }
   gap: 12px;
   position: sticky;
   top: 0;
-  z-index: var(--z-topbar, 300);
+  z-index: var(--z-topbar, 100);
   width: 100%;
 }
 .topbar-right {
@@ -302,6 +303,28 @@ a { color: inherit; text-decoration: none; }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.connection-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.connection-status-pill:empty {
+  display: none;
+}
+.connection-status-pill[data-state="connected"] {
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
 }
 .top-actions, .topbar-actions {
   display: flex;
@@ -910,12 +933,12 @@ dialog {
   color: #ffffff !important;
   box-shadow: 0 30px 120px rgba(0, 0, 0, 0.85) !important;
   background: #111426 !important;
-  z-index: var(--z-modal, 900);
+  z-index: var(--z-modal, 300);
 }
 dialog::backdrop {
   background: rgba(4, 5, 18, 0.82) !important;
   backdrop-filter: blur(14px) !important;
-  z-index: var(--z-modal-backdrop, 800);
+  z-index: var(--z-modal, 300);
 }
 .modal-head {
   display: flex;
@@ -950,7 +973,7 @@ dialog::backdrop {
   font-weight: 800;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(117, 80, 239, 0.4);
   transition: all 0.25s var(--ease);
-  z-index: 10000000;
+  z-index: var(--z-toast, 400);
 }
 .toast.show {
   opacity: 1;
@@ -1759,7 +1782,7 @@ dialog::backdrop {
 .scorear-bank-stage {
   position: fixed;
   inset: 0;
-  z-index: 99998;
+  z-index: var(--z-modal, 300);
   background: radial-gradient(ellipse at 18% 0%, #30234f66, transparent 52%),
               radial-gradient(ellipse at 85% 95%, #12494e45, transparent 50%),
               #0c0d1d;
@@ -1926,7 +1949,7 @@ dialog::backdrop {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  z-index: 99999;
+  z-index: var(--z-toast, 400);
   box-shadow: 0 12px 36px #0009, 0 0 24px #7c4cf92b;
   max-width: min(92vw, 600px);
 }
@@ -1943,7 +1966,7 @@ dialog::backdrop {
   display: flex;
   align-items: center;
   gap: 12px;
-  z-index: 99999;
+  z-index: var(--z-toast, 400);
   font-weight: 800;
   font-size: 12px;
   box-shadow: 0 10px 28px #0008;
