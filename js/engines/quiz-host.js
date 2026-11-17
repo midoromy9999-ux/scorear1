@@ -472,11 +472,6 @@
     const s = getOrCreateStage();
     if (global.ScoreARPodiumEffects?.renderHostPodium) {
       global.ScoreARPodiumEffects.renderHostPodium(s, currentRoom, closeHostSession);
-      setTimeout(() => {
-        if (document.getElementById('podiumStageRoot') && typeof global.ScoreARPodiumEffects?.startCinematicShow === 'function') {
-          global.ScoreARPodiumEffects.startCinematicShow();
-        }
-      }, 350);
     }
     else if (ev()) ev().renderHostPodium(s, currentRoom, closeHostSession);
   }

@@ -541,6 +541,10 @@
             `;
           }).join('')}
         </div>
+        ${fastest && fastest.name ? `<div style="margin-top:10px;background:rgba(245,158,11,0.14);border:1px solid rgba(251,191,36,0.38);border-radius:12px;padding:6px 14px;display:inline-flex;align-items:center;gap:10px;">
+          <img src="assets/characters/animated/${escapeHtml(fastest.avatarId || 'char_01')}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(fastest.name)}" style="width:34px;height:40px;object-fit:contain;">
+          <span style="font-size:13px;font-weight:900;color:#fef08a;">⚡ الأسرع: ${escapeHtml(fastest.name)} (${fastest.timeSec}ث)</span>
+        </div>` : ''}
         ${explanation ? `<div style="margin-top:10px;background:rgba(255,255,255,0.08);border-radius:10px;padding:7px 14px;font-size:13px;color:#f1f5f9;text-align:center;">💡 <b>التفسير:</b> ${escapeHtml(explanation)}</div>` : ''}
       </div>
     `;

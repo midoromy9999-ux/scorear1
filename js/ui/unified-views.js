@@ -268,7 +268,7 @@
     `;
 
     setTimeout(() => {
-      simulatePodium('all');
+      simulatePodium('chooser');
     }, 60);
   }
 
@@ -285,8 +285,9 @@
     if (typeof global.ScoreARPodiumEffects.renderHostPodium === 'function') {
       const room = { worldId: 'royal', world: { id: 'royal' }, players: demoPodium };
       global.ScoreARPodiumEffects.renderHostPodium(container, room, () => { closeView(); });
-      if (target === 3 && typeof global.ScoreARPodiumEffects.advanceReveal === 'function') {
-        global.ScoreARPodiumEffects.advanceReveal();
+      if ((target === 3 || target === 2 || target === 1) && typeof global.ScoreARPodiumEffects.advanceReveal === 'function') {
+        const steps = target === 3 ? 1 : (target === 2 ? 2 : 3);
+        for (let s = 0; s < steps; s++) global.ScoreARPodiumEffects.advanceReveal();
       } else if (target === 'all' && typeof global.ScoreARPodiumEffects.revealAll === 'function') {
         global.ScoreARPodiumEffects.revealAll();
       } else if (target === 'cinematic' && typeof global.ScoreARPodiumEffects.startCinematicShow === 'function') {

@@ -198,11 +198,12 @@
               gapHtml = `<div style="text-align:center;margin:-3px 0;font-size:10px;font-weight:800;color:rgba(255,255,255,0.7);"><span style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);padding:2px 10px;border-radius:10px;">تفصلك ${gap} نقطة عن المركز #${idx}</span></div>`;
             }
 
-            const cleanCode = p.avatarId ? (p.avatarId.startsWith('char_') ? p.avatarId : 'char_' + String(p.avatarId).padStart(2, '0')) : 'char_01';
+            const rawAv = p.avatarId || p.characterId || p.avatar || (p.player && (p.player.avatarId || p.player.characterId)) || 'char_01';
+            const avNum = parseInt(String(rawAv).replace(/\D/g, ''), 10);
+            const cleanCode = /^char_\d{2}$/.test(String(rawAv).trim())
+              ? String(rawAv).trim()
+              : ('char_' + String((!isNaN(avNum) && avNum >= 1 && avNum <= 20) ? avNum : 1).padStart(2, '0'));
             const actionType = (worldId === 'treasure') ? 'climb' : (worldId === 'magic') ? 'fly' : 'run';
-            const resolveAsset = (rel) => (typeof document !== 'undefined' && document.baseURI) ? new URL(rel, document.baseURI).href : rel;
-            const actionAtlas = resolveAsset(`assets/characters/animated/${cleanCode}-${actionType}.webp`);
-            const baseAtlas = resolveAsset(`assets/characters/animated/${cleanCode}-atlas.webp`);
             const raceProgressPct = Math.min(86, Math.max(6, Math.round(((p.score || 0) / maxLeaderScore) * 82)));
 
             return `
@@ -217,18 +218,16 @@
                 </svg>
 
                 <!-- Left side: Rank & Character with Procedural Motion -->
-                <div style="display:flex;align-items:center;gap:14px;position:relative;z-index:2;">
-                  <div style="display:flex;flex-direction:column;align-items:center;min-width:44px;">
+                <div style="display:flex;align-items:center;gap:14px;position:relative;z-index:2;min-width:0;">
+                  <div style="display:flex;flex-direction:column;align-items:center;min-width:44px;flex-shrink:0;">
                     <span style="font-size:15px;font-weight:900;color:${isTop1 ? '#fef08a' : '#ffffff'};">${medal}</span>
                     <span style="margin-top:1px;">${arrowHtml}</span>
                   </div>
 
-                  <div style="position:relative;width:66px;height:68px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;">
-                    <div class="char-procedural-rig scorear-character character-${actionType}" style="--character-action-atlas:url('${actionAtlas}');--character-atlas:url('${baseAtlas}');width:62px;height:64px;animation:charProceduralBounce 1.1s infinite ease-in-out;transform-origin:bottom center;">
-                      <span class="character-frames" style="display:block !important;background-image:url('${actionAtlas}');"></span>
-                      <img src="assets/characters/animated/${cleanCode}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(p.name)}" style="height:62px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6));visibility:hidden;">
+                  <div style="position:relative;width:66px;height:72px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;">
+                    <div id="hostLbHero_${idx}" data-char-code="${cleanCode}" data-action="${actionType}" style="width:64px;height:68px;display:flex;align-items:flex-end;justify-content:center;position:relative;">
+                      <img src="assets/characters/animated/${cleanCode}-idle.webp" onerror="this.onerror=null;this.src='assets/characters/${cleanCode}_full.webp';this.onerror=function(){this.src='assets/characters/animated/char_01-idle.webp';};" alt="${escapeHtml(p.name)}" style="width:60px;height:66px;object-fit:contain;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6));">
                     </div>
-                    <div style="width:42px;height:8px;background:radial-gradient(ellipse at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 70%);border-radius:50%;margin-top:-3px;animation:shadowScale 1.1s infinite ease-in-out;"></div>
                   </div>
 
                   <div>
@@ -261,6 +260,21 @@
       </main>
     `;
 
+    // Mount crisp animated heroes (keeps visible fallback <img> when reduced motion is enabled)
+    const isReducedMotion = (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)
+      || (typeof document !== 'undefined' && document.documentElement.classList.contains('characters-paused'));
+    if (!isReducedMotion && global.ScoreARMotionEngine && typeof global.ScoreARMotionEngine.mount === 'function') {
+      top5.forEach((p, idx) => {
+        const slot = document.getElementById('hostLbHero_' + idx);
+        if (!slot) return;
+        const code = slot.getAttribute('data-char-code') || 'char_01';
+        const act = slot.getAttribute('data-action') || 'run';
+        try {
+          global.ScoreARMotionEngine.mount(slot, code, act, { width: 64, height: 70, enableParticles: false, enableShadow: true });
+        } catch (e) {}
+      });
+    }
+
     // Count-up execution
     setTimeout(() => {
       const countEls = stage.querySelectorAll('.scorear-count-up');
@@ -278,14 +292,21 @@
       });
     }, 400);
 
-    // Broadcast private ranking summary to students
+    // Broadcast private ranking summary with hero avatars to students
     if (global.ScoreARRealtime) {
+      const normAvatar = p => {
+        const raw = p?.avatarId || p?.characterId || p?.avatar || 'char_01';
+        if (/^char_\d{2}$/.test(String(raw).trim())) return String(raw).trim();
+        const n = parseInt(String(raw).replace(/\D/g, ''), 10);
+        return 'char_' + String((!isNaN(n) && n >= 1 && n <= 20) ? n : 1).padStart(2, '0');
+      };
       global.ScoreARRealtime.publish('LEADERBOARD_UPDATE', {
-        top5: top5.map(p => ({ id: p.id, name: p.name, score: p.score })),
+        top5: top5.map(p => ({ id: p.id, name: p.name, score: p.score, avatarId: normAvatar(p) })),
         totalPlayers: sorted.length,
         allRanks: sorted.map((p, i) => ({
           id: p.id,
           name: p.name,
+          avatarId: normAvatar(p),
           rank: i + 1,
           score: p.score,
           delta: p._rankDelta || 0,

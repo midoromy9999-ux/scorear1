@@ -51,6 +51,9 @@
       if (user && user.role === 'student' && !user.isAnonymous) {
         state.isRegistered = true;
         state.name = user.displayName || user.name || '';
+        const prof = JSON.parse(localStorage.getItem('scorear_student_profile_v1') || '{}');
+        const savedAv = user.avatarId || prof.avatarId;
+        if (savedAv && /^char_\d{2}$/.test(String(savedAv))) state.avatarId = savedAv;
       } else {
         const activeQuiz = sessionStorage.getItem('scorear_active_quiz_session');
         const saved = sessionStorage.getItem('scorear_student_session');
@@ -59,6 +62,9 @@
           state.name = parsed.name;
           if (parsed.avatarId) state.avatarId = parsed.avatarId;
           if (activeQuiz && parsed.pin && (Date.now() - (parsed.savedAt || 0) < 3600000)) state.savedActiveSession = parsed;
+        } else {
+          const prof = JSON.parse(localStorage.getItem('scorear_student_profile_v1') || '{}');
+          if (prof.avatarId && /^char_\d{2}$/.test(String(prof.avatarId))) state.avatarId = prof.avatarId;
         }
       }
     } catch(e){}

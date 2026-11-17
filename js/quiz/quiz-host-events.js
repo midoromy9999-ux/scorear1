@@ -144,7 +144,7 @@
         const numericResp = parseFloat(respTime);
         if (numericResp < minTimeSec) {
           minTimeSec = numericResp;
-          fastest = { id: String(p.id), name: p.name, timeSec: numericResp };
+          fastest = { id: String(p.id), name: p.name, timeSec: numericResp, avatarId: p.avatarId || 'char_01' };
         }
       }
 
@@ -185,7 +185,7 @@
     const correctList = Object.values(playerResults)
       .filter(r => r.isCorrect)
       .sort((a, b) => parseFloat(a.respTime || 999) - parseFloat(b.respTime || 999));
-    const fastestTop2 = correctList.slice(0, 2).map((r, i) => ({ id: String(r.id), name: r.playerName, timeSec: parseFloat(r.respTime || 0), rank: i + 1 }));
+    const fastestTop2 = correctList.slice(0, 2).map((r, i) => ({ id: String(r.id), name: r.playerName, avatarId: players.find(p => String(p.id) === String(r.id))?.avatarId || 'char_01', timeSec: parseFloat(r.respTime || 0), rank: i + 1 }));
 
     return { correct: correctIndices, correctAnswer: correctIdx, correctAnswerText, playerResults, fastest, fastestTop2 };
   }

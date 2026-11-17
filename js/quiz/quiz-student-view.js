@@ -135,6 +135,7 @@
       else if (currentRank > lastRank) { deltaIcon = `▼ ${currentRank - lastRank}`; deltaText = `تراجعت ${currentRank - lastRank} مراكز`; }
     }
 
+    const myAvatar = currentStudent?.avatarId || 'char_01';
     const opts = resData.options || [];
     stage.innerHTML = `
       <div style="position:absolute;inset:0;background:url('assets/worlds/${currentWorldId}/results.jpg') center/cover no-repeat;filter:brightness(0.8) saturate(1.08);z-index:1;"></div>
@@ -144,7 +145,10 @@
       </header>
       <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px;text-align:center;gap:10px;overflow-y:auto;">
         <div style="background:rgba(21,23,49,0.92);border:2px solid ${isCorrect ? '#10b981' : '#ef4444'};border-radius:20px;padding:14px 16px;width:100%;max-width:360px;box-shadow:0 8px 25px rgba(0,0,0,0.5);">
-          <div style="font-size:38px;line-height:1;margin-bottom:4px;">${isCorrect ? '🎉' : '❌'}</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;">
+            <img src="assets/characters/animated/${escapeHtml(myAvatar)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(myName || 'البطل')}" style="width:54px;height:64px;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.55));">
+            <div style="font-size:36px;line-height:1;">${isCorrect ? '🎉' : '❌'}</div>
+          </div>
           <h2 style="font-size:19px;font-weight:900;color:${isCorrect ? '#34d399' : '#f87171'};margin:0 0 4px 0;">${isCorrect ? 'إجابة صحيحة وممتازة!' : (myChoiceIdx === -1 ? 'انتهى الوقت ولم تُجب!' : 'إجابة خاطئة!')}</h2>
           <div style="font-size:18px;font-weight:900;color:#fcd34d;margin:2px 0;">+${earned} <span style="font-size:12px;color:#c9baff;">نقطة</span>${respTime ? `<span style="font-size:11px;color:#6ee7b7;font-weight:700;margin-inline-start:6px;">(⚡ ${respTime}ث)</span>` : ''}</div>
           ${isCardArena && (myFastRank === 1 || myFastRank === 2) ? `<div style="background:rgba(142,100,239,0.25);border:1px solid #8e64ef;color:#e9d5ff;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">🏆 المركز ${myFastRank === 1 ? 'الأول' : 'الثاني'} في السرعة! كسبت كارت تكتيكي 🃏</div>` : (isCardArena && isCorrect ? `<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#c9baff;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;margin-top:4px;">💡 أسرع في السؤال القادم لتكون من الأول أو الثاني وتكسب كارت!</div>` : (isFastest ? `<div style="background:rgba(245,158,11,0.25);border:1px solid #f59e0b;color:#fcd34d;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">⚡ بطل السرعة: كنت أسرع إجابة صحيحة!</div>` : ''))}
@@ -279,6 +283,9 @@
       : (myInfo.gapToAbove > 0 ? `تفصلك ${myInfo.gapToAbove} نقطة عن المركز الأعلى` : 'أداء رائع، استمر في التحدي!');
 
     const charAvatarId = currentStudent?.avatarId || 'char_01';
+    const topContestants = (Array.isArray(msg.top5) && msg.top5.length)
+      ? msg.top5
+      : (Array.isArray(msg.allRanks) ? msg.allRanks.slice(0, 5) : []);
 
     stage.innerHTML = `
       <div style="position:absolute;inset:0;background:url('assets/worlds/${currentWorldId}/results.jpg') center/cover no-repeat;filter:brightness(0.8) saturate(1.08);z-index:1;"></div>
@@ -287,11 +294,11 @@
         <span style="font-size:15px;font-weight:900;color:#fcd34d;">🏁 لوحة الترتيب بعد السؤال</span>
         <span style="font-size:12px;color:#94a3b8;">إجمالي المتسابقين: <b style="color:#52d9ed;">${total}</b></span>
       </header>
-      <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:12px;">
-        <img src="assets/characters/animated/${charAvatarId}-idle.webp" onerror="this.onerror=null;this.src='assets/characters/${charAvatarId}.webp';this.onerror=function(){this.src='assets/characters/char_01.webp';};" alt="${escapeHtml(myName)}" style="width:90px;height:105px;object-fit:contain;animation:character-joy 1.1s ease-in-out infinite;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));">
+      <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px;text-align:center;gap:10px;overflow-y:auto;">
+        <img src="assets/characters/animated/${escapeHtml(charAvatarId)}-idle.webp" onerror="this.onerror=null;this.src='assets/characters/${escapeHtml(charAvatarId)}_full.webp';this.onerror=function(){this.src='assets/characters/animated/char_01-idle.webp';};" alt="${escapeHtml(myName)}" style="width:82px;height:96px;object-fit:contain;animation:character-joy 1.1s ease-in-out infinite;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));flex-shrink:0;">
         <h3 style="font-size:18px;font-weight:900;color:#ffffff;margin:0;">يا ${escapeHtml(myName)}! 🚀</h3>
         
-        <div style="width:100%;max-width:340px;background:rgba(21,23,49,0.92);border:2px solid rgba(142,100,239,0.4);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 30px rgba(0,0,0,0.5);">
+        <div style="width:100%;max-width:340px;background:rgba(21,23,49,0.92);border:2px solid rgba(142,100,239,0.4);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 30px rgba(0,0,0,0.5);">
           <div style="display:flex;justify-content:space-around;align-items:center;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px;">
             <div>
               <div style="font-size:11px;color:#a89bff;font-weight:700;">ترتيبي الشخصي</div>
@@ -320,6 +327,27 @@
             ${gapText}
           </div>
         </div>
+
+        ${topContestants.length ? `
+          <div style="width:100%;max-width:340px;background:rgba(15,16,36,0.92);border:1px solid rgba(255,255,255,0.14);border-radius:18px;padding:10px 12px;text-align:right;">
+            <div style="font-size:12px;font-weight:900;color:#fef08a;margin-bottom:8px;">🏆 ترتيب الأبطال بعد السؤال:</div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              ${topContestants.map((tp, i) => {
+                const av = tp?.avatarId || 'char_01';
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
+                const isMe = String(tp?.id) === myId || (tp?.name && tp.name === myName);
+                return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;border-radius:11px;background:${isMe ? 'rgba(117,80,239,0.28)' : 'rgba(255,255,255,0.04)'};border:1px solid ${isMe ? '#a855f7' : 'rgba(255,255,255,0.08)'};">
+                  <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                    <span style="font-size:13px;font-weight:900;min-width:22px;text-align:center;">${medal}</span>
+                    <img src="assets/characters/animated/${escapeHtml(av)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(tp?.name || 'بطل')}" style="width:32px;height:38px;object-fit:contain;flex-shrink:0;">
+                    <b style="font-size:12.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(tp?.name || 'متسابق')}</b>
+                  </div>
+                  <span style="font-size:13px;font-weight:900;color:#38bdf8;font-family:monospace;flex-shrink:0;">${Number(tp?.score || 0)}</span>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
 
         <div style="font-size:12px;color:#c9baff;font-weight:800;">
           ⏳ المعلم يراجع النتائج ويستعد للسؤال التالي...
