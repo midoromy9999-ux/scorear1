@@ -168,6 +168,7 @@
         chosenIndex = wrongIndices.length ? wrongIndices[Math.floor(Math.random() * wrongIndices.length)] : 0;
       }
 
+      const exactMs = Math.round(delaySec * 1000);
       const tId = setTimeout(() => {
         if (room.status !== 'question') return;
         const cpNow = global.ScoreARCardArena?.getManager?.()?.players?.[bot.id];
@@ -176,8 +177,12 @@
           bot.isPinned = false;
           return;
         }
-        global.ScoreARQuizHost?.submitBotAnswer?.(bot.id, chosenIndex);
-      }, Math.round(delaySec * 1000));
+        global.ScoreARQuizHost?.submitBotAnswer?.(bot.id, chosenIndex, exactMs);
+        const ansBucket = room.answers && room.answers[qIndex];
+        if (ansBucket && ansBucket[bot.id] && typeof ansBucket[bot.id].exactElapsedMs !== 'number') {
+          ansBucket[bot.id].exactElapsedMs = exactMs;
+        }
+      }, exactMs);
 
       pendingTimeouts.push(tId);
     });

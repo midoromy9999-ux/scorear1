@@ -252,14 +252,13 @@
         </div>
       </div>
       <style>
-        .unified-podium-sim-bar { padding:7px 14px;flex-shrink:0; }
+        .unified-podium-sim-bar { padding:5px 14px;flex-shrink:0; }
         .unified-podium-sim-scroll { display:flex;align-items:center;gap:6px;flex-wrap:wrap; }
         #unifiedPodiumStage { position:relative;width:100%;flex:1 1 0;min-height:0;background:#080914;overflow:hidden;display:flex;flex-direction:column; }
-        @media (min-width: 721px) {
-          #unifiedPodiumStage #podiumCameraRig { transform: scale(0.84); transform-origin: bottom center; }
-        }
-        @media (max-height: 780px) and (min-width: 721px) {
-          #unifiedPodiumStage #podiumCameraRig { transform: scale(0.70); transform-origin: bottom center; }
+        #unifiedPodiumStage #podiumStageRoot .podium-header-bar { padding:4px 14px !important; }
+        #unifiedPodiumStage #podiumStageRoot .podium-title-text { display:none !important; }
+        @media (min-width: 721px) and (max-height: 760px) {
+          #unifiedPodiumStage #podiumStageRoot { --pod-s: 0.77 !important; --pod-dx: clamp(205px, 18.5vw, 270px) !important; }
         }
         @media (max-width: 720px) {
           .scorear-unified-stage .gallery-header { position: relative !important; padding: 8px 10px !important; }

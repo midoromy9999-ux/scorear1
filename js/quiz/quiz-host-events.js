@@ -88,14 +88,16 @@
   }
 
   /**
-   * Anti-Cheat Authoritative Host Evaluation (Item 2)
-   * Derives time remaining strictly from questionStartTime vs server ts (ServerValue.TIMESTAMP).
-   * Completely ignores any client-sent timeRemaining so forged packets gain no advantage.
+   * Anti-Cheat Authoritative Host Evaluation
+   * Wrong/timeout answers earn strictly 0 points; correct answers scale strongly by response speed
+   * (+ Top-3 speed rank edge & reduced Streak bonus so slower answers never outscore faster ones).
    */
   function evaluateQuestionResults(qData, answers = {}, players = [], totalTime = 20, questionStartTime = null) {
-    let fastest = null, minTimeSec = Infinity;
     const playerResults = {};
     const evaluator = global.ScoreAREvaluator;
+    const limitSec = (typeof totalTime === 'number' && totalTime > 0) ? totalTime : 20;
+    const totalMs = limitSec * 1000;
+    const evaluated = [];
 
     players.forEach(p => {
       const pIdStr = String(p.id);
@@ -115,43 +117,64 @@
         ? evaluator.isCorrect(qData, chosen, optionOrder)
         : (ans && Array.isArray(qData.correct) && qData.correct.includes(Number(ans.optionIndex))));
 
-      let earned = 0, respTime = null, scoreFormula = wasPinned ? 'مجمد بكارت تثبيت ❄️' : '';
+      let elapsedMs = totalMs, respTime = null;
       if (isAnsCorrect) {
-        // Robust Authoritative Server Time Calculation
         const rawTs = (ans && typeof ans.ts === 'number' && !isNaN(ans.ts))
           ? ans.ts
-          : (ans && typeof ans.answeredAt === 'number' ? ans.answeredAt : Date.now());
-        let elapsedSec = 1.0;
-        if (typeof questionStartTime === 'number' && questionStartTime > 0) {
-          elapsedSec = Math.max(0.1, (rawTs - questionStartTime) / 1000);
+          : (ans && typeof ans.answeredAt === 'number' ? ans.answeredAt : null);
+        if (ans && typeof ans.exactElapsedMs === 'number' && !isNaN(ans.exactElapsedMs)) {
+          elapsedMs = Math.max(100, Math.min(totalMs, ans.exactElapsedMs));
+        } else if (typeof questionStartTime === 'number' && questionStartTime > 0 && rawTs !== null) {
+          elapsedMs = Math.max(100, Math.min(totalMs, rawTs - questionStartTime));
         } else if (ans && typeof ans.timeRemaining === 'number') {
-          elapsedSec = Math.max(0.1, totalTime - ans.timeRemaining);
+          elapsedMs = Math.max(100, Math.min(totalMs, (limitSec - ans.timeRemaining) * 1000));
+        } else {
+          elapsedMs = 1000;
         }
-        respTime = elapsedSec.toFixed(1);
-        const derivedTimeRemaining = Math.max(0, totalTime - elapsedSec);
+        respTime = (elapsedMs / 1000).toFixed(1);
+      }
 
+      evaluated.push({ p, pIdStr, ans, cardP, wasPinned, isAnsCorrect, elapsedMs, respTime });
+    });
+
+    const correctSorted = evaluated.filter(e => e.isAnsCorrect).sort((a, b) => a.elapsedMs - b.elapsedMs);
+    const speedRankMap = new Map();
+    correctSorted.forEach((e, idx) => speedRankMap.set(e.pIdStr, idx + 1));
+
+    const firstFast = correctSorted[0] || null;
+    const fastest = firstFast ? {
+      id: firstFast.pIdStr,
+      name: firstFast.p.name,
+      timeSec: parseFloat(firstFast.respTime),
+      avatarId: firstFast.p.avatarId || 'char_01'
+    } : null;
+
+    evaluated.forEach(({ p, pIdStr, ans, cardP, wasPinned, isAnsCorrect, elapsedMs, respTime }) => {
+      let earned = 0;
+      let scoreFormula = wasPinned ? 'مجمد بكارت تثبيت ❄️' : 'إجابة خاطئة (0 نقطة)';
+      const speedRank = speedRankMap.get(pIdStr) || 0;
+
+      if (isAnsCorrect) {
         const base = Number(qData.points) || 1000;
+        const speedRatio = Math.max(0, Math.min(1, (totalMs - elapsedMs) / totalMs));
+        const tf = 0.25 + 0.75 * speedRatio;
         const cardMult = (cardP?.status?.multiplier === 2 || p.cardMultiplier === 2) ? 2 : 1;
         if (cardP?.status) cardP.status.multiplier = 1;
         p.cardMultiplier = 1;
         const mult = ((qData.isDouble || qData.multiplier === 2) ? 2 : (Number(qData.multiplier) || 1)) * cardMult;
-        const tf = (0.5 + 0.5 * (derivedTimeRemaining / (totalTime || 20)));
+
+        const baseScale = base / 1000;
+        const speedBonusRaw = speedRank === 1 ? 120 : speedRank === 2 ? 70 : speedRank === 3 ? 30 : 0;
+        const speedBonus = Math.round(speedBonusRaw * baseScale);
+
         const nextStreak = (p.streak || 0) + 1;
-        const streakBonus = nextStreak >= 2 ? Math.min(300, (nextStreak - 1) * 100) : 0;
-        earned = Math.round(base * tf * mult) + streakBonus;
-        scoreFormula = `${base} × ${tf.toFixed(2)} × ${mult}${streakBonus ? ' + 🔥' + streakBonus : ''} = ${earned}`;
+        const streakStep = Math.max(5, Math.round(15 * baseScale));
+        const streakCap = Math.max(15, Math.round(45 * baseScale));
+        const streakBonus = nextStreak >= 2 ? Math.min(streakCap, (nextStreak - 1) * streakStep) : 0;
 
-        const numericResp = parseFloat(respTime);
-        if (numericResp < minTimeSec) {
-          minTimeSec = numericResp;
-          fastest = { id: String(p.id), name: p.name, timeSec: numericResp, avatarId: p.avatarId || 'char_01' };
-        }
-      }
-
-      p.score = (p.score || 0) + earned;
-      p.lastPointsGained = earned;
-      if (isAnsCorrect) {
-        p.streak = (p.streak || 0) + 1;
+        earned = Math.round((base * tf + speedBonus) * mult) + streakBonus;
+        p.streak = nextStreak;
+        scoreFormula = `${base} × ${tf.toFixed(2)}${speedBonus ? ' + ⚡' + speedBonus : ''} × ${mult}${streakBonus ? ' + 🔥' + streakBonus : ''} = ${earned}`;
       } else {
         const saverIdx = cardP?.trapSlots ? cardP.trapSlots.findIndex(t => t.id === 'STREAK_SAVER') : -1;
         if (saverIdx !== -1) {
@@ -160,6 +183,9 @@
           p.streak = 0;
         }
       }
+
+      p.score = (p.score || 0) + earned;
+      p.lastPointsGained = earned;
 
       playerResults[pIdStr] = {
         id: p.id,
@@ -171,6 +197,8 @@
         totalScore: p.score,
         streak: p.streak,
         respTime,
+        speedRank,
+        elapsedMs: isAnsCorrect ? elapsedMs : null,
         scoreFormula
       };
     });
@@ -182,10 +210,13 @@
     const opts = qData.options || qData.opts || [];
     const correctAnswerText = opts[correctIdx] || '';
 
-    const correctList = Object.values(playerResults)
-      .filter(r => r.isCorrect)
-      .sort((a, b) => parseFloat(a.respTime || 999) - parseFloat(b.respTime || 999));
-    const fastestTop2 = correctList.slice(0, 2).map((r, i) => ({ id: String(r.id), name: r.playerName, avatarId: players.find(p => String(p.id) === String(r.id))?.avatarId || 'char_01', timeSec: parseFloat(r.respTime || 0), rank: i + 1 }));
+    const fastestTop2 = correctSorted.slice(0, 2).map((e, i) => ({
+      id: e.pIdStr,
+      name: e.p.name,
+      avatarId: e.p.avatarId || 'char_01',
+      timeSec: parseFloat(e.respTime || 0),
+      rank: i + 1
+    }));
 
     return { correct: correctIndices, correctAnswer: correctIdx, correctAnswerText, playerResults, fastest, fastestTop2 };
   }

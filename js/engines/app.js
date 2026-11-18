@@ -634,7 +634,9 @@ window.handleContestAnswer = function(selectedIndex, correctIndex, worldId){
 
   if (isAnsCorrect) {
     if (window.ScoreARAudio?.playSfx) window.ScoreARAudio.playSfx('correct');
-    contestScore += 100;
+    const speedRatio = Math.max(0, Math.min(1, contestTimeRemaining / 15));
+    const gained = Math.round(1000 * (0.25 + 0.75 * speedRatio));
+    contestScore += gained;
     const sEl = document.getElementById('contestLiveScore');
     if (sEl) sEl.textContent = contestScore;
 
@@ -642,7 +644,7 @@ window.handleContestAnswer = function(selectedIndex, correctIndex, worldId){
     if (window.confetti) window.confetti({particleCount: 70, spread: 60, origin: {y: 0.6}});
 
     title.style.color = '#34d399';
-    title.innerHTML = '✨ أحسنت! إجابة صحيحة مبهرة (+100 نقطة)';
+    title.innerHTML = `✨ أحسنت! إجابة صحيحة (+${gained} نقطة ⚡)`;
     if (window.ScoreARCardArena && typeof window.ScoreARCardArena.onCorrectAnswerGranted === 'function') {
       window.ScoreARCardArena.onCorrectAnswerGranted('solo_player', true);
     }
@@ -680,8 +682,8 @@ function renderContestPodium(worldId){
     <video src="assets/videos/worlds/${w.id}.mp4?v=20261106_smooth" poster="assets/${w.image}.webp" autoplay loop muted playsinline style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;opacity:1;filter:brightness(0.4) saturate(1.1);pointer-events:none;"></video>
     <div style="position:relative;min-height:100%;width:100%;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;text-align:center;padding:18px 20px 28px;z-index:20;color:#fff;box-sizing:border-box;">
       <div style="font-size:clamp(36px, 5vw, 52px);margin:auto 0 4px;">🏆</div>
-      <div style="margin:6px auto;width:136px;height:166px;position:relative;">
-        <span class="scorear-character character-celebrate" style="--character-atlas:url('${new URL('assets/characters/animated/char_01-atlas.webp', document.baseURI).href}');width:132px;height:166px;margin:0 auto;">
+      <div style="margin:6px auto;width:clamp(136px, 19vh, 210px);height:clamp(166px, 24vh, 260px);position:relative;">
+        <span class="scorear-character character-celebrate" style="--character-atlas:url('${new URL('assets/characters/animated/char_01-atlas.webp', document.baseURI).href}');width:100%;height:100%;margin:0 auto;">
           <img src="assets/characters/animated/char_01-idle.webp" alt="الفائز" style="object-fit:contain;filter:drop-shadow(0 15px 30px rgba(0,0,0,0.7));">
           <span class="character-frames" aria-hidden="true"></span>
         </span>

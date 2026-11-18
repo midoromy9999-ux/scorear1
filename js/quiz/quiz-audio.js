@@ -52,27 +52,42 @@
     return audioCtx;
   }
 
+  let counterStep = 0;
+
   function tone(freq, dur, type, vol, delay = 0, freqEnd = null) {
     const ctx = getCtx();
-    if (!ctx || ctx.state !== 'running') return;
-    try {
-      const now = ctx.currentTime + delay;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = type || 'sine';
-      osc.frequency.setValueAtTime(freq, now);
-      if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, now + dur);
-      gain.gain.setValueAtTime(Math.max(0.001, vol), now);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + dur + 0.02);
-    } catch(e) {}
+    if (!ctx) return;
+    const fire = () => {
+      try {
+        const now = ctx.currentTime + delay;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        if (freqEnd) osc.frequency.exponentialRampToValueAtTime(freqEnd, now + dur);
+        gain.gain.setValueAtTime(Math.max(0.001, vol), now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + dur + 0.02);
+      } catch(e) {}
+    };
+    if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+      ctx.resume().then(fire).catch(() => {});
+    } else if (ctx.state === 'running') {
+      fire();
+    }
   }
 
   function playSynthSfx(type, vol) {
-    const v = Math.min(0.4, (vol || 0.7) * 0.35);
+    const v = Math.min(0.48, (vol || 0.75) * 0.4);
+    if (type === 'counter') {
+      counterStep = (counterStep + 1) % 8;
+      const base = 540 + counterStep * 36;
+      tone(base, 0.07, 'triangle', Math.min(0.5, v * 1.15), 0, base * 1.45);
+      return tone(base * 1.5, 0.09, 'sine', Math.min(0.42, v * 0.9), 0.045);
+    }
     if (type === 'tick') return tone(920, 0.06, 'triangle', v, 0, 440);
     if (type === 'pop') return tone(540, 0.08, 'sine', v, 0, 820);
     if (type === 'whoosh') return tone(380, 0.18, 'sine', v * 0.8, 0, 140);

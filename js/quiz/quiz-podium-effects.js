@@ -36,8 +36,15 @@
   function mountHero(el, avatarId, pose = 'celebrate') {
     if (!el) return;
     const validPose = POSES.includes(pose) ? pose : 'celebrate';
-    if (global.ScoreARMotionEngine?.mount) global.ScoreARMotionEngine.mount(el, charCode(avatarId), validPose);
+    const w = el.offsetWidth || parseInt(el.style?.width, 10) || 220;
+    const h = el.offsetHeight || parseInt(el.style?.height, 10) || 260;
+    if (global.ScoreARMotionEngine?.mount) global.ScoreARMotionEngine.mount(el, charCode(avatarId), validPose, { width: w, height: h });
     else el.innerHTML = heroImg(avatarId, '', validPose);
+  }
+
+  function resetRovingSpotlight() {
+    const r = $('scRovingSpotlight');
+    if (r) { r.style.display = 'none'; r.style.opacity = '0'; r.style.animation = 'none'; }
   }
 
   /* ── Preserved Constant: 3D Isometric Pedestal with Pentagon Rank Shield ── */
@@ -47,16 +54,16 @@
       2: { face: 'linear-gradient(180deg, #431482 0%, #2e1065 100%)', top: 'linear-gradient(135deg, #5b21b6 0%, #3b0764 100%)', pentBg: 'linear-gradient(135deg, #94a3b8 0%, #475569 100%)', pentBorder: '#e2e8f0' },
       3: { face: 'linear-gradient(180deg, #3b0f75 0%, #240a4d 100%)', top: 'linear-gradient(135deg, #4c1d95 0%, #2e1065 100%)', pentBg: 'linear-gradient(135deg, #f97316 0%, #c2410c 100%)', pentBorder: '#fed7aa' }
     };
-    const t = themes[rank], pentSize = rank === 1 ? 82 : (rank === 2 ? 72 : 68);
+    const t = themes[rank], pentSize = rank === 1 ? 94 : (rank === 2 ? 82 : 76);
     return `<div id="podiumPedestal_${rank}" class="kahoot-3d-pedestal ped-rank-${rank}" style="height:${heightPx}px;width:${widthPx}px;position:relative;transition:all 0.65s cubic-bezier(0.16,1,0.3,1);filter:drop-shadow(0 20px 38px rgba(0,0,0,0.82));">
       <div style="position:absolute;top:-22px;left:0;right:0;height:24px;background:${t.top};clip-path:polygon(12% 0%, 88% 0%, 100% 100%, 0% 100%);z-index:6;"></div>
       <div style="position:absolute;inset:0;background:${t.face};border-top:2px solid rgba(255,255,255,0.22);border-radius:0 0 10px 10px;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:18px 10px 14px;overflow:hidden;box-shadow:inset 0 10px 24px rgba(255,255,255,0.12), inset 0 -18px 28px rgba(0,0,0,0.5);">
         <div style="width:${pentSize}px;height:${pentSize}px;background:${t.pentBorder};clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);display:grid;place-items:center;padding:4px;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.55));">
-          <div style="width:100%;height:100%;background:${t.pentBg};clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);display:grid;place-items:center;font-size:${rank===1?38:32}px;font-weight:900;color:#ffffff;font-family:Montserrat,Arial,sans-serif;">
+          <div style="width:100%;height:100%;background:${t.pentBg};clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);display:grid;place-items:center;font-size:${rank===1?42:35}px;font-weight:900;color:#ffffff;font-family:Montserrat,Arial,sans-serif;">
             <span id="pedMedal_${rank}">${rank}</span>
           </div>
         </div>
-        <div id="podiumMystery_${rank}" style="width:90%;background:rgba(6,8,22,0.75);border:1.5px solid ${t.pentBorder};border-radius:8px;padding:4px 8px;text-align:center;font-family:Montserrat,Tajawal,sans-serif;font-size:15px;font-weight:900;color:#ffffff;">❓</div>
+        <div id="podiumMystery_${rank}" style="width:90%;background:rgba(6,8,22,0.75);border:1.5px solid ${t.pentBorder};border-radius:8px;padding:5px 8px;text-align:center;font-family:Montserrat,Tajawal,sans-serif;font-size:16px;font-weight:900;color:#ffffff;">❓</div>
       </div>
     </div>`;
   }
@@ -64,17 +71,25 @@
   function runSpotlights(canvas, worldId, phase) {
     const ctx = canvas.getContext('2d'); if (!ctx) return;
     let t = 0; if (rafId) cancelAnimationFrame(rafId); spotCanvas = canvas;
+    const drawCone = (H, ox, tx, halfW, col) => {
+      const g = ctx.createLinearGradient(ox, 0, tx, H * 0.92);
+      g.addColorStop(0, col); g.addColorStop(0.65, col.replace(/[\d.]+\)$/, '0.07)')); g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.beginPath(); ctx.moveTo(ox - 12, 0); ctx.lineTo(ox + 12, 0);
+      ctx.lineTo(tx + halfW, H); ctx.lineTo(tx - halfW, H);
+      ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+    };
     function frame() {
       if (!spotCanvas) return;
       const W = canvas.width = canvas.offsetWidth || 960, H = canvas.height = canvas.offsetHeight || 640;
       ctx.clearRect(0, 0, W, H);
       if (phase >= 1) {
-        const sway = Math.sin(t * 0.7) * W * 0.1;
-        const g = ctx.createLinearGradient(W * 0.5, 0, W * 0.5 + sway, H);
-        g.addColorStop(0, 'rgba(251,191,36,0.22)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.beginPath(); ctx.moveTo(W * 0.5 - 20, 0); ctx.lineTo(W * 0.5 + 20, 0);
-        ctx.lineTo(W * 0.5 + sway + 170, H); ctx.lineTo(W * 0.5 + sway - 170, H);
-        ctx.closePath(); ctx.fillStyle = g; ctx.fill();
+        const sway = Math.sin(t * 0.65) * W * 0.08;
+        drawCone(H, W * 0.18, W * 0.5 + sway, W * 0.15, 'rgba(167,139,250,0.16)');
+        drawCone(H, W * 0.82, W * 0.5 - sway, W * 0.15, 'rgba(88,220,227,0.14)');
+      }
+      if (phase >= 3) {
+        const pulse = 0.18 + Math.sin(t * 1.4) * 0.04;
+        drawCone(H, W * 0.5, W * 0.5, W * 0.19, `rgba(251,191,36,${pulse.toFixed(2)})`);
       }
       t += 0.025;
       rafId = requestAnimationFrame(frame);
@@ -125,13 +140,13 @@
 
     if (global.ScoreARAudio?.playMusic) global.ScoreARAudio.playMusic('victory', 0.28);
 
-    const P1 = pedestal3D(1, 185, 225);
-    const P2 = pedestal3D(2, 150, 200);
-    const P3 = pedestal3D(3, 125, 190);
+    const P1 = pedestal3D(1, 205, 258);
+    const P2 = pedestal3D(2, 165, 230);
+    const P3 = pedestal3D(3, 140, 215);
 
     stage.innerHTML = `
 <style>
-  #podiumStageRoot{--pod-dx:245px;--pod-recede:260px;--pod-s:1;position:absolute;inset:0;display:flex;flex-direction:column;font-family:Cairo,Tajawal,Arial,sans-serif;background:#1a0b3b;overflow:hidden;box-sizing:border-box;}
+  #podiumStageRoot{--pod-dx:clamp(240px,21vw,320px);--pod-recede:clamp(250px,22vw,335px);--pod-s:0.96;position:absolute;inset:0;display:flex;flex-direction:column;font-family:Cairo,Tajawal,Arial,sans-serif;background:#1a0b3b;overflow:hidden;box-sizing:border-box;}
   #podiumStageRoot main{max-width:none;margin:0;padding:4px 12px 6px;}
   #podiumStageRoot .podium-col{transform-origin:bottom center;}
   #podiumStageRoot[data-ceremony-theme="chests"] .sc-ceremony-aura{background:radial-gradient(circle at 50% 62%,rgba(245,158,11,0.34),transparent 65%);}
@@ -139,9 +154,24 @@
   #podiumStageRoot[data-ceremony-theme="rockets"] .sc-ceremony-aura{background:radial-gradient(circle at 50% 72%,rgba(14,165,233,0.42),rgba(99,102,241,0.16) 45%,transparent 72%);}
   #podiumStageRoot[data-ceremony-theme="finishline"] .sc-ceremony-aura{background:repeating-linear-gradient(90deg,rgba(255,255,255,0.16) 0 18px,rgba(16,185,129,0.22) 18px 36px);height:16px !important;top:auto !important;bottom:8px;border-radius:999px;max-width:740px;margin:0 auto;}
   #podiumStageRoot[data-ceremony-theme="portal"] .sc-ceremony-aura{background:radial-gradient(circle at 50% 52%,rgba(254,240,138,0.38),rgba(139,92,246,0.24) 44%,transparent 72%);}
-  .podium-name-pill{background:rgba(12,14,32,0.86);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2);border-radius:999px;padding:3px 16px;margin-bottom:16px;position:relative;z-index:40;white-space:nowrap;box-shadow:0 8px 22px rgba(0,0,0,0.65);}
+  .podium-name-pill{background:rgba(12,14,32,0.88);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.22);border-radius:999px;padding:4px 18px;margin-bottom:6px;position:relative;z-index:40;white-space:nowrap;box-shadow:0 8px 22px rgba(0,0,0,0.65);}
+  @media (min-width:721px) and (max-height:820px){
+    #podiumStageRoot{--pod-dx:clamp(220px,19.5vw,290px);--pod-recede:clamp(235px,21vw,305px);--pod-s:0.88;}
+  }
+  @media (min-width:721px) and (max-height:690px){
+    #podiumStageRoot{--pod-dx:clamp(205px,18.5vw,270px);--pod-recede:clamp(220px,20vw,285px);--pod-s:0.81;}
+  }
+  @media (min-width:1440px) and (min-height:821px){
+    #podiumStageRoot{--pod-dx:clamp(260px,21vw,335px);--pod-s:1.05;}
+  }
+  @media (min-width:1850px) and (min-height:880px){
+    #podiumStageRoot{--pod-dx:345px;--pod-recede:360px;--pod-s:1.15;}
+  }
+  @media (max-width:960px) and (min-width:721px){
+    #podiumStageRoot{--pod-dx:210px;--pod-recede:225px;--pod-s:0.78;}
+  }
   @media (max-width:720px){
-    #podiumStageRoot{--pod-dx:100px;--pod-recede:112px;--pod-s:0.46;max-width:100vw !important;overflow-x:hidden !important;}
+    #podiumStageRoot{--pod-dx:102px;--pod-recede:112px;--pod-s:0.39;max-width:100vw !important;overflow-x:hidden !important;}
     #podiumStageRoot main{padding:2px 6px 16px !important;min-height:250px !important;}
     #podiumStageRoot #podiumCameraRig{height:250px !important;max-width:100% !important;}
     #podiumStageRoot .podium-header-bar{padding:5px 8px !important;gap:4px !important;}
@@ -157,11 +187,12 @@
   @keyframes floatUp{0%{transform:translateY(0);opacity:1;}100%{transform:translateY(-220px);opacity:0;}}
   @keyframes heroPopIn{0%{opacity:0;transform:translateY(32px) scale(0.72);}100%{opacity:1;transform:translateY(0) scale(1);}}
   @keyframes theatricalSpotRoam {
-    0%   { transform: translate(-150%, -15%) scale(0.85); opacity: 0; }
-    15%  { transform: translate(-115%, -35%) scale(1); opacity: 1; }
-    45%  { transform: translate(15%, -20%) scale(1.06); opacity: 1; }
-    75%  { transform: translate(-80%, -45%) scale(0.96); opacity: 1; }
-    100% { transform: translate(-50%, -32%) scale(1.12); opacity: 1; }
+    0%   { transform: translate(-155%, -12%) scale(0.88); opacity: 0; }
+    16%  { transform: translate(-115%, -34%) scale(1.02); opacity: 0.92; }
+    44%  { transform: translate(18%, -20%) scale(1.06); opacity: 0.92; }
+    72%  { transform: translate(-75%, -44%) scale(0.98); opacity: 0.95; }
+    84%  { transform: translate(-50%, -34%) scale(1.08); opacity: 0.85; }
+    100% { transform: translate(-50%, -34%) scale(1.12); opacity: 0; }
   }
 </style>
 <div id="podiumStageRoot">
@@ -173,7 +204,7 @@
   <canvas id="scPart" style="position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;opacity:0.85;"></canvas>
 
   <div id="scDarknessOverlay" style="position:absolute;inset:0;background:rgba(4,2,14,0.86);opacity:0;pointer-events:none;transition:opacity 0.6s ease;z-index:18;"></div>
-  <div id="scRovingSpotlight" style="display:none;position:absolute;top:42%;left:50%;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,0.52) 0%, rgba(196,181,253,0.32) 48%, rgba(255,255,255,0) 70%);box-shadow:0 0 90px rgba(255,255,255,0.35);pointer-events:none;z-index:24;"></div>
+  <div id="scRovingSpotlight" style="display:none;position:absolute;top:38%;left:50%;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle, rgba(255,250,220,0.62) 0%, rgba(251,191,36,0.26) 40%, rgba(167,139,250,0.10) 62%, rgba(255,255,255,0) 76%);filter:blur(16px);mix-blend-mode:screen;opacity:0;transition:opacity 0.55s ease;pointer-events:none;z-index:24;"></div>
   <div id="scReact" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:150;"></div>
 
   <!-- Cosmic Glass Top Bar + Ceremony Theme Switcher -->
@@ -196,30 +227,30 @@
 
   <main style="position:relative;z-index:22;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;overflow:visible;padding-bottom:10px;">
     <div class="sc-ceremony-aura" style="position:absolute;inset:0;pointer-events:none;z-index:2;transition:all 0.35s ease;"></div>
-    <div id="podiumCameraRig" data-id="podiumCameraRig" style="position:relative;width:100%;max-width:980px;height:480px;margin:0 auto;z-index:5;">
+    <div id="podiumCameraRig" data-id="podiumCameraRig" style="position:relative;width:100%;max-width:1180px;height:clamp(420px,68vh,620px);margin:0 auto;z-index:5;">
       <div id="climax${wid.charAt(0).toUpperCase() + wid.slice(1)}" style="display:none;position:absolute;inset:0;pointer-events:none;z-index:7;"></div>
 
-      <div id="col_2" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.85 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
+      <div id="col_2" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.95 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
         <div id="podiumHeroArea_2" style="display:none;flex-direction:column;align-items:center;animation:heroPopIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both;">
-          <div class="podium-name-pill" style="font-size:24px;font-weight:900;color:#ffffff;text-shadow:0 2px 10px rgba(0,0,0,0.85);">${esc(p2.name)}</div>
-          <div id="hm_2" style="height:200px;width:160px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p2.avatarId, p2.name, 'celebrate')}</div>
+          <div class="podium-name-pill" style="font-size:25px;font-weight:900;color:#ffffff;text-shadow:0 2px 10px rgba(0,0,0,0.85);">${esc(p2.name)}</div>
+          <div id="hm_2" style="height:255px;width:210px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p2.avatarId, p2.name, 'celebrate')}</div>
         </div>
         ${P2}
       </div>
 
-      <div id="col_1" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.85 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;z-index:30;">
+      <div id="col_1" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.92 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;z-index:30;">
         <div id="podiumHeroArea_1" style="display:none;flex-direction:column;align-items:center;position:relative;animation:heroPopIn 0.65s cubic-bezier(0.34,1.56,0.64,1) both;">
-          <span id="championCrownEl" style="font-size:40px;visibility:hidden;animation:crownDrop 0.8s cubic-bezier(0.34,1.56,0.64,1);filter:drop-shadow(0 0 24px #fef08a);margin-bottom:2px;">👑<span id="scCrown" style="display:none;"></span></span>
-          <div class="podium-name-pill" style="font-size:29px;font-weight:900;color:#fef08a;text-shadow:0 2px 12px rgba(0,0,0,0.9);">${esc(p1.name)}</div>
-          <div id="hm_1" style="height:235px;width:190px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p1.avatarId, p1.name, 'celebrate')}</div>
+          <span id="championCrownEl" style="font-size:38px;line-height:1;visibility:hidden;animation:crownDrop 0.8s cubic-bezier(0.34,1.56,0.64,1);filter:drop-shadow(0 0 24px #fef08a);margin-bottom:-2px;">👑<span id="scCrown" style="display:none;"></span></span>
+          <div class="podium-name-pill" style="font-size:30px;font-weight:900;color:#fef08a;text-shadow:0 2px 12px rgba(0,0,0,0.9);">${esc(p1.name)}</div>
+          <div id="hm_1" style="height:295px;width:245px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p1.avatarId, p1.name, 'celebrate')}</div>
         </div>
         ${P1}
       </div>
 
-      <div id="col_3" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.85 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
+      <div id="col_3" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.91 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
         <div id="podiumHeroArea_3" style="display:none;flex-direction:column;align-items:center;animation:heroPopIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">
-          <div class="podium-name-pill" style="font-size:23px;font-weight:900;color:#ffffff;text-shadow:0 2px 10px rgba(0,0,0,0.85);">${esc(p3.name)}</div>
-          <div id="hm_3" style="height:185px;width:150px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p3.avatarId, p3.name, 'celebrate')}</div>
+          <div class="podium-name-pill" style="font-size:24px;font-weight:900;color:#ffffff;text-shadow:0 2px 10px rgba(0,0,0,0.85);">${esc(p3.name)}</div>
+          <div id="hm_3" style="height:235px;width:195px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p3.avatarId, p3.name, 'celebrate')}</div>
         </div>
         ${P3}
       </div>
@@ -309,10 +340,10 @@
       setTimeout(() => {
         sfx('drumroll');
         if (dark) dark.style.opacity = '1';
-        if (c2) { c2.style.transform = 'translate(calc(-50% - var(--pod-dx, 245px)), 16px) scale(calc(0.86 * var(--pod-s, 1)))'; c2.style.opacity = '0.28'; c2.style.filter = 'brightness(0.55)'; }
-        if (c3) { c3.style.transform = 'translate(calc(-50% + var(--pod-dx, 245px)), 22px) scale(calc(0.82 * var(--pod-s, 1)))'; c3.style.opacity = '0.28'; c3.style.filter = 'brightness(0.55)'; }
+        if (c2) { c2.style.transform = 'translate(calc(-50% - var(--pod-dx, 260px)), 14px) scale(calc(0.95 * var(--pod-s, 1)))'; c2.style.opacity = '0.28'; c2.style.filter = 'brightness(0.55)'; }
+        if (c3) { c3.style.transform = 'translate(calc(-50% + var(--pod-dx, 260px)), 20px) scale(calc(0.91 * var(--pod-s, 1)))'; c3.style.opacity = '0.28'; c3.style.filter = 'brightness(0.55)'; }
         if (c1) { c1.style.pointerEvents = 'auto'; c1.style.zIndex = '30'; c1.style.opacity = '1'; c1.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))'; }
-        if (roving) { roving.style.display = 'block'; roving.style.animation = 'theatricalSpotRoam 1.85s cubic-bezier(0.42, 0, 0.58, 1) forwards'; }
+        if (roving) { roving.style.animation = 'none'; void roving.offsetWidth; roving.style.display = 'block'; roving.style.opacity = '1'; roving.style.animation = 'theatricalSpotRoam 2.3s cubic-bezier(0.42, 0, 0.58, 1) forwards'; }
         sTimer = setTimeout(() => {
           sfx('fanfare');
           if (sc) runSpotlights(sc, wid, 3);
@@ -322,6 +353,7 @@
           setMysteryScore(1, players[0]?.score || 0, '#fef08a');
           setTimeout(() => {
             if (dark) dark.style.opacity = '0';
+            if (roving) { roving.style.opacity = '0'; roving.style.display = 'none'; roving.style.animation = 'none'; }
             if (c2) { c2.style.opacity = '1'; c2.style.filter = 'brightness(1)'; c2.style.pointerEvents = 'auto'; }
             if (c3) { c3.style.opacity = '1'; c3.style.filter = 'brightness(1)'; c3.style.pointerEvents = 'auto'; }
           }, 450);
@@ -342,6 +374,8 @@
 
   function startCinematicShow() {
     if (cTimer) { clearTimeout(cTimer); cTimer = null; }
+    if (sTimer) { clearTimeout(sTimer); sTimer = null; }
+    resetRovingSpotlight();
     const btn = $('scCinBtn'); if (btn) btn.disabled = true;
     revealStep = 0; advanceReveal();
     cTimer = setTimeout(() => { advanceReveal(); cTimer = setTimeout(() => advanceReveal(), 2800); }, 2600);
@@ -350,12 +384,15 @@
   function revealAll() {
     if (cTimer) { clearTimeout(cTimer); cTimer = null; }
     if (sTimer) { clearTimeout(sTimer); sTimer = null; }
+    resetRovingSpotlight();
     revealStep = 3;
+    const sc = $('scSpot'), wid = room?.world?.id || room?.worldId || 'royal';
+    if (sc) runSpotlights(sc, wid, 3);
     const c1 = $('col_1'), c2 = $('col_2'), c3 = $('col_3'), dark = $('scDarknessOverlay');
     if (dark) dark.style.opacity = '0';
-    if (c2) { c2.style.opacity = '1'; c2.style.filter = 'brightness(1)'; c2.style.transform = 'translate(calc(-50% - var(--pod-dx, 245px)), 16px) scale(calc(0.86 * var(--pod-s, 1)))'; }
-    if (c3) { c3.style.opacity = '1'; c3.style.filter = 'brightness(1)'; c3.style.transform = 'translate(calc(-50% + var(--pod-dx, 245px)), 22px) scale(calc(0.82 * var(--pod-s, 1)))'; }
-    if (c1) { c1.style.opacity = '1'; c1.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))'; }
+    if (c2) { c2.style.pointerEvents = 'auto'; c2.style.opacity = '1'; c2.style.filter = 'brightness(1)'; c2.style.transform = 'translate(calc(-50% - var(--pod-dx, 260px)), 14px) scale(calc(0.95 * var(--pod-s, 1)))'; }
+    if (c3) { c3.style.pointerEvents = 'auto'; c3.style.opacity = '1'; c3.style.filter = 'brightness(1)'; c3.style.transform = 'translate(calc(-50% + var(--pod-dx, 260px)), 20px) scale(calc(0.91 * var(--pod-s, 1)))'; }
+    if (c1) { c1.style.pointerEvents = 'auto'; c1.style.opacity = '1'; c1.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))'; }
     [3, 2, 1].forEach(r => {
       const h = $(`podiumHeroArea_${r}`), hm = $(`hm_${r}`), pl = players[r === 1 ? 0 : r === 2 ? 1 : 2];
       if (h) h.style.display = 'flex';

@@ -1238,18 +1238,9 @@ dialog::backdrop {
    ScoreAR Batch 5: Multi-Device Responsive Architecture
    Mobile (360-768px) · Tablet (768-1024px) · Laptop/PC · Smart TV (1920px+)
    ============================================================ */
-@media (max-height: 760px) and (min-width: 901px) {
-  #podiumCameraRig {
-    transform: scale(0.76);
-    transform-origin: bottom center;
-  }
-}
-
 @media (max-width: 900px) {
   #podiumCameraRig {
     gap: 14px !important;
-    transform: scale(0.84) !important;
-    transform-origin: bottom center !important;
   }
 }
 
@@ -1359,12 +1350,7 @@ dialog::backdrop {
     padding: 12px 14px !important;
   }
 
-  /* Host Podium Mobile Scaling */
-  #podiumCameraRig {
-    gap: 8px !important;
-    transform: scale(0.62) !important;
-    transform-origin: bottom center !important;
-  }
+  /* Host Podium Mobile Scaling (handled cleanly by --pod-s in #podiumStageRoot) */
   .podium-header-bar, .podium-footer-bar {
     padding: 8px 10px !important;
     justify-content: center !important;
@@ -1383,9 +1369,6 @@ dialog::backdrop {
   }
   .host-lobby-characters-arena {
     height: 38vh !important;
-  }
-  #podiumCameraRig {
-    transform: scale(0.54) !important;
   }
 }
 
@@ -1412,10 +1395,6 @@ dialog::backdrop {
   .host-option-card {
     min-height: 104px !important;
     padding: 22px 28px !important;
-  }
-  #podiumCameraRig {
-    transform: scale(1.18) !important;
-    transform-origin: bottom center !important;
   }
 }
 

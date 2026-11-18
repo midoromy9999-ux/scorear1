@@ -262,7 +262,7 @@
               ts: Number(val.ts) || Date.now(),
               answeredAt: Number(val.ts) || Date.now()
             };
-            sfx('pop');
+            sfx('counter');
             updateLiveAnswerStats();
             if (currentRoom.players.length > 0 && Object.keys(currentRoom.answers[idx]).length >= currentRoom.players.length) finishCurrentQuestion();
           }
@@ -342,7 +342,16 @@
     if (!currentRoom) return;
     const qIndex = currentQIndex, answers = currentRoom.answers[qIndex] || {};
     const countEl = document.getElementById('hostAnsweredCount');
-    if (countEl) countEl.textContent = Object.keys(answers).length;
+    if (countEl) {
+      countEl.textContent = Object.keys(answers).length;
+      const pill = countEl.parentElement;
+      if (pill && pill.style) {
+        pill.style.transition = 'transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        pill.style.transform = 'scale(1.16)';
+        clearTimeout(pill._popTimer);
+        pill._popTimer = setTimeout(() => { pill.style.transform = 'scale(1)'; }, 180);
+      }
+    }
   }
 
   function finishCurrentQuestion() {
@@ -476,15 +485,17 @@
     else if (ev()) ev().renderHostPodium(s, currentRoom, closeHostSession);
   }
 
-  function submitBotAnswer(playerId, optionIndex) {
+  function submitBotAnswer(playerId, optionIndex, exactElapsedMs = null) {
     if (!currentRoom || currentRoom.status !== 'question') return;
     const bot = currentRoom.players.find(p => p.id === playerId && (p.isBot || p.isDemo));
     const q = activeQuestions[currentQIndex], options = q?.options || q?.opts || [];
     if (!bot || !Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex >= options.length) return;
     const answers = currentRoom.answers[currentQIndex] || (currentRoom.answers[currentQIndex] = {});
     if (answers[playerId]) return;
-    const ts = questionStartTime + Math.max(0, (q.timeLimit || 20) - timeRemaining) * 1000;
-    answers[playerId] = { playerId, playerName:bot.name, optionIndex, chosenIndices:[optionIndex], ts, answeredAt:ts };
+    const elapsedMs = (typeof exactElapsedMs === 'number' && !isNaN(exactElapsedMs)) ? Math.max(100, exactElapsedMs) : Math.max(0, (q.timeLimit || 20) - timeRemaining) * 1000;
+    const ts = questionStartTime + elapsedMs;
+    answers[playerId] = { playerId, playerName:bot.name, optionIndex, chosenIndices:[optionIndex], ts, answeredAt:ts, exactElapsedMs: elapsedMs };
+    sfx('counter');
     updateLiveAnswerStats();
     if (Object.keys(answers).length >= currentRoom.players.length) finishCurrentQuestion();
   }

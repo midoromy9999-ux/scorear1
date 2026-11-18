@@ -38,6 +38,10 @@
   justify-content: center;
   perspective: 800px;
 }
+#podiumStageRoot .scorear-motion-stage {
+  max-width: 100%;
+  max-height: 100%;
+}
 
 /* Character Wrap: Root for 60FPS GPU Squash & Stretch */
 .scorear-character-wrap {
