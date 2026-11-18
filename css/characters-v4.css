@@ -229,20 +229,38 @@
 .character-tabs button {
   font: inherit;
   font-size: 12px;
-  padding: 9px 12px;
+  padding: 9px 13px;
   border-radius: 12px;
-  border: 1px solid #8880b74a;
-  background: #19192f;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(25, 25, 47, 0.85);
   color: #d9d4ed;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.character-controls button svg,
+.character-tabs button svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.character-controls button:hover,
+.character-tabs button:hover {
+  background: rgba(117, 80, 239, 0.2);
+  border-color: rgba(172, 139, 242, 0.45);
+  color: #ffffff;
 }
 
 .character-controls button[aria-pressed=true],
 .character-tabs button[aria-pressed=true] {
-  background: #b5a2ff;
-  color: #191130;
-  border-color: #d7cdff;
+  background: linear-gradient(110deg, #7550ef, #9665ff);
+  color: #ffffff;
+  border-color: rgba(196, 168, 255, 0.48);
   font-weight: 800;
+  box-shadow: 0 4px 18px rgba(117, 80, 239, 0.32);
 }
 
 .character-motion {
@@ -563,18 +581,67 @@
 }
 .scorear-unified-actions {
   display: flex;
-  gap: 8px;
+  gap: 5px;
   align-items: center;
   flex-wrap: wrap;
+  background: rgba(20, 21, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  padding: 4px;
+  backdrop-filter: blur(12px);
 }
 .scorear-unified-action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #b1a8d8;
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.scorear-unified-action-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.scorear-unified-action-btn:hover {
   color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
+.scorear-unified-action-btn.is-active-cards {
+  background: linear-gradient(110deg, rgba(245, 158, 11, 0.24), rgba(117, 80, 239, 0.65));
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #fef3c7;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.16);
+}
+.scorear-unified-action-btn.is-active-heroes {
+  background: linear-gradient(110deg, #7550ef, #9665ff);
+  border-color: rgba(196, 168, 255, 0.45);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(117, 80, 239, 0.3);
+}
+.scorear-unified-action-btn.is-active-podium {
+  background: linear-gradient(110deg, rgba(88, 220, 227, 0.22), rgba(117, 80, 239, 0.62));
+  border-color: rgba(88, 220, 227, 0.45);
+  color: #e6fffe;
+  box-shadow: 0 4px 16px rgba(88, 220, 227, 0.18);
+}
+.scorear-unified-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #eceeff;
   border-radius: 12px;
   padding: 8px 13px;
   font-size: 12px;
@@ -583,31 +650,12 @@
   font-family: inherit;
   white-space: nowrap;
   flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.scorear-unified-action-btn.is-active-cards {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  border-color: #f59e0b;
-}
-.scorear-unified-action-btn.is-active-heroes {
-  background: linear-gradient(135deg, #7550ef, #582cd1);
-  border-color: #7550ef;
-}
-.scorear-unified-action-btn.is-active-podium {
-  background: linear-gradient(135deg, #10b981, #059669);
-  border-color: #10b981;
-}
-.scorear-unified-close-btn {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
-  border-radius: 12px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-  font-family: inherit;
-  white-space: nowrap;
-  flex-shrink: 0;
+.scorear-unified-close-btn:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.42);
+  color: #fecaca;
 }
 
 @media (max-width: 920px) {

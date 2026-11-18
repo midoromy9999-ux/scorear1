@@ -12,6 +12,8 @@
   let cachedTeachers = [];
   let cachedStudents = [];
   let searchQuery = '';
+  const uiIc = (n, s = 14) => global.ScoreARUI?.icon?.(n, { size: s }) || '';
+  const uiBox = (n, t = 'violet', s = 'md') => global.ScoreARUI?.iconBox?.(n, { size: s, tone: t }) || '';
 
   function getDb() {
     return (global.ScoreARAuth && global.ScoreARAuth.getDb)
@@ -89,53 +91,47 @@
 
   function renderHubShell(container) {
     container.innerHTML = `
-      <div style="background:#0e1022;border:1px solid rgba(142,100,239,0.35);border-radius:24px;width:100%;max-width:960px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.8);overflow:hidden;direction:rtl;font-family:inherit;">
-        <!-- Header -->
-        <div style="padding:20px 24px;border-bottom:1px solid rgba(142,100,239,0.2);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,rgba(117,80,239,0.15),transparent);">
+      <div class="scorear-modal-shell" style="width:100%;max-width:960px;max-height:90vh;direction:rtl;font-family:inherit;">
+        <div class="scorear-modal-head">
           <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#7550ef,#a855f7);display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(117,80,239,0.5);font-size:22px;">🛡️</div>
+            ${uiBox('shield', 'violet', 'md')}
             <div>
-              <h2 style="margin:0;font-size:20px;font-weight:900;color:#ffffff;">لوحة الإدارة والحسابات (Admin Hub)</h2>
+              <h2 style="margin:0;font-size:19px;font-weight:900;color:#ffffff;">لوحة الإدارة والحسابات (Admin Hub)</h2>
               <p style="margin:2px 0 0;font-size:12px;color:#a78bfa;">إدارة المعلمين والطلاب والموافقات الرسمية لمنصة ScoreAR</p>
             </div>
           </div>
-          <button onclick="ScoreARAdminManagement.closeAdminHub()" style="background:rgba(255,255,255,0.08);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">✕</button>
+          <button type="button" onclick="ScoreARAdminManagement.closeAdminHub()" class="scorear-gear-btn" aria-label="إغلاق">${uiIc('close', 16)}</button>
         </div>
 
-        <!-- Navigation Tabs -->
-        <div style="display:flex;gap:8px;padding:12px 24px;background:#13152a;border-bottom:1px solid rgba(255,255,255,0.06);overflow-x:auto;">
-          <button onclick="ScoreARAdminManagement.setTab('requests')" class="admin-tab-btn" id="admTab_requests" style="${getTabStyle('requests')}">
-            ⏳ طلبات المعلمين <span id="admBadgeRequests" style="background:#ef4444;color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;margin-inline-start:4px;display:none;">0</span>
-          </button>
-          <button onclick="ScoreARAdminManagement.setTab('teachers')" class="admin-tab-btn" id="admTab_teachers" style="${getTabStyle('teachers')}">
-            👨‍🏫 المعلمون المعتمدون
-          </button>
-          <button onclick="ScoreARAdminManagement.setTab('students')" class="admin-tab-btn" id="admTab_students" style="${getTabStyle('students')}">
-            🎓 إدارة الطلاب
-          </button>
-          <button onclick="ScoreARAdminManagement.setTab('audit')" class="admin-tab-btn" id="admTab_audit" style="${getTabStyle('audit')}">
-            📋 سجل العمليات
-          </button>
+        <div style="padding:10px 24px;background:rgba(17,18,38,0.85);border-bottom:1px solid rgba(255,255,255,0.08);overflow-x:auto;">
+          <div class="scorear-segmented-tabs">
+            <button type="button" onclick="ScoreARAdminManagement.setTab('requests')" class="scorear-segmented-tab ${currentTab === 'requests' ? 'active' : ''}" id="admTab_requests">
+              ${uiIc('clock', 14)} <span>طلبات المعلمين</span> <span id="admBadgeRequests" style="background:#ef4444;color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;display:none;">0</span>
+            </button>
+            <button type="button" onclick="ScoreARAdminManagement.setTab('teachers')" class="scorear-segmented-tab ${currentTab === 'teachers' ? 'active' : ''}" id="admTab_teachers">
+              ${uiIc('school', 14)} <span>المعلمون المعتمدون</span>
+            </button>
+            <button type="button" onclick="ScoreARAdminManagement.setTab('students')" class="scorear-segmented-tab ${currentTab === 'students' ? 'active' : ''}" id="admTab_students">
+              ${uiIc('graduation', 14)} <span>إدارة الطلاب</span>
+            </button>
+            <button type="button" onclick="ScoreARAdminManagement.setTab('audit')" class="scorear-segmented-tab ${currentTab === 'audit' ? 'active' : ''}" id="admTab_audit">
+              ${uiIc('list', 14)} <span>سجل العمليات</span>
+            </button>
+          </div>
         </div>
 
-        <!-- Content Area -->
-        <div id="admContentArea" style="flex:1;overflow-y:auto;padding:24px;">
-          <div style="text-align:center;padding:40px;color:#a78bfa;">جاري تحميل البيانات من الخادم... ⏳</div>
+        <div id="admContentArea" class="scorear-modal-body" style="flex:1;overflow-y:auto;">
+          <div style="text-align:center;padding:40px;color:#a78bfa;">جاري تحميل البيانات من الخادم...</div>
         </div>
       </div>
     `;
-  }
-
-  function getTabStyle(tab) {
-    const isActive = currentTab === tab;
-    return `padding:8px 16px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;border:1px solid ${isActive ? '#8e64ef' : 'transparent'};background:${isActive ? '#7550ef' : 'rgba(255,255,255,0.05)'};color:${isActive ? '#fff' : '#b1a2e9'};transition:all 0.2s;white-space:nowrap;`;
   }
 
   function setTab(tab) {
     currentTab = tab;
     ['requests', 'teachers', 'students', 'audit'].forEach(t => {
       const el = document.getElementById('admTab_' + t);
-      if (el) el.style.cssText = getTabStyle(t);
+      if (el) el.classList.toggle('active', currentTab === t);
     });
     renderTabContent();
   }
@@ -196,8 +192,8 @@
 
     if (pending.length === 0) {
       container.innerHTML = `
-        <div style="text-align:center;padding:60px 20px;color:#9ca3af;">
-          <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+        <div style="text-align:center;padding:56px 20px;color:#9ca3af;">
+          <div style="display:flex;justify-content:center;margin-bottom:12px;">${uiBox('checkCircle', 'cyan', 'lg')}</div>
           <h3 style="color:#fff;font-size:18px;font-weight:800;margin-bottom:6px;">لا توجد طلبات معلمين معلقة حالياً</h3>
           <p style="font-size:13px;color:#a78bfa;">جميع طلبات الانضمام تم البت فيها بنجاح.</p>
         </div>
@@ -361,9 +357,9 @@
   async function approveTeacher(uid) {
     if (!confirm('هل تريد بالتأكيد اعتماد هذا المعلم وتفعيل صلاحيات الاستوديو له؟')) return;
     try {
-      if (global.toast) global.toast('جاري معالجة الاعتماد... ⏳');
+      if (global.toast) global.toast('جاري معالجة الاعتماد...');
       await callApi({ action: 'approve', targetUid: uid });
-      if (global.toast) global.toast('✓ تم اعتماد حساب المعلم وضبط دوره بنجاح!');
+      if (global.toast) global.toast('تم اعتماد حساب المعلم وضبط دوره بنجاح ✓');
     } catch (e) {
       alert('خطأ في الاعتماد: ' + e.message);
     }

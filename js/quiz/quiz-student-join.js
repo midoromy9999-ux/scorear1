@@ -1,8 +1,7 @@
 /**
  * ScoreAR Student 3-Step Join Flow (quiz-student-join.js)
  * Step 1: 6-digit PIN with large touch keypad & room openness validation.
- * Step 2: Student Nickname (1-40 chars, regex-validated, pre-filled if logged in, deduplicated, textContent).
- * Step 3: 20-Character Picker with live preview & entry into lobby.
+ * Step 2: Student Nickname + 20-Character Picker with live preview & entry into lobby.
  * Strictly Rule 7 compliant (<500 lines).
  */
 (function(global) {
@@ -11,6 +10,12 @@
   function escapeHtml(str) {
     if (typeof str !== 'string') return String(str || '');
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  function uiIcon(name, size = 15) {
+    return (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function')
+      ? global.ScoreARUI.icon(name, { size })
+      : '';
   }
 
   const NAME_REGEX = /^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFFa-zA-Z0-9\u0660-\u0669\u06F0-\u06F9\s\-\.\/]{1,40}$/;
@@ -39,13 +44,11 @@
       }).catch(() => {});
     }
 
-    // Warm-up anonymous auth early for instantaneous RTDB verification
     try {
       const a = (global.ScoreARAuth && global.ScoreARAuth.getAuth) ? global.ScoreARAuth.getAuth() : (global.firebase && global.firebase.auth ? global.firebase.auth() : null);
       if (a && !a.currentUser) a.signInAnonymously().catch(() => {});
     } catch(e){}
 
-    // Pre-fill registered student if logged in
     try {
       const user = (global.ScoreARAuth && global.ScoreARAuth.getCurrentUser) ? global.ScoreARAuth.getCurrentUser() : null;
       if (user && user.role === 'student' && !user.isAnonymous) {
@@ -76,26 +79,20 @@
     if (!containerEl) return;
     containerEl.innerHTML = `
       <div class="student-join-flow" style="display:flex;flex-direction:column;gap:14px;color:#fff;direction:rtl;text-align:right;">
-        <!-- Step Indicator -->
-        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:2px;">
           <div style="display:flex;align-items:center;gap:6px;">
-            <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${state.step>=1?'#7550ef':'#282a4a'};color:#fff;font-size:12px;font-weight:900;">1</span>
-            <span style="font-size:12px;font-weight:800;color:${state.step===1?'#c9baff':'#717495'};">رمز القاعة</span>
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${state.step>=1?'#7550ef':'#222442'};color:#fff;font-size:11.5px;font-weight:900;">1</span>
+            <span style="font-size:12px;font-weight:800;color:${state.step===1?'#eceeff':'#878aa6'};">رمز القاعة</span>
           </div>
-          <div style="width:24px;height:2px;background:${state.step>=2?'#7550ef':'#282a4a'};"></div>
+          <div style="width:24px;height:1px;background:${state.step>=2?'#7550ef':'rgba(255,255,255,0.12)'};"></div>
           <div style="display:flex;align-items:center;gap:6px;">
-            <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${state.step>=2?'#7550ef':'#282a4a'};color:#fff;font-size:12px;font-weight:900;">2</span>
-            <span style="font-size:12px;font-weight:800;color:${state.step===2?'#c9baff':'#717495'};">الاسم</span>
-          </div>
-          <div style="width:24px;height:2px;background:${state.step>=3?'#7550ef':'#282a4a'};"></div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${state.step>=3?'#7550ef':'#282a4a'};color:#fff;font-size:12px;font-weight:900;">3</span>
-            <span style="font-size:12px;font-weight:800;color:${state.step===3?'#c9baff':'#717495'};">الشخصية</span>
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${state.step>=2?'#7550ef':'#222442'};color:#fff;font-size:11.5px;font-weight:900;">2</span>
+            <span style="font-size:12px;font-weight:800;color:${state.step===2?'#eceeff':'#878aa6'};">الاسم والبطل</span>
           </div>
         </div>
 
         ${state.error ? `
-          <div id="studentStepError" style="background:rgba(239,68,68,0.18);border:1px solid #ef4444;color:#fca5a5;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:800;line-height:1.5;text-align:center;">
+          <div id="studentStepError" style="background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.38);color:#fca5a5;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:800;line-height:1.5;text-align:center;">
             ${escapeHtml(state.error)}
           </div>` : ''}
 
@@ -103,7 +100,6 @@
       </div>
     `;
 
-    // Safe focus and event attachments
     if (state.step === 1) {
       const pinInp = containerEl.querySelector('#studentJoinPinInput');
       if (pinInp) {
@@ -143,72 +139,72 @@
     const boxes = disp.querySelectorAll('.pin-digit-box');
     boxes.forEach((box, i) => {
       box.textContent = digits[i] || '';
-      box.style.borderColor = (i === digits.length) ? '#a855f7' : (digits[i] ? '#7550ef' : 'rgba(255,255,255,0.2)');
+      box.style.borderColor = (i === digits.length) ? '#58dce3' : (digits[i] ? '#7550ef' : 'rgba(255,255,255,0.14)');
     });
   }
 
-  // STEP 1: PIN & Large Virtual Keypad
   function renderStep1Html() {
     const digits = state.pin.split('');
     return `
       <div style="text-align:center;">
+        <span class="launch-pill" style="margin-bottom:8px;"><span class="live-dot"></span> دخول القاعة المباشر</span>
         <h3 style="font-size:20px;font-weight:900;color:#ffffff;margin:2px 0 4px;">أدخل رمز القاعة (PIN)</h3>
-        <p style="font-size:12px;color:#a5b4fc;margin:0 0 12px;">اكتب الرمز المكون من 6 أرقام والظاهر على شاشة المعلم</p>
+        <p style="font-size:12px;color:#a1a4be;margin:0 0 14px;">اكتب الرمز المكون من ٦ أرقام والظاهر على شاشة المعلم</p>
         ${state.savedActiveSession ? `
-          <div style="background:rgba(117,80,239,0.22);border:1.5px solid #a855f7;border-radius:14px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="background:rgba(117,80,239,0.16);border:1px solid rgba(172,139,242,0.38);border-radius:14px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
             <div style="text-align:right;">
-              <div style="font-size:12px;font-weight:900;color:#fcd34d;">⚡ استعادة الاتصال السريع</div>
+              <div style="font-size:12px;font-weight:900;color:#58dce3;">استعادة الاتصال السريع</div>
               <div style="font-size:11px;color:#e2e8f0;">القاعة: <b>${state.savedActiveSession.pin}</b> | الطالب: <b>${escapeHtml(state.savedActiveSession.name)}</b></div>
             </div>
-            <button type="button" onclick="ScoreARStudentJoin.fastReconnect()" style="background:#7550ef;border:none;border-radius:10px;padding:6px 12px;color:#fff;font-weight:900;font-size:12px;cursor:pointer;">دخول سريع ↩</button>
+            <button type="button" onclick="ScoreARStudentJoin.fastReconnect()" class="btn launch-primary" style="border-radius:10px;padding:6px 12px;font-weight:900;font-size:12px;cursor:pointer;">دخول سريع</button>
           </div>` : ''}
-        <div id="studentPinDisplay" onclick="const inp=document.getElementById('studentJoinPinInput'); if(inp) inp.focus();" style="display:flex;justify-content:center;gap:6px;margin-bottom:14px;direction:ltr;cursor:pointer;width:100%;">
-          ${[0,1,2,3,4,5].map(i => `<div class="pin-digit-box" style="flex:1;max-width:44px;min-width:34px;height:clamp(44px,11vw,52px);background:#13152a;border:2px solid ${i===digits.length?'#a855f7':(digits[i]?'#7550ef':'rgba(255,255,255,0.2)')};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:clamp(20px,5.2vw,26px);font-weight:900;color:#fcd34d;font-family:monospace;">${digits[i]||''}</div>`).join('')}
+        <div id="studentPinDisplay" onclick="const inp=document.getElementById('studentJoinPinInput'); if(inp) inp.focus();" style="display:flex;justify-content:center;gap:7px;margin-bottom:14px;direction:ltr;cursor:pointer;width:100%;">
+          ${[0,1,2,3,4,5].map(i => `<div class="pin-digit-box" style="flex:1;max-width:46px;min-width:34px;height:clamp(46px,11vw,54px);background:#12142a;border:1.5px solid ${i===digits.length?'#58dce3':(digits[i]?'#7550ef':'rgba(255,255,255,0.14)')};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:clamp(20px,5.2vw,26px);font-weight:900;color:#58dce3;font-family:Montserrat,monospace;box-shadow:inset 0 1px 8px rgba(0,0,0,0.4);">${digits[i]||''}</div>`).join('')}
         </div>
         <input id="studentJoinPinInput" type="text" inputmode="numeric" maxlength="6" value="${escapeHtml(state.pin)}" style="opacity:0;position:absolute;pointer-events:none;height:0;width:0;">
         <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;max-width:320px;margin:0 auto 14px;direction:ltr;">
-          ${['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(k => `<button type="button" onclick="ScoreARStudentJoin.handleKeypad('${k}')" class="keypad-btn" style="height:50px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:${k==='C'?'#f87171':k==='⌫'?'#38bdf8':'#ffffff'};font-size:${k==='⌫'?'20px':'22px'};font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;">${k}</button>`).join('')}
+          ${['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(k => `<button type="button" onclick="ScoreARStudentJoin.handleKeypad('${k}')" class="keypad-btn" style="height:48px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.11);border-radius:12px;color:${k==='C'?'#fca5a5':k==='⌫'?'#58dce3':'#ffffff'};font-size:${k==='⌫'?'18px':'20px'};font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;transition:background 0.15s;">${k}</button>`).join('')}
         </div>
-        <button type="button" id="studentStep1NextBtn" onclick="ScoreARStudentJoin.submitStep1()" ${state.loading?'disabled':''} class="btn dark full" style="padding:12px;font-size:15px;font-weight:900;border-radius:14px;background:linear-gradient(135deg, #7550ef, #4f46e5);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(117,80,239,0.4);">
-          ${state.loading ? '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></span> جارٍ التحقق من القاعة...' : 'دخول ➔'}
+        <button type="button" id="studentStep1NextBtn" onclick="ScoreARStudentJoin.submitStep1()" ${state.loading?'disabled':''} class="btn launch-primary full" style="padding:13px;font-size:15px;font-weight:900;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+          ${state.loading ? '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></span> جارٍ التحقق من القاعة...' : `<span>دخول القاعة</span> ${uiIcon('arrow', 16)}`}
         </button>
       </div>
     `;
   }
 
-  // STEP 2: Unified Direct Name + 20-Hero Picker (1-Step Fast Entry after QR Scan)
   function renderStep2Html() {
     const list = (global.ScoreARCharacters && global.ScoreARCharacters.list) ? global.ScoreARCharacters.list : [];
     const currentHero = list.find(c => c.code === state.avatarId) || list[0] || { name: 'زياد', title: 'المستكشف' };
     return `
       <div>
         <div style="text-align:center;margin-bottom:10px;">
-          <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.18);border:1px solid #10b981;color:#6ee7b7;font-size:11.5px;font-weight:900;padding:4px 12px;border-radius:999px;margin-bottom:6px;">
-            <span>✓ متصل بالقاعة رقم: <b style="font-family:monospace;font-size:13px;color:#fff;">${escapeHtml(state.pin)}</b></span>
+          <div class="launch-pill" style="border-color:rgba(88,220,227,0.35);color:#c7f9ff;margin-bottom:6px;">
+            <span class="live-dot"></span>
+            <span>متصل بالقاعة رقم: <b style="font-family:Montserrat,monospace;font-size:13px;color:#fff;">${escapeHtml(state.pin)}</b></span>
           </div>
           <h3 style="font-size:19px;font-weight:900;color:#ffffff;margin:2px 0;">سجّل اسمك واختر بطلك الكرتوني</h3>
         </div>
 
         <div style="margin-bottom:12px;">
-          <label style="display:block;font-size:12px;font-weight:800;color:#c9baff;margin-bottom:5px;">١. اكتب اسمك للمشاركة في القاعة:</label>
-          <input id="studentJoinNameInput" type="text" maxlength="40" placeholder="مثال: أحمد محمد، أو 3/1 رقم 15..." style="width:100%;box-sizing:border-box;background:#111426;border:2px solid #8e64ef;border-radius:13px;color:#fff;padding:11px 14px;font-size:15px;font-weight:800;outline:none;" onkeydown="if(event.key==='Enter'){event.preventDefault();ScoreARStudentJoin.submitStep2();}">
+          <label style="display:block;font-size:12px;font-weight:800;color:#ddd8ff;margin-bottom:5px;">١. اكتب اسمك للمشاركة في القاعة:</label>
+          <input id="studentJoinNameInput" class="field" type="text" maxlength="40" placeholder="مثال: أحمد محمد، أو 3/1 رقم 15..." style="width:100%;box-sizing:border-box;border-radius:12px;padding:11px 14px;font-size:14.5px;font-weight:800;" onkeydown="if(event.key==='Enter'){event.preventDefault();ScoreARStudentJoin.submitStep2();}">
         </div>
 
         <div style="margin-bottom:12px;">
-          <label style="display:block;font-size:12px;font-weight:800;color:#52d9ed;margin-bottom:6px;">٢. اختر صورتك / بطلك المفضل (٢٠ بطلاً):</label>
-          <div style="background:rgba(21,23,49,0.92);border:1.5px solid rgba(142,100,239,0.5);border-radius:16px;padding:8px 12px;display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-            <div style="width:56px;height:68px;display:flex;align-items:flex-end;justify-content:center;background:rgba(255,255,255,0.05);border-radius:10px;padding:2px;flex-shrink:0;">
+          <label style="display:block;font-size:12px;font-weight:800;color:#58dce3;margin-bottom:6px;">٢. اختر بطلك المفضل (٢٠ بطلاً):</label>
+          <div style="background:rgba(18,20,44,0.9);border:1px solid rgba(172,139,242,0.32);border-radius:16px;padding:8px 12px;display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+            <div style="width:56px;height:68px;display:flex;align-items:flex-end;justify-content:center;background:rgba(255,255,255,0.04);border-radius:10px;padding:2px;flex-shrink:0;">
               <img id="studentAvatarLiveImg" src="assets/characters/animated/${escapeHtml(state.avatarId)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="البطل" style="height:64px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6));">
             </div>
             <div>
               <div id="studentAvatarLiveName" style="font-size:15px;font-weight:900;color:#ffffff;">${escapeHtml(currentHero.name)}</div>
-              <div id="studentAvatarLiveTitle" style="font-size:11px;color:#a5b4fc;font-weight:700;">${escapeHtml(currentHero.title)}</div>
+              <div id="studentAvatarLiveTitle" style="font-size:11px;color:#a1a4be;font-weight:700;">${escapeHtml(currentHero.title)}</div>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:6px;max-height:165px;overflow-y:auto;padding:2px;">
             ${list.map((c) => {
               const isSel = (c.code === state.avatarId);
-              return `<div class="avatar-card-picker ${isSel?'selected':''}" onclick="ScoreARStudentJoin.selectAvatar('${c.code}')" style="display:flex;flex-direction:column;align-items:center;background:${isSel?'rgba(117,80,239,0.32)':'#16182e'};border:2px solid ${isSel?'#a855f7':'rgba(255,255,255,0.1)'};border-radius:11px;padding:5px 2px;cursor:pointer;">
+              return `<div class="avatar-card-picker ${isSel?'selected':''}" onclick="ScoreARStudentJoin.selectAvatar('${c.code}')" style="display:flex;flex-direction:column;align-items:center;background:${isSel?'rgba(117,80,239,0.28)':'#15172a'};border:1.5px solid ${isSel?'#a855f7':'rgba(255,255,255,0.09)'};border-radius:11px;padding:5px 2px;cursor:pointer;">
                 <img src="assets/characters/animated/${c.code}-idle.webp" loading="lazy" alt="${escapeHtml(c.name)}" style="width:42px;height:50px;object-fit:contain;">
                 <span style="font-size:9.5px;font-weight:800;color:#fff;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48px;">${escapeHtml(c.name)}</span>
               </div>`;
@@ -217,67 +213,24 @@
         </div>
 
         <div style="display:flex;gap:8px;">
-          ${!state.fromQr ? `<button type="button" onclick="ScoreARStudentJoin.goToStep(1)" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:12px;border-radius:12px;font-weight:800;font-size:12.5px;cursor:pointer;">⬅ تغيير الرمز</button>` : ''}
-          <button type="button" id="studentStep2NextBtn" onclick="ScoreARStudentJoin.submitStep2()" ${state.loading?'disabled':''} style="flex:2;background:linear-gradient(135deg, #10b981, #059669);border:none;color:#fff;padding:12px;border-radius:12px;font-weight:900;font-size:14.5px;cursor:pointer;box-shadow:0 4px 16px rgba(16,185,129,0.4);">
-            ${state.loading ? 'جارٍ الدخول للقاعة... ⏳' : 'دخول للقاعة الآن 🚀'}
+          ${!state.fromQr ? `<button type="button" class="scorear-gear-btn" onclick="ScoreARStudentJoin.goToStep(1)" style="flex:1;padding:12px;border-radius:12px;font-size:12.5px;">تغيير الرمز</button>` : ''}
+          <button type="button" id="studentStep2NextBtn" class="btn launch-primary" onclick="ScoreARStudentJoin.submitStep2()" ${state.loading?'disabled':''} style="flex:2;padding:12px;border-radius:12px;font-weight:900;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+            ${state.loading ? 'جارٍ الدخول للقاعة...' : `<span>دخول للقاعة الآن</span> ${uiIcon('arrow', 15)}`}
           </button>
         </div>
       </div>
     `;
   }
 
-  // STEP 3: 20-Character Picker with Live Preview
   function renderStep3Html() {
-    const list = (global.ScoreARCharacters && global.ScoreARCharacters.list) ? global.ScoreARCharacters.list : [];
-    const currentHero = list.find(c => c.code === state.avatarId) || list[0] || { name: 'البطل', title: 'المستكشف' };
-    return `
-      <div>
-        <div style="text-align:center;margin-bottom:10px;">
-          <h3 style="font-size:20px;font-weight:900;color:#ffffff;margin:2px 0 4px;">اختر بطلك الكرتوني</h3>
-          <p style="font-size:12px;color:#a5b4fc;margin:0;">اختر من بين 20 بطلاً يمثلك في القاعة ولوحة الشرف</p>
-        </div>
-        <div style="background:rgba(21,23,49,0.9);border:2px solid #7550ef;border-radius:18px;padding:12px;display:flex;align-items:center;gap:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(0,0,0,0.4);">
-          <div style="width:70px;height:85px;display:flex;align-items:flex-end;justify-content:center;background:rgba(255,255,255,0.05);border-radius:12px;padding:4px;">
-            <img id="studentAvatarLiveImg" src="assets/characters/animated/${escapeHtml(state.avatarId)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="البطل" style="height:80px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6));">
-          </div>
-          <div>
-            <div id="studentAvatarLiveName" style="font-size:17px;font-weight:900;color:#ffffff;">${escapeHtml(currentHero.name)}</div>
-            <div id="studentAvatarLiveTitle" style="font-size:12px;color:#a5b4fc;font-weight:700;">${escapeHtml(currentHero.title)}</div>
-            <div style="display:inline-flex;align-items:center;gap:4px;background:rgba(117,80,239,0.25);color:#c9baff;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800;margin-top:4px;">
-              <span>الاسم المختار:</span> <b id="studentSelectedNameReview" style="color:#fcd34d;"></b>
-            </div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;max-height:190px;overflow-y:auto;padding-right:4px;margin-bottom:14px;">
-          ${list.map((c) => {
-            const isSel = (c.code === state.avatarId);
-            return `<div class="avatar-card-picker ${isSel?'selected':''}" onclick="ScoreARStudentJoin.selectAvatar('${c.code}')" style="display:flex;flex-direction:column;align-items:center;background:${isSel?'rgba(117,80,239,0.3)':'#16182e'};border:2px solid ${isSel?'#a855f7':'rgba(255,255,255,0.1)'};border-radius:12px;padding:6px 2px;cursor:pointer;transition:transform 0.15s, border-color 0.2s;">
-              <img src="assets/characters/animated/${c.code}-idle.webp" loading="lazy" alt="${escapeHtml(c.name)}" style="width:48px;height:58px;object-fit:contain;">
-              <span style="font-size:10px;font-weight:800;color:#fff;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:54px;">${escapeHtml(c.name)}</span>
-            </div>`;
-          }).join('')}
-        </div>
-        <div style="display:flex;gap:10px;">
-          <button type="button" onclick="ScoreARStudentJoin.goToStep(2)" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:12px;border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;">⬅ رجوع</button>
-          <button type="button" id="studentStep3FinalBtn" onclick="ScoreARStudentJoin.submitStep3()" ${state.loading?'disabled':''} style="flex:2;background:linear-gradient(135deg, #10b981, #059669);border:none;color:#fff;padding:12px;border-radius:12px;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,0.4);display:flex;align-items:center;justify-content:center;gap:6px;">
-            ${state.loading ? '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></span> جارٍ الدخول...' : 'دخول للوبي 🚀'}
-          </button>
-        </div>
-      </div>
-    `;
+    return renderStep2Html();
   }
 
   function handleKeypad(key) {
     state.error = null;
-    if (key === 'C') {
-      state.pin = '';
-    } else if (key === '⌫' || key === 'backspace') {
-      state.pin = state.pin.slice(0, -1);
-    } else if (/^\d$/.test(key)) {
-      if (state.pin.length < 6) {
-        state.pin += key;
-      }
-    }
+    if (key === 'C') state.pin = '';
+    else if (key === '⌫' || key === 'backspace') state.pin = state.pin.slice(0, -1);
+    else if (/^\d$/.test(key) && state.pin.length < 6) state.pin += key;
     updatePinDisplay();
     const pinInp = containerEl ? containerEl.querySelector('#studentJoinPinInput') : null;
     if (pinInp) pinInp.value = state.pin;
@@ -373,30 +326,18 @@
   function submitStep2() {
     state.error = null;
     const rawName = (state.name || '').trim();
-
     if (!rawName) {
       state.error = 'يرجى كتابة اسمك أو رقم فصلك للدخول.';
       render();
       return;
     }
-
     if (!NAME_REGEX.test(rawName)) {
       state.error = 'الاسم يمكن أن يحتوي على حروف وأرقام ومسافات وشرطات ونقاط وسلاش فقط (1 إلى 40 حرفاً).';
       render();
       return;
     }
-
-    // Deduplication against existing players in the room
-    const deduped = deduplicateName(rawName, state.existingPlayers);
-    state.name = deduped;
+    state.name = deduplicateName(rawName, state.existingPlayers);
     submitStep3();
-    return;
-
-    // Fill selected name preview strictly via textContent
-    setTimeout(() => {
-      const reviewEl = containerEl ? containerEl.querySelector('#studentSelectedNameReview') : null;
-      if (reviewEl) reviewEl.textContent = state.name;
-    }, 50);
   }
 
   function deduplicateName(name, existingList) {
@@ -406,9 +347,7 @@
     let count = 2;
     const isTaken = (n) => existingList.some(p => p && p.name && p.name.trim() === n);
     if (isTaken(candidate)) {
-      while (isTaken(`${base} (${count})`)) {
-        count++;
-      }
+      while (isTaken(`${base} (${count})`)) count++;
       candidate = `${base} (${count})`;
     }
     return candidate;
@@ -430,8 +369,8 @@
     const cards = containerEl ? containerEl.querySelectorAll('.avatar-card-picker') : [];
     cards.forEach(card => {
       const isSel = card.getAttribute('onclick')?.includes(avatarId);
-      card.style.borderColor = isSel ? '#a855f7' : 'rgba(255,255,255,0.1)';
-      card.style.background = isSel ? 'rgba(117,80,239,0.3)' : '#16182e';
+      card.style.borderColor = isSel ? '#a855f7' : 'rgba(255,255,255,0.09)';
+      card.style.background = isSel ? 'rgba(117,80,239,0.28)' : '#15172a';
     });
   }
 
@@ -451,7 +390,7 @@
         student.isReconnect = true;
       }
       if (global.closeModal) global.closeModal();
-      if (global.toast) global.toast(`مرحباً بك يا ${state.name}! تم الانضمام للقاعة بنجاح 🌟`);
+      if (global.toast) global.toast(`مرحباً بك يا ${state.name}! تم الانضمام للقاعة بنجاح`);
 
       if (global.ScoreARQuizStudent) {
         await global.ScoreARQuizStudent.startStudentSession(state.pin, student, chosenAvatar);
@@ -475,12 +414,6 @@
     state.error = null;
     state.step = stepNum;
     render();
-    if (stepNum === 3) {
-      setTimeout(() => {
-        const reviewEl = containerEl ? containerEl.querySelector('#studentSelectedNameReview') : null;
-        if (reviewEl) reviewEl.textContent = state.name;
-      }, 50);
-    }
   }
 
   function fastReconnect() {
@@ -495,11 +428,9 @@
 
   function openJoinModal(initialPin = '') {
     if (typeof global.openModal === 'function') {
-      global.openModal('انضم إلى قاعة الاختبار 🎮', '<div id="scorearStudentJoinMount" style="padding:4px 0;"></div>');
+      global.openModal('انضم إلى قاعة المنافسة', '<div id="scorearStudentJoinMount" style="padding:4px 0;"></div>');
       const mount = document.getElementById('scorearStudentJoinMount');
-      if (mount) {
-        init(mount, initialPin);
-      }
+      if (mount) init(mount, initialPin);
     }
   }
 

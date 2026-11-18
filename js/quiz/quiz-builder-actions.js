@@ -15,6 +15,7 @@
   let lastPointsGeneralization = null; // { previousPoints: [], timerId }
   let lastTimeGeneralization = null; // { previousTimes: [], timerId }
   let draggedQIndex = null;
+  const uiIc = (n, s = 14) => global.ScoreARUI?.icon?.(n, { size: s }) || '';
 
   // --- 1. Five-Second Delete with Undo ---
   function deleteWithUndo(currentQuiz, idx, onUpdate) {
@@ -43,14 +44,14 @@
     }
 
     const toast = document.createElement('div');
-    toast.style.cssText = 'pointer-events:auto;background:#1e183d;border:2px solid #ef4444;border-radius:14px;padding:12px 18px;color:#fff;display:flex;align-items:center;gap:14px;box-shadow:0 10px 30px rgba(0,0,0,0.6);font-size:13px;font-weight:800;animation:enterFullBody 0.3s ease;';
+    toast.style.cssText = 'pointer-events:auto;background:rgba(17,18,37,0.96);backdrop-filter:blur(16px);border:1px solid rgba(239,68,68,0.45);border-radius:14px;padding:12px 18px;color:#fff;display:flex;align-items:center;gap:14px;box-shadow:0 10px 30px rgba(0,0,0,0.6);font-size:13px;font-weight:800;animation:enterFullBody 0.3s ease;';
 
     let secondsLeft = 5;
     toast.innerHTML = `
-      <span>🗑️ تم حذف السؤال (${qNum})</span>
-      <button id="scorearUndoDelBtn" type="button" style="background:#10b981;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;">
-        <span>تراجع ↩</span>
-        <span id="scorearUndoSecPill" style="background:rgba(0,0,0,0.25);padding:1px 6px;border-radius:6px;font-size:11px;">5s</span>
+      <span class="scorear-inline-icon">${uiIc('trash', 14)} تم حذف السؤال (${qNum})</span>
+      <button id="scorearUndoDelBtn" type="button" class="scorear-gear-btn" style="border-color:rgba(88,220,227,0.45);color:#7fe7ce;padding:5px 12px;font-size:12px;">
+        ${uiIc('rotateCcw', 13)} <span>تراجع</span>
+        <span id="scorearUndoSecPill" style="background:rgba(0,0,0,0.3);padding:1px 6px;border-radius:6px;font-size:11px;">5s</span>
       </button>
     `;
 
@@ -207,14 +208,14 @@
     }
 
     const toast = document.createElement('div');
-    toast.style.cssText = 'pointer-events:auto;background:#151833;border:2px solid #7550ef;border-radius:14px;padding:12px 18px;color:#fff;display:flex;align-items:center;gap:14px;box-shadow:0 10px 30px rgba(0,0,0,0.6);font-size:13px;font-weight:800;animation:enterFullBody 0.3s ease;';
+    toast.style.cssText = 'pointer-events:auto;background:rgba(17,18,37,0.96);backdrop-filter:blur(16px);border:1px solid rgba(172,139,242,0.42);border-radius:14px;padding:12px 18px;color:#fff;display:flex;align-items:center;gap:14px;box-shadow:0 10px 30px rgba(0,0,0,0.6);font-size:13px;font-weight:800;animation:enterFullBody 0.3s ease;';
 
     let secLeft = 10;
     toast.innerHTML = `
-      <span>⚡ تم تعميم ${fieldTitle} (${valueStr})</span>
-      <button id="genUndoBtn" type="button" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:6px;">
-        <span>تراجع ↩</span>
-        <span id="genUndoSecPill" style="background:rgba(0,0,0,0.25);padding:1px 6px;border-radius:6px;font-size:11px;">10s</span>
+      <span class="scorear-inline-icon">${uiIc('zap', 14)} تم تعميم ${fieldTitle} (${valueStr})</span>
+      <button id="genUndoBtn" type="button" class="scorear-gear-btn" style="border-color:rgba(239,68,68,0.45);color:#fca5a5;padding:5px 12px;font-size:12px;">
+        ${uiIc('rotateCcw', 13)} <span>تراجع</span>
+        <span id="genUndoSecPill" style="background:rgba(0,0,0,0.3);padding:1px 6px;border-radius:6px;font-size:11px;">10s</span>
       </button>
     `;
 

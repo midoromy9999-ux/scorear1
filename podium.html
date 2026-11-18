@@ -19,6 +19,8 @@
 <script src="js/quiz/quiz-audio.js?v=20261112_v12_organized" defer></script>
 <script src="js/quiz/quiz-podium-effects.js?v=20261112_v12_organized" defer></script>
 <script src="js/quiz/quiz-podium-capture.js?v=20261112_v12_organized" defer></script>
+<script src="vendor/lucide.js" defer></script>
+<script src="js/ui/ui-icons.js?v=20261112_v12_organized" defer></script>
 <script src="js/ui/nav.js?v=20261112_v12_organized" defer></script>
 <style>
   html, body {
@@ -109,25 +111,35 @@
     }
   }
   .test-btn {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: #fff;
-    padding: 7px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: #eceeff;
+    padding: 6px 12px;
     border-radius: 10px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 800;
     cursor: pointer;
     font-family: inherit;
     transition: all 0.2s;
   }
+  .test-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
   .test-btn:hover {
-    background: rgba(142, 100, 239, 0.3);
-    border-color: #8e64ef;
+    background: rgba(142, 100, 239, 0.22);
+    border-color: rgba(172, 139, 242, 0.45);
+    color: #ffffff;
   }
   .test-btn.primary {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    border-color: #fbbf24;
-    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+    background: linear-gradient(110deg, #7550ef, #9665ff);
+    border-color: rgba(196, 168, 255, 0.45);
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(117, 80, 239, 0.34);
   }
   .sidebar {
     transform: translateX(100%);
@@ -161,11 +173,11 @@
   <nav aria-label="القائمة الرئيسية">
     <a href="index.html#home" data-nav="home"><i data-icon="home"></i><span>الرئيسية</span></a>
     <a href="index.html#studio" data-nav="studio"><i data-icon="grid"></i><span>استوديو المعلم</span></a>
-    <a href="index.html#classrooms" data-nav="classrooms"><i data-icon="book"></i><span>ملفي وصفوفي 🏫</span></a>
+    <a href="index.html#classrooms" data-nav="classrooms"><i data-icon="book"></i><span>ملفي وصفوفي</span></a>
     <a href="index.html#worlds" data-nav="worlds"><i data-icon="planet"></i><span>قاعة المنافسات</span></a>
     <a href="characters.html" data-nav="heroes"><i data-icon="spark"></i><span>قاعة الأبطال (٢٠)</span></a>
-    <a href="cards.html" data-nav="cards"><i data-icon="spark"></i><span>قاعة الكروت (٢٠)</span></a>
-    <a href="podium.html" data-nav="podium" class="active"><i data-icon="crown"></i><span>منصة التتويج الاحتفالية 👑</span></a>
+    <a href="cards.html" data-nav="cards"><i data-icon="layers"></i><span>قاعة الكروت (٢٠)</span></a>
+    <a href="podium.html" data-nav="podium" class="active"><i data-icon="crown"></i><span>منصة التتويج الاحتفالية</span></a>
     <a href="index.html#journey" data-nav="journey"><i data-icon="route"></i><span>رحلتي التعليمية</span></a>
     <a href="index.html#library" data-nav="library"><i data-icon="book"></i><span>مكتبة المحتوى</span></a>
   </nav>
@@ -175,30 +187,30 @@
   </div>
 </aside>
 
-<div class="podium-tester-bar" style="background:rgba(18,20,42,0.98);border-bottom:1px solid rgba(142,100,239,0.3);padding:6px 12px;min-height:42px;height:auto;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;z-index:50;flex-shrink:0;">
+<div class="podium-tester-bar scorear-control-bar" style="padding:7px 14px;min-height:44px;height:auto;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;z-index:50;flex-shrink:0;">
   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;max-width:100%;">
-    <button type="button" class="test-btn mobile-menu" data-action="menu" aria-label="فتح القائمة" aria-expanded="false" style="padding:3px 8px;font-size:12px;">☰</button>
-    <a href="index.html#home" class="test-btn podium-tester-links" style="text-decoration:none;padding:3px 8px;font-size:11px;">🏠 الرئيسية</a>
-    <a href="index.html#worlds" class="test-btn podium-tester-links" style="text-decoration:none;padding:3px 8px;font-size:11px;">🚀 العوالم</a>
-    <a href="index.html#classrooms" class="test-btn podium-tester-links" style="text-decoration:none;padding:3px 8px;font-size:11px;">🏫 الصفوف</a>
-    <a href="characters.html" class="test-btn podium-tester-links" style="text-decoration:none;padding:3px 8px;font-size:11px;">✨ الأبطال</a>
-    <a href="cards.html" class="test-btn podium-tester-links" style="text-decoration:none;padding:3px 8px;font-size:11px;">🃏 الكروت</a>
-    <span style="font-weight:900;color:#fef08a;font-size:12px;white-space:nowrap;">👑 منصة التتويج</span>
+    <button type="button" class="test-btn mobile-menu" data-action="menu" aria-label="فتح القائمة" aria-expanded="false" style="padding:5px 9px;"><i data-icon="menu" data-size="15"></i></button>
+    <a href="index.html#home" class="test-btn podium-tester-links" style="text-decoration:none;padding:5px 10px;font-size:11.5px;"><i data-icon="home" data-size="13"></i><span>الرئيسية</span></a>
+    <a href="index.html#worlds" class="test-btn podium-tester-links" style="text-decoration:none;padding:5px 10px;font-size:11.5px;"><i data-icon="planet" data-size="13"></i><span>العوالم</span></a>
+    <a href="index.html#classrooms" class="test-btn podium-tester-links" style="text-decoration:none;padding:5px 10px;font-size:11.5px;"><i data-icon="school" data-size="13"></i><span>الصفوف</span></a>
+    <a href="characters.html" class="test-btn podium-tester-links" style="text-decoration:none;padding:5px 10px;font-size:11.5px;"><i data-icon="spark" data-size="13"></i><span>الأبطال</span></a>
+    <a href="cards.html" class="test-btn podium-tester-links" style="text-decoration:none;padding:5px 10px;font-size:11.5px;"><i data-icon="layers" data-size="13"></i><span>الكروت</span></a>
+    <span class="scorear-control-pill" style="color:#fde68a;border-color:rgba(251,191,36,0.28);font-size:11.5px;"><i data-icon="crown" data-size="13"></i><span>منصة التتويج</span></span>
   </div>
 
   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;max-width:100%;">
-    <select id="worldSelect" onchange="changeWorld(this.value)" style="background:#1f1d38;border:1px solid rgba(255,255,255,0.2);color:#fff;padding:2px 6px;border-radius:6px;font-weight:800;font-size:11px;cursor:pointer;">
-      <option value="royal">👑 Royal</option>
-      <option value="cosmic">🚀 Cosmic</option>
-      <option value="treasure">💎 Treasure</option>
-      <option value="stadium">🏟️ Stadium</option>
-      <option value="oasis">🌴 Oasis</option>
-      <option value="magic">🔮 Magic</option>
+    <select id="worldSelect" onchange="changeWorld(this.value)" style="background:rgba(20,22,46,0.88);border:1px solid rgba(255,255,255,0.16);color:#eceeff;padding:5px 9px;border-radius:10px;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit;">
+      <option value="royal">Royal · القصر الملكي</option>
+      <option value="cosmic">Cosmic · الفضاء الكوني</option>
+      <option value="treasure">Treasure · الكنز</option>
+      <option value="stadium">Stadium · الاستاد</option>
+      <option value="oasis">Oasis · الواحة</option>
+      <option value="magic">Magic · السحر</option>
     </select>
-    <button type="button" class="test-btn primary" onclick="ScoreARPodiumEffects.startCinematicShow()" style="padding:5px 12px;font-size:11.5px;white-space:nowrap;flex-shrink:0;">🎬 عرض سينمائي</button>
-    <button type="button" class="test-btn" onclick="ScoreARPodiumEffects.advanceReveal()" style="padding:5px 10px;font-size:11.5px;white-space:nowrap;flex-shrink:0;">▶️ التالي</button>
-    <button type="button" class="test-btn" onclick="ScoreARPodiumEffects.revealAll()" style="padding:5px 10px;font-size:11.5px;white-space:nowrap;flex-shrink:0;">⚡ كشف الكل</button>
-    <button type="button" class="test-btn" onclick="initDemoPodium()" style="padding:5px 10px;font-size:11.5px;white-space:nowrap;flex-shrink:0;">🔄 إعادة</button>
+    <button type="button" class="test-btn primary" onclick="ScoreARPodiumEffects.startCinematicShow()" style="padding:5px 12px;font-size:11.5px;white-space:nowrap;flex-shrink:0;"><i data-icon="play" data-size="13"></i><span>عرض سينمائي</span></button>
+    <button type="button" class="test-btn" onclick="ScoreARPodiumEffects.advanceReveal()" style="padding:5px 10px;font-size:11.5px;white-space:nowrap;flex-shrink:0;"><i data-icon="skipForward" data-size="13"></i><span>التالي</span></button>
+    <button type="button" class="test-btn" onclick="ScoreARPodiumEffects.revealAll()" style="padding:5px 10px;font-size:11.5px;white-space:nowrap;flex-shrink:0;"><i data-icon="zap" data-size="13"></i><span>كشف الكل</span></button>
+    <button type="button" class="test-btn" onclick="initDemoPodium()" style="padding:5px 10px;font-size:11.5px;white-space:nowrap;flex-shrink:0;"><i data-icon="rotateCcw" data-size="13"></i><span>إعادة</span></button>
   </div>
 </div>
 

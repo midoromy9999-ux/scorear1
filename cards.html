@@ -14,6 +14,8 @@
 <link rel="stylesheet" href="css/characters-v4.css?v=20261112_v12_organized">
 <script src="js/ui/cards-gallery.js?v=20261112_v12_organized"></script>
 <script src="js/quiz/quiz-audio.js?v=20261112_v12_organized" defer></script>
+<script src="vendor/lucide.js" defer></script>
+<script src="js/ui/ui-icons.js?v=20261112_v12_organized" defer></script>
 <script src="js/ui/nav.js?v=20261112_v12_organized" defer></script>
 <style>
   body {
@@ -105,10 +107,10 @@
     color: #ffffff;
   }
   .character-tabs button[aria-pressed=true] {
-    background: linear-gradient(110deg, #f59e0b, #d97706) !important;
+    background: linear-gradient(110deg, #7550ef, #9665ff) !important;
     color: #ffffff !important;
-    border-color: #f59e0b !important;
-    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+    border-color: rgba(196, 168, 255, 0.48) !important;
+    box-shadow: 0 4px 16px rgba(117, 80, 239, 0.35);
   }
   .btn-gallery-back {
     display: inline-flex;
@@ -218,11 +220,11 @@
   <nav aria-label="القائمة الرئيسية">
     <a href="index.html#home" data-nav="home"><i data-icon="home"></i><span>الرئيسية</span></a>
     <a href="index.html#studio" data-nav="studio"><i data-icon="grid"></i><span>استوديو المعلم</span></a>
-    <a href="index.html#classrooms" data-nav="classrooms"><i data-icon="book"></i><span>ملفي وصفوفي 🏫</span></a>
+    <a href="index.html#classrooms" data-nav="classrooms"><i data-icon="book"></i><span>ملفي وصفوفي</span></a>
     <a href="index.html#worlds" data-nav="worlds"><i data-icon="planet"></i><span>قاعة المنافسات</span></a>
     <a href="characters.html" data-nav="heroes"><i data-icon="spark"></i><span>قاعة الأبطال (٢٠)</span></a>
-    <a href="cards.html" data-nav="cards" class="active"><i data-icon="spark"></i><span>قاعة الكروت (٢٠)</span></a>
-    <a href="podium.html" data-nav="podium"><i data-icon="crown"></i><span>منصة التتويج الاحتفالية 👑</span></a>
+    <a href="cards.html" data-nav="cards" class="active"><i data-icon="layers"></i><span>قاعة الكروت (٢٠)</span></a>
+    <a href="podium.html" data-nav="podium"><i data-icon="crown"></i><span>منصة التتويج الاحتفالية</span></a>
     <a href="index.html#journey" data-nav="journey"><i data-icon="route"></i><span>رحلتي التعليمية</span></a>
     <a href="index.html#library" data-nav="library"><i data-icon="book"></i><span>مكتبة المحتوى</span></a>
   </nav>
@@ -247,11 +249,11 @@
         </div>
       </a>
     </div>
-    <div class="gallery-desktop-actions" style="display:flex;gap:10px;align-items:center;">
-      <a href="characters.html" class="btn small" style="text-decoration:none;background:linear-gradient(135deg,#7550ef,#582cd1);color:#fff;font-weight:900;border:none;">✨ قاعة الأبطال (٢٠)</a>
-      <a href="podium.html" class="btn small" style="text-decoration:none;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:900;border:none;">👑 منصة التتويج</a>
-      <a href="index.html#worlds" class="btn dark small" style="text-decoration:none;">🚀 قاعة المنافسات</a>
-      <a href="index.html#home" class="btn light small" style="text-decoration:none;">🏠 الرئيسية</a>
+    <div class="gallery-desktop-actions" style="display:flex;gap:8px;align-items:center;">
+      <a href="characters.html" class="scorear-gear-btn" style="text-decoration:none;padding:7px 13px;"><i data-icon="spark" data-size="14"></i><span>قاعة الأبطال (٢٠)</span></a>
+      <a href="podium.html" class="scorear-gear-btn" style="text-decoration:none;padding:7px 13px;"><i data-icon="crown" data-size="14"></i><span>منصة التتويج</span></a>
+      <a href="index.html#worlds" class="scorear-gear-btn" style="text-decoration:none;padding:7px 13px;"><i data-icon="planet" data-size="14"></i><span>قاعة المنافسات</span></a>
+      <a href="index.html#home" class="scorear-gear-btn is-active" style="text-decoration:none;padding:7px 13px;"><i data-icon="home" data-size="14"></i><span>الرئيسية</span></a>
     </div>
     <button type="button" class="mobile-menu gallery-mobile-menu" data-action="menu" aria-label="فتح القائمة" aria-expanded="false" style="display:inline-flex;width:44px;height:44px;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);border-radius:12px;color:#fff;cursor:pointer;">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -259,7 +261,7 @@
   </header>
 
   <div class="gallery-title-area">
-    <div class="eyebrow" style="margin-bottom:8px;color:#f59e0b;font-weight:900;">🃏 موسوعة حرب الكروت التكتيكية</div>
+    <div class="eyebrow scorear-inline-icon" style="margin-bottom:8px;color:#fbbf24;font-weight:900;"><i data-icon="layers" data-size="14"></i><span>موسوعة حرب الكروت التكتيكية</span></div>
     <h1>ترسانة الـ ٢٠ كارت.. ذكاء تكتيكي يقلب موازين القاعة.</h1>
     <p>تعرّف على أسرار كل كارت في طور حرب الكروت (Card Arena): من انقلاب المراكز بالكامل وسرقة النقاط، إلى فخاخ مرآة القاضي والصد العكسي التلقائي، والدروع الذهبية ومساعدات الـ 50/50.</p>
   </div>
@@ -289,9 +291,9 @@
 
       <div id="cardsGrid" class="cards-grid-layout"></div>
 
-      <div style="background:rgba(245,158,11,0.08);border:1px dashed rgba(245,158,11,0.3);border-radius:18px;padding:16px 20px;margin-top:24px;line-height:1.7;color:#fde68a;font-size:13px;">
-        💡 <b>كيف تكسب وتستخدم الكروت؟</b><br>
-        كل إجابة صحيحة في طور «حرب الكروت» تمنحك كارت عشوائي في حقيبة يدك (بحد أقصى 3 كروت). يمكنك تفعيل كروت الهجوم فوراً واختيار المنافس المستهدف، أو وضع كروت الدفاع في خانة الفخاخ لتصد أو تعكس الهجمات القادمة نحوك تلقائياً وبشكل فوري!
+      <div class="scorear-soft-note" style="margin-top:24px;color:#e9d5ff;background:rgba(142,100,239,0.08);border-color:rgba(172,139,242,0.22);">
+        <i data-icon="info" data-size="16"></i>
+        <div><b>كيف تكسب وتستخدم الكروت؟</b><br>كل إجابة صحيحة في طور «حرب الكروت» تمنحك كارت عشوائي في حقيبة يدك (بحد أقصى 3 كروت). يمكنك تفعيل كروت الهجوم فوراً واختيار المنافس المستهدف، أو وضع كروت الدفاع في خانة الفخاخ لتصد أو تعكس الهجمات القادمة نحوك تلقائياً وبشكل فوري.</div>
       </div>
     </div>
   </div>

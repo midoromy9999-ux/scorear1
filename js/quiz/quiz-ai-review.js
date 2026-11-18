@@ -61,8 +61,8 @@
           }
         }
       </style>
-      <div style="background:#0c0d1d;border:1px solid #9665ff55;box-shadow:0 0 60px #7c4cf92b;border-radius:24px;width:100%;max-width:1050px;display:flex;flex-direction:column;max-height:92vh;overflow:hidden;">
-        <header style="background:#111226;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff16;">
+      <div class="scorear-modal-shell" style="width:100%;max-width:1050px;max-height:92vh;">
+        <header class="scorear-modal-head">
           <div style="display:flex;align-items:center;gap:12px;">
             ${ui.iconBox('layers', { size: 'md', tone: 'violet' })}
             <div>
@@ -70,10 +70,10 @@
               <p style="color:#a1a4be;font-size:12px;margin:2px 0 0 0;">دقق الأسئلة واقتباسات المصدر، وعدّل أي خيار، أو أعد توليد أي سؤال منفرد قبل الاعتماد.</p>
             </div>
           </div>
-          <button onclick="ScoreARQuizAIReview.closeReviewTable()" class="icon-btn" aria-label="إغلاق">${ui.icon('close', { size: 17 })}</button>
+          <button type="button" onclick="ScoreARQuizAIReview.closeReviewTable()" class="scorear-gear-btn" aria-label="إغلاق">${ui.icon('close', { size: 16 })}</button>
         </header>
 
-        <div style="padding:20px 24px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;flex:1;">
+        <div class="scorear-modal-body" style="display:flex;flex-direction:column;gap:16px;">
           ${!count ? `
             <div style="text-align:center;padding:40px;color:#a1a4be;">
               <p style="font-size:16px;">لا توجد أسئلة في المسودة الحالية.</p>
@@ -96,10 +96,10 @@
                   `}
                 </div>
                 <div style="display:flex;gap:8px;">
-                  <button onclick="ScoreARQuizAIReview.regenerateQuestion(${idx})" class="btn launch-outline" style="padding:5px 10px;font-size:11px;">
+                  <button type="button" onclick="ScoreARQuizAIReview.regenerateQuestion(${idx})" class="scorear-gear-btn" style="padding:5px 10px;font-size:11px;">
                     ${ui.icon('refresh', { size: 13 })} أعد توليد هذا السؤال
                   </button>
-                  <button onclick="ScoreARQuizAIReview.deleteQuestion(${idx})" class="btn launch-outline" style="padding:5px 10px;font-size:11px;border-color:#c3849866;color:#ffd3e5;">
+                  <button type="button" onclick="ScoreARQuizAIReview.deleteQuestion(${idx})" class="scorear-gear-btn" style="padding:5px 10px;font-size:11px;border-color:rgba(239,68,68,0.35);color:#fca5a5;">
                     ${ui.icon('trash', { size: 13 })} حذف
                   </button>
                 </div>
@@ -130,11 +130,11 @@
           `).join('')}
         </div>
 
-        <footer style="background:#111226;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #ffffff16;flex-wrap:wrap;gap:10px;">
+        <footer class="scorear-modal-head" style="border-top:1px solid rgba(255,255,255,0.09);border-bottom:none;">
           <span style="color:#a1a4be;font-size:11px;">لن يتم حفظ أي سؤال في المسابقة حتى تضغط زر «اعتماد وإضافة إلى المسابقة».</span>
           <div style="display:flex;gap:10px;">
-            <button onclick="ScoreARQuizAIReview.closeReviewTable()" class="btn launch-outline" style="padding:8px 16px;font-size:12px;">إلغاء</button>
-            <button onclick="ScoreARQuizAIReview.commitQuestions()" class="btn launch-primary" style="padding:10px 22px;font-size:13px;">
+            <button type="button" onclick="ScoreARQuizAIReview.closeReviewTable()" class="scorear-gear-btn" style="padding:8px 16px;font-size:12px;">إلغاء</button>
+            <button type="button" onclick="ScoreARQuizAIReview.commitQuestions()" class="btn launch-primary" style="padding:10px 22px;font-size:13px;">
               ${ui.icon('check', { size: 15 })} اعتماد وإضافة إلى المسابقة (${count})
             </button>
           </div>

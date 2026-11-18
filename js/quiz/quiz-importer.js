@@ -7,6 +7,8 @@
   let currentContext = { mode: 'hub', onImport: null };
   let importedRows = [];
   let currentFileName = '';
+  const uiIc = (n, s = 15) => global.ScoreARUI?.icon?.(n, { size: s }) || '';
+  const uiBox = (n, t = 'violet', s = 'md') => global.ScoreARUI?.iconBox?.(n, { size: s, tone: t }) || '';
   function getDb() {
     return (global.firebase && global.firebase.database) ? global.firebase.database() : null;
   }
@@ -183,40 +185,40 @@
   function renderUploadView() {
     const m = getOrCreateImporterModal();
     m.innerHTML = `
-      <div style="background:#101124;border:2px solid #7550ef;box-shadow:0 0 40px rgba(117,80,239,0.4);border-radius:24px;width:100%;max-width:760px;overflow:hidden;display:flex;flex-direction:column;max-height:92vh;">
-        <header style="background:#171836;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(142,100,239,0.3);">
+      <div class="scorear-modal-shell" style="width:100%;max-width:760px;max-height:92vh;">
+        <header class="scorear-modal-head">
           <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:42px;height:42px;border-radius:12px;background:#7550ef;display:flex;align-items:center;justify-content:center;font-size:22px;">📥</div>
+            ${uiBox('upload', 'violet', 'md')}
             <div>
-              <h2 style="color:#ffffff;font-size:18px;font-weight:900;margin:0;">استيراد الأسئلة من Excel / CSV</h2>
+              <h2 style="color:#ffffff;font-size:17px;font-weight:900;margin:0;">استيراد الأسئلة من Excel / CSV</h2>
               <p style="color:#a1a4be;font-size:12px;margin:2px 0 0 0;">متوافق مع قوالب كاهوت وملفات Excel و CSV باللغة العربية.</p>
             </div>
           </div>
-          <button onclick="ScoreARQuizImporter.closeImporter()" style="background:none;border:none;color:#9ca3af;font-size:22px;cursor:pointer;padding:4px 8px;">✕</button>
+          <button type="button" onclick="ScoreARQuizImporter.closeImporter()" class="scorear-gear-btn" aria-label="إغلاق">${uiIc('close', 16)}</button>
         </header>
-        <div style="padding:24px;overflow-y:auto;display:flex;flex-direction:column;gap:20px;">
-          <div style="background:#161833;border:1px dashed #7550ef;border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div class="scorear-modal-body" style="display:flex;flex-direction:column;gap:20px;">
+          <div style="background:rgba(20,21,42,0.72);border:1px dashed rgba(172,139,242,0.45);border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
             <div>
-              <h3 style="color:#52d9ed;font-size:14px;font-weight:900;margin:0 0 4px 0;">💡 هل تحتاج إلى القالب المعتمد؟</h3>
+              <h3 class="scorear-inline-icon" style="color:#52d9ed;font-size:14px;font-weight:900;margin:0 0 4px 0;">${uiIc('info', 15)} <span>هل تحتاج إلى القالب المعتمد؟</span></h3>
               <p style="color:#cbd5e1;font-size:12px;margin:0;">رتّب أسئلتك على جهازك ثم ارفع الملف هنا للاستيراد الفوري.</p>
             </div>
-            <div style="display:flex;gap:10px;">
-              <button onclick="ScoreARQuizImporter.downloadTemplate('xlsx')" style="background:#1e3a29;color:#34d399;border:1px solid #10b981;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">📊 تنزيل قالب Excel</button>
-              <button onclick="ScoreARQuizImporter.downloadTemplate('csv')" style="background:#221d42;color:#c4b5fd;border:1px solid #7550ef;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">📄 تنزيل قالب CSV (UTF-8)</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button type="button" onclick="ScoreARQuizImporter.downloadTemplate('xlsx')" class="scorear-gear-btn" style="border-color:rgba(88,220,227,0.4);color:#7fe7ce;padding:8px 13px;">${uiIc('spreadsheet', 14)} <span>تنزيل قالب Excel</span></button>
+              <button type="button" onclick="ScoreARQuizImporter.downloadTemplate('csv')" class="scorear-gear-btn" style="border-color:rgba(172,139,242,0.4);color:#ddd8ff;padding:8px 13px;">${uiIc('file', 14)} <span>تنزيل قالب CSV (UTF-8)</span></button>
             </div>
           </div>
-          <div id="scorearDropZone" style="border:2px dashed rgba(142,100,239,0.5);border-radius:20px;padding:40px 20px;text-align:center;background:#14152e;cursor:pointer;transition:all 0.2s;" onclick="document.getElementById('scorearFileInput').click()">
+          <div id="scorearDropZone" style="border:1px dashed rgba(172,139,242,0.45);border-radius:20px;padding:38px 20px;text-align:center;background:rgba(17,18,38,0.72);cursor:pointer;transition:all 0.2s;" onclick="document.getElementById('scorearFileInput').click()">
             <input type="file" id="scorearFileInput" accept=".xlsx, .xls, .csv" style="display:none;" onchange="ScoreARQuizImporter.handleFileSelect(this.files[0])">
-            <div style="font-size:48px;margin-bottom:12px;">📁</div>
+            <div style="display:flex;justify-content:center;margin-bottom:12px;">${uiBox('folderOpen', 'violet', 'lg')}</div>
             <h3 style="color:#ffffff;font-size:16px;font-weight:800;margin:0 0 6px 0;">اضغط لاختيار ملف Excel/CSV أو اسحبه هنا</h3>
             <p style="color:#94a3b8;font-size:12px;margin:0;">يدعم .xlsx ، .xls ، .csv (ترميز UTF-8 مع العربية)</p>
           </div>
-          <div style="background:#111228;border-radius:14px;padding:12px 16px;border:1px solid rgba(255,255,255,0.06);color:#cbd5e1;font-size:11px;line-height:1.6;">
+          <div style="background:rgba(17,18,38,0.75);border-radius:14px;padding:12px 16px;border:1px solid rgba(255,255,255,0.08);color:#cbd5e1;font-size:11px;line-height:1.6;">
             <strong style="color:#a89bff;">أعمدة كاهوت القياسية:</strong> السؤال | الإجابة 1 | الإجابة 2 | الإجابة 3 | الإجابة 4 | الزمن (ث) | الإجابة الصحيحة (1-4) | النقاط | الشرح
           </div>
         </div>
-        <footer style="background:#14152e;padding:14px 24px;display:flex;justify-content:flex-end;border-top:1px solid rgba(142,100,239,0.2);">
-          <button onclick="ScoreARQuizImporter.closeImporter()" style="background:rgba(255,255,255,0.08);color:#d1d5db;border:1px solid rgba(255,255,255,0.15);padding:8px 18px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">إلغاء</button>
+        <footer class="scorear-modal-head" style="justify-content:flex-end;border-top:1px solid rgba(255,255,255,0.09);border-bottom:none;">
+          <button type="button" onclick="ScoreARQuizImporter.closeImporter()" class="scorear-gear-btn" style="padding:8px 18px;font-size:13px;">إلغاء</button>
         </footer>
       </div>
     `;
@@ -235,22 +237,22 @@
     const errors = inc.filter(r => !r.isValid).length;
     const canSave = (errors === 0 && valid > 0);
     m.innerHTML = `
-      <div style="background:#101124;border:2px solid #7550ef;box-shadow:0 0 50px rgba(117,80,239,0.4);border-radius:24px;width:100%;max-width:1150px;overflow:hidden;display:flex;flex-direction:column;max-height:94vh;">
-        <header style="background:#171836;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(142,100,239,0.3);">
+      <div class="scorear-modal-shell" style="width:100%;max-width:1150px;max-height:94vh;">
+        <header class="scorear-modal-head">
           <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:38px;height:38px;border-radius:10px;background:#7550ef;display:flex;align-items:center;justify-content:center;font-size:20px;">📋</div>
+            ${uiBox('spreadsheet', 'violet', 'md')}
             <div>
               <h2 style="color:#ffffff;font-size:16px;font-weight:900;margin:0;">معاينة الأسئلة (${currentFileName || 'ملف جاهز'})</h2>
               <div style="display:flex;gap:10px;margin-top:2px;">
                 <span style="color:#c4b5fd;font-size:11px;font-weight:700;">إجمالي: ${importedRows.length} سؤال</span>
-                <span style="color:#34d399;font-size:11px;font-weight:800;">✓ ${valid} سليم</span>
-                ${errors > 0 ? `<span style="background:rgba(239,68,68,0.2);color:#f87171;padding:1px 6px;border-radius:6px;font-size:11px;font-weight:800;border:1px solid #ef4444;">⚠️ ${errors} أخطاء</span>` : ''}
+                <span style="color:#34d399;font-size:11px;font-weight:800;">${valid} سليم</span>
+                ${errors > 0 ? `<span class="scorear-inline-icon" style="background:rgba(239,68,68,0.16);color:#fca5a5;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:800;border:1px solid rgba(239,68,68,0.4);">${uiIc('alert', 11)} ${errors} أخطاء</span>` : ''}
               </div>
             </div>
           </div>
-          <div style="display:flex;gap:10px;">
-            <button onclick="ScoreARQuizImporter.renderUploadView()" class="btn launch-outline" style="padding:6px 12px;font-size:11px;">${(global.ScoreARUI?.icon('folderOpen', { size: 13 }) || '')} ملف آخر</button>
-            <button onclick="ScoreARQuizImporter.closeImporter()" class="icon-btn" style="padding:4px 8px;" aria-label="إغلاق">${(global.ScoreARUI?.icon('close', { size: 15 }) || '✕')}</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button type="button" onclick="ScoreARQuizImporter.renderUploadView()" class="scorear-gear-btn">${uiIc('folderOpen', 13)} <span>ملف آخر</span></button>
+            <button type="button" onclick="ScoreARQuizImporter.closeImporter()" class="scorear-gear-btn" aria-label="إغلاق">${uiIc('close', 15)}</button>
           </div>
         </header>
         ${errors > 0 ? `
@@ -361,34 +363,34 @@
   function renderDestinationModal(questions) {
     const m = getOrCreateImporterModal();
     m.innerHTML = `
-      <div style="background:#101124;border:2px solid #7550ef;box-shadow:0 0 40px rgba(117,80,239,0.4);border-radius:24px;width:100%;max-width:540px;overflow:hidden;direction:rtl;font-family:inherit;">
-        <header style="background:#171836;padding:16px 20px;border-bottom:1px solid rgba(142,100,239,0.3);display:flex;align-items:center;justify-content:space-between;">
+      <div class="scorear-modal-shell" style="width:100%;max-width:540px;direction:rtl;font-family:inherit;">
+        <header class="scorear-modal-head">
           <h3 style="color:#fff;font-size:16px;font-weight:900;margin:0;">اختر وجهة حفظ (${questions.length}) سؤالاً</h3>
-          <button onclick="ScoreARQuizImporter.renderPreviewView()" style="background:none;border:none;color:#9ca3af;font-size:18px;cursor:pointer;">✕</button>
+          <button type="button" onclick="ScoreARQuizImporter.renderPreviewView()" class="scorear-gear-btn" aria-label="رجوع">${uiIc('close', 15)}</button>
         </header>
-        <div style="padding:24px;display:flex;flex-direction:column;gap:16px;">
-          <div style="background:#17193b;border:2px solid rgba(142,100,239,0.4);border-radius:16px;padding:16px;cursor:pointer;" onclick="ScoreARQuizImporter.saveAsNewQuiz()">
+        <div class="scorear-modal-body" style="display:flex;flex-direction:column;gap:16px;">
+          <div style="background:rgba(23,25,59,0.7);border:1px solid rgba(172,139,242,0.35);border-radius:16px;padding:16px;cursor:pointer;" onclick="ScoreARQuizImporter.saveAsNewQuiz()">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-              <span style="font-size:24px;">📚</span>
+              ${uiBox('book', 'violet', 'sm')}
               <h4 style="color:#fff;font-size:14px;font-weight:800;margin:0;">حفظ كمسابقة جديدة في مكتبتي</h4>
             </div>
             <p style="color:#cbd5e1;font-size:12px;margin:0 0 10px 0;">إنشاء مسابقة جاهزة بكامل الأسئلة مع إمكانية إطلاقها فوراً للطلاب.</p>
-            <input type="text" id="impQuizTitle" value="مسابقة مستوردة - ${new Date().toLocaleDateString('ar-EG')}" onclick="event.stopPropagation()" style="width:100%;background:#111228;border:1px solid #7550ef;border-radius:8px;padding:8px 12px;color:#fff;font-size:12px;font-family:inherit;box-sizing:border-box;">
+            <input type="text" id="impQuizTitle" value="مسابقة مستوردة - ${new Date().toLocaleDateString('ar-EG')}" onclick="event.stopPropagation()" style="width:100%;background:#111228;border:1px solid rgba(172,139,242,0.45);border-radius:8px;padding:8px 12px;color:#fff;font-size:12px;font-family:inherit;box-sizing:border-box;">
           </div>
-          <div style="background:#17193b;border:2px solid rgba(16,185,129,0.4);border-radius:16px;padding:16px;cursor:pointer;" onclick="ScoreARQuizImporter.saveToQuestionBank()">
+          <div style="background:rgba(23,25,59,0.7);border:1px solid rgba(88,220,227,0.32);border-radius:16px;padding:16px;cursor:pointer;" onclick="ScoreARQuizImporter.saveToQuestionBank()">
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-              <span style="font-size:24px;">💡</span>
+              ${uiBox('layers', 'cyan', 'sm')}
               <h4 style="color:#fff;font-size:14px;font-weight:800;margin:0;">إضافة جميع الأسئلة لبنك الأسئلة الشامل</h4>
             </div>
             <p style="color:#cbd5e1;font-size:12px;margin:0 0 10px 0;">تخزين الأسئلة مع تصنيف المادة والصف لإعادة استخدامها في أي مسابقة.</p>
             <div style="display:flex;gap:10px;" onclick="event.stopPropagation()">
-              <select id="impBankSubject" style="flex:1;background:#111228;border:1px solid #10b981;border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:inherit;">
+              <select id="impBankSubject" style="flex:1;background:#111228;border:1px solid rgba(88,220,227,0.35);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:inherit;">
                 <option value="لغة عربية - نحو">لغة عربية - نحو</option>
                 <option value="لغة عربية - بلاغة">لغة عربية - بلاغة</option>
                 <option value="لغة عربية - نصوص">لغة عربية - نصوص</option>
                 <option value="تربية إسلامية">تربية إسلامية</option>
               </select>
-              <select id="impBankGrade" style="flex:1;background:#111228;border:1px solid #10b981;border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:inherit;">
+              <select id="impBankGrade" style="flex:1;background:#111228;border:1px solid rgba(88,220,227,0.35);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:inherit;">
                 <option value="الصف الأول الإعدادي">الصف الأول الإعدادي</option>
                 <option value="الصف الثاني الإعدادي">الصف الثاني الإعدادي</option>
                 <option value="الصف الثالث الإعدادي">الصف الثالث الإعدادي</option>
@@ -397,8 +399,8 @@
             </div>
           </div>
         </div>
-        <footer style="background:#14152e;padding:12px 20px;display:flex;justify-content:flex-end;">
-          <button onclick="ScoreARQuizImporter.renderPreviewView()" style="background:rgba(255,255,255,0.08);color:#d1d5db;border:1px solid rgba(255,255,255,0.15);padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;">العودة للمعاينة</button>
+        <footer class="scorear-modal-head" style="justify-content:flex-end;border-top:1px solid rgba(255,255,255,0.09);border-bottom:none;">
+          <button type="button" onclick="ScoreARQuizImporter.renderPreviewView()" class="scorear-gear-btn">العودة للمعاينة</button>
         </footer>
       </div>
     `;

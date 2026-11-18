@@ -15,6 +15,7 @@
   let activeTab = 'quizzes'; // 'quizzes' | 'bank'
   let searchQuery = '';
   let subjectFilter = 'all';
+  const uiIc = (n, s = 14) => global.ScoreARUI?.icon?.(n, { size: s }) || '';
 
   function escapeHtml(str) {
     return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -119,46 +120,47 @@
     const timeFormatted = mins > 0 ? `${mins} د و ${secs} ث` : `${secs} ثانية`;
 
     m.innerHTML = `
-      <div style="background:#101124;border:2px solid #7550ef;box-shadow:0 0 50px rgba(117,80,239,0.4);border-radius:24px;width:100%;max-width:920px;height:90vh;max-height:860px;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="scorear-modal-shell" style="width:100%;max-width:920px;height:90vh;max-height:860px;">
         <!-- Header: Active World Showcase & Switcher -->
-        <header style="background:#171836;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(142,100,239,0.3);">
+        <header class="scorear-modal-head">
           <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;border:1.5px solid #7550ef;position:relative;">
+            <div style="width:48px;height:48px;border-radius:12px;overflow:hidden;border:1px solid rgba(172,139,242,0.45);position:relative;">
               <img src="assets/worlds/${curWorld.id}/lobby.jpg" onerror="this.src='assets/${curWorld.id}.webp'" alt="${curWorld.name}" style="width:100%;height:100%;object-fit:cover;">
             </div>
             <div>
               <div style="display:flex;align-items:center;gap:8px;">
                 <h3 style="color:#ffffff;font-size:16px;font-weight:900;margin:0;">${curWorld.name}</h3>
-                <span style="background:rgba(142,100,239,0.25);border:1px solid #7550ef;color:#c4b5fd;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;">${curWorld.tag}</span>
+                <span style="background:rgba(142,100,239,0.22);border:1px solid rgba(172,139,242,0.4);color:#c4b5fd;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;">${curWorld.tag}</span>
               </div>
               <p style="color:#a1a4be;font-size:11px;margin:2px 0 0 0;">اختر المحتوى التعليمي لبدء القاعة مباشرة في هذا العالم المختار.</p>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <button onclick="ScoreARWorldContentPicker.promptChangeWorld()" style="background:rgba(255,255,255,0.08);color:#ddd;border:1px solid rgba(255,255,255,0.15);padding:6px 12px;border-radius:10px;font-size:11px;font-weight:800;cursor:pointer;">
-              🪐 تغيير العالم
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button type="button" onclick="ScoreARWorldContentPicker.promptChangeWorld()" class="scorear-gear-btn" style="padding:6px 12px;">
+              ${uiIc('planet', 14)} <span>تغيير العالم</span>
             </button>
-            <button onclick="ScoreARWorldContentPicker.closeContentPicker()" style="background:none;border:none;color:#9ca3af;font-size:22px;cursor:pointer;padding:2px 6px;">✕</button>
+            <button type="button" onclick="ScoreARWorldContentPicker.closeContentPicker()" class="scorear-gear-btn" aria-label="إغلاق">${uiIc('close', 15)}</button>
           </div>
         </header>
 
         <!-- Search & Tab Bar -->
-        <div style="background:#13142e;padding:12px 22px;border-bottom:1px solid rgba(142,100,239,0.2);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">
-          <!-- Tabs -->
-          <div style="display:flex;background:#1a1c3d;padding:4px;border-radius:12px;border:1px solid rgba(142,100,239,0.3);">
-            <button onclick="ScoreARWorldContentPicker.switchTab('quizzes')" style="background:${activeTab==='quizzes'?'#7550ef':'transparent'};color:${activeTab==='quizzes'?'#fff':'#a1a4be'};border:none;padding:6px 14px;border-radius:8px;font-weight:900;font-size:12px;cursor:pointer;">
-              📚 مسابقاتي الجاهزة (${quizzes.length})
+        <div style="background:rgba(17,18,38,0.85);padding:12px 22px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">
+          <div class="scorear-segmented-tabs">
+            <button type="button" onclick="ScoreARWorldContentPicker.switchTab('quizzes')" class="scorear-segmented-tab ${activeTab==='quizzes'?'active':''}">
+              ${uiIc('book', 14)} <span>مسابقاتي الجاهزة (${quizzes.length})</span>
             </button>
-            <button onclick="ScoreARWorldContentPicker.switchTab('bank')" style="background:${activeTab==='bank'?'#7550ef':'transparent'};color:${activeTab==='bank'?'#fff':'#a1a4be'};border:none;padding:6px 14px;border-radius:8px;font-weight:900;font-size:12px;cursor:pointer;">
-              💡 بنك الأسئلة (${bankQuestions.length})
+            <button type="button" onclick="ScoreARWorldContentPicker.switchTab('bank')" class="scorear-segmented-tab ${activeTab==='bank'?'active':''}">
+              ${uiIc('layers', 14)} <span>بنك الأسئلة (${bankQuestions.length})</span>
             </button>
           </div>
 
-          <!-- Search & Filter Input -->
           <div style="display:flex;align-items:center;gap:8px;">
-            <input type="text" value="${escapeHtml(searchQuery)}" oninput="ScoreARWorldContentPicker.setSearch(this.value)" placeholder="🔍 بحث في المحتوى..." style="background:#1a1c3d;border:1px solid rgba(142,100,239,0.3);color:#fff;padding:6px 12px;border-radius:10px;font-size:11px;width:180px;">
+            <div style="position:relative;display:flex;align-items:center;">
+              <span style="position:absolute;right:10px;color:#9ca3af;display:inline-flex;pointer-events:none;">${uiIc('search', 13)}</span>
+              <input type="text" value="${escapeHtml(searchQuery)}" oninput="ScoreARWorldContentPicker.setSearch(this.value)" placeholder="بحث في المحتوى..." style="background:rgba(20,22,46,0.9);border:1px solid rgba(255,255,255,0.14);color:#fff;padding:6px 30px 6px 12px;border-radius:10px;font-size:11px;width:180px;font-family:inherit;">
+            </div>
             ${activeTab === 'bank' ? `
-              <button onclick="ScoreARWorldContentPicker.toggleSelectAllBank()" style="background:rgba(142,100,239,0.2);color:#c4b5fd;border:1px solid rgba(142,100,239,0.4);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;">
+              <button type="button" onclick="ScoreARWorldContentPicker.toggleSelectAllBank()" class="scorear-gear-btn" style="padding:6px 11px;">
                 ${selectedBankQuestionIds.size === filteredBank.length && filteredBank.length > 0 ? 'إلغاء تحديد الكل' : 'تحديد كل المعروض'}
               </button>
             ` : ''}
@@ -166,7 +168,7 @@
         </div>
 
         <!-- Main Content Area -->
-        <div style="flex:1 1 0%;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:16px 22px;">
+        <div class="scorear-modal-body" style="flex:1 1 0%;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:16px 22px;">
           ${activeTab === 'quizzes' ? `
             <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:12px;">
               ${!quizzes.length ? `
@@ -177,10 +179,10 @@
                 const count = qz.questions ? qz.questions.length : 0;
                 const isSelected = (selectedQuizId === qz.id);
                 return `
-                  <div onclick="ScoreARWorldContentPicker.selectQuiz('${qz.id}')" style="cursor:pointer;border:2px solid ${isSelected ? '#10b981' : 'rgba(142,100,239,0.25)'};background:${isSelected ? 'rgba(16,185,129,0.18)' : '#14152e'};border-radius:14px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;transition:all 0.2s;">
+                  <div onclick="ScoreARWorldContentPicker.selectQuiz('${qz.id}')" style="cursor:pointer;border:1px solid ${isSelected ? '#44b8a5' : 'rgba(255,255,255,0.1)'};background:${isSelected ? 'rgba(68,184,165,0.14)' : 'rgba(20,21,42,0.75)'};border-radius:14px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;transition:all 0.2s;">
                     <div style="display:flex;align-items:center;justify-content:space-between;">
                       <span style="background:rgba(142,100,239,0.2);color:#c4b5fd;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;">${escapeHtml(qz.subject || 'مسابقة')}</span>
-                      <span style="color:${isSelected ? '#34d399' : '#666'};font-size:18px;font-weight:900;">${isSelected ? '✓' : '○'}</span>
+                      <span style="color:${isSelected ? '#34d399' : '#666'};font-size:18px;font-weight:900;">${isSelected ? uiIc('check', 15) : '○'}</span>
                     </div>
                     <h4 style="color:#ffffff;font-size:14px;font-weight:900;margin:0;">${escapeHtml(qz.title || 'مسابقة')}</h4>
                     <div style="color:#52d9ed;font-size:11px;font-weight:800;">${count} أسئلة</div>
@@ -197,7 +199,7 @@
               ` : filteredBank.map(q => {
                 const isChecked = selectedBankQuestionIds.has(q.id);
                 return `
-                  <div onclick="ScoreARWorldContentPicker.toggleBankQuestion('${q.id}')" style="cursor:pointer;background:${isChecked ? 'rgba(117,80,239,0.2)' : '#14152e'};border:1px solid ${isChecked ? '#7550ef' : 'rgba(255,255,255,0.06)'};border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:12px;">
+                  <div onclick="ScoreARWorldContentPicker.toggleBankQuestion('${q.id}')" style="cursor:pointer;background:${isChecked ? 'rgba(117,80,239,0.2)' : 'rgba(20,21,42,0.75)'};border:1px solid ${isChecked ? '#7550ef' : 'rgba(255,255,255,0.08)'};border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:12px;">
                     <input type="checkbox" ${isChecked ? 'checked' : ''} style="width:18px;height:18px;accent-color:#7550ef;cursor:pointer;">
                     <div style="flex:1;">
                       <div style="color:#fff;font-size:13px;font-weight:800;margin-bottom:2px;">${escapeHtml(q.q || q.text)}</div>
@@ -215,22 +217,22 @@
         </div>
 
         <!-- Sticky Live Counter & Launch Footer -->
-        <footer style="background:#171836;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid rgba(142,100,239,0.3);">
+        <footer class="scorear-modal-head" style="border-top:1px solid rgba(255,255,255,0.09);border-bottom:none;">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <div style="background:#11122a;border:1px solid rgba(142,100,239,0.4);border-radius:10px;padding:6px 14px;display:flex;align-items:center;gap:8px;">
-              <span style="font-size:16px;">📝</span>
-              <span style="color:#fff;font-size:13px;font-weight:900;"><b style="color:#52d9ed;">${totalCount}</b> أسئلة مختارة</span>
+            <div class="scorear-control-pill">
+              ${uiIc('layers', 14)}
+              <span style="color:#fff;font-size:12.5px;"><b style="color:#52d9ed;">${totalCount}</b> أسئلة مختارة</span>
             </div>
-            <div style="background:#11122a;border:1px solid rgba(142,100,239,0.4);border-radius:10px;padding:6px 14px;display:flex;align-items:center;gap:8px;">
-              <span style="font-size:16px;">⏱️</span>
-              <span style="color:#fff;font-size:13px;font-weight:900;">الزمن المتوقع: <b style="color:#fcd34d;">${timeFormatted}</b></span>
+            <div class="scorear-control-pill">
+              ${uiIc('clock', 14)}
+              <span style="color:#fff;font-size:12.5px;">الزمن المتوقع: <b style="color:#fcd34d;">${timeFormatted}</b></span>
             </div>
           </div>
 
           <div style="display:flex;gap:10px;">
-            <button onclick="ScoreARWorldContentPicker.closeContentPicker()" style="background:rgba(255,255,255,0.08);color:#d1d5db;border:1px solid rgba(255,255,255,0.15);padding:10px 18px;border-radius:12px;font-size:12px;cursor:pointer;">إلغاء</button>
-            <button onclick="ScoreARWorldContentPicker.launchRoomWithChosenContent()" ${totalCount === 0 ? 'disabled' : ''} style="background:${totalCount === 0 ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg, #10b981, #059669)'};color:#fff;border:none;padding:10px 26px;border-radius:12px;font-size:14px;font-weight:900;cursor:${totalCount === 0 ? 'not-allowed' : 'pointer'};box-shadow:${totalCount === 0 ? 'none' : '0 0 20px rgba(16,185,129,0.4)'};">
-              افتح القاعة بالعالم المختار 🚀
+            <button type="button" onclick="ScoreARWorldContentPicker.closeContentPicker()" class="scorear-gear-btn" style="padding:9px 18px;font-size:12.5px;">إلغاء</button>
+            <button type="button" onclick="ScoreARWorldContentPicker.launchRoomWithChosenContent()" ${totalCount === 0 ? 'disabled' : ''} class="btn launch-primary" style="padding:10px 26px;font-size:13.5px;opacity:${totalCount === 0 ? '0.45' : '1'};cursor:${totalCount === 0 ? 'not-allowed' : 'pointer'};">
+              ${uiIc('play', 15)} <span>افتح القاعة بالعالم المختار</span>
             </button>
           </div>
         </footer>
@@ -309,7 +311,7 @@
     global.contestQuestions = combined;
 
     if (global.toast) {
-      global.toast(`تم تجهيز (${combined.length}) سؤالاً. جارٍ فتح القاعة في ${getWorldData(activeWorldId).name}... 🚀`);
+      global.toast(`تم تجهيز (${combined.length}) سؤالاً. جارٍ فتح القاعة في ${getWorldData(activeWorldId).name}...`);
     }
 
     if (global.ScoreARQuizHost && typeof global.ScoreARQuizHost.startHostLobby === 'function') {

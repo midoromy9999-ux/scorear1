@@ -233,9 +233,54 @@ body.is-logged-in .launch-nav {
 }
 
 .nav-join {
-  background: transparent;
-  color: #bcb6d2;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: rgba(88, 220, 227, 0.08);
+  border: 1px solid rgba(88, 220, 227, 0.32);
+  color: #e8fcff;
   font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+  backdrop-filter: blur(12px);
+}
+.nav-join svg {
+  width: 15px;
+  height: 15px;
+  color: #58dce3;
+}
+.nav-join:hover {
+  background: rgba(88, 220, 227, 0.16);
+  border-color: rgba(88, 220, 227, 0.65);
+  box-shadow: 0 6px 24px rgba(88, 220, 227, 0.22);
+  transform: translateY(-2px);
+}
+
+.btn.launch-student-join {
+  background: linear-gradient(135deg, rgba(18, 52, 68, 0.82) 0%, rgba(23, 25, 54, 0.92) 100%);
+  color: #ffffff;
+  border: 1px solid rgba(88, 220, 227, 0.45);
+  box-shadow: 0 10px 30px rgba(10, 14, 32, 0.55), 0 0 26px rgba(88, 220, 227, 0.18), inset 0 1px rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(14px);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 800;
+  transition: all 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.btn.launch-student-join svg {
+  width: 18px;
+  height: 18px;
+  color: #58dce3;
+}
+.btn.launch-student-join:hover {
+  background: linear-gradient(135deg, rgba(22, 68, 88, 0.92) 0%, rgba(34, 30, 74, 0.96) 100%);
+  border-color: #58dce3;
+  box-shadow: 0 12px 36px rgba(88, 220, 227, 0.32), inset 0 1px rgba(255, 255, 255, 0.35);
+  transform: translateY(-3px);
 }
 
 .btn.launch-primary {

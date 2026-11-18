@@ -93,23 +93,28 @@ const state={
   lobbyParticipants: readStore('scorear_lobby_participants', [])
 };
 
-function worldCard(w){
-  return `<article class="world-card" data-world-id="${w.id}">
+function worldCard(w, idx = 0){
+  const ui = window.ScoreARUI;
+  const ic = (name, size = 15) => ui?.icon ? ui.icon(name, { size }) : icon(name);
+  const arNums = ['٠١', '٠٢', '٠٣', '٠٤', '٠٥', '٠٦'];
+  const numLbl = arNums[idx] || `0${idx + 1}`;
+  return `<article class="world-card spotlight" data-world-id="${w.id}">
     <div class="world-thumb">
       <img src="assets/${w.image}.webp" alt="${w.name}" loading="lazy" width="768" height="512">
       <span class="world-chip">${w.tag}</span>
+      <span class="world-index">${numLbl}</span>
     </div>
     <div class="world-body">
       <div class="world-body-top">
         <h3>${w.name}</h3>
-        <span style="color:#FFD93D;font-size:15px">✦</span>
+        <span class="world-mode-tag">${w.mode}</span>
       </div>
       <p>${w.desc}</p>
       <div class="world-actions-stack" style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
-        <button class="btn dark small" data-action="launchworld" data-world="${w.id}" style="width:100%;justify-content:center;font-weight:900;">🚀 انطلاق القاعة بهذا العالم</button>
-        <div style="display:flex;gap:6px;">
-          <button class="btn light small" data-action="preview" data-world="${w.id}" style="flex:1;justify-content:center;">🎬 معاينة الفيديو</button>
-          <button class="btn outline small" data-action="worldquiz" data-world="${w.id}" style="flex:1;justify-content:center;">🎯 تجربة سؤال</button>
+        <button class="btn launch-primary small" data-action="launchworld" data-world="${w.id}" style="width:100%;justify-content:center;font-weight:900;">${ic('play', 14)} انطلاق القاعة بهذا العالم</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn launch-outline small" data-action="preview" data-world="${w.id}" style="flex:1;justify-content:center;">${ic('eye', 14)} معاينة الفيديو</button>
+          <button class="btn launch-outline small" data-action="worldquiz" data-world="${w.id}" style="flex:1;justify-content:center;">${ic('spark', 14)} تجربة سؤال</button>
         </div>
       </div>
     </div>
@@ -121,31 +126,42 @@ function studio(){
   const user = window.ScoreARAuth ? window.ScoreARAuth.getUser() : null;
   const isAuthorized = user && (user.role === 'admin' || user.role === 'teacher');
   if (!isAuthorized) {
+    const ui = window.ScoreARUI;
+    const backdrop = ui?.cosmicBackdrop ? ui.cosmicBackdrop() : '';
+    const ic = (n, s = 16) => ui?.icon ? ui.icon(n, { size: s }) : icon(n);
+    const orb = (n, tone = 'violet') => ui?.orbShowcase ? ui.orbShowcase(n, { tone, compact: true }) : '';
     if (user && (user.role === 'pending_teacher' || user.status === 'pending')) {
-      return `<div class="page" style="text-align:center;padding:70px 20px;"><div style="max-width:520px;margin:0 auto;background:#13152a;border:1px solid rgba(245,158,11,0.4);border-radius:24px;padding:36px 24px;box-shadow:0 12px 40px rgba(0,0,0,0.5);"><div style="font-size:48px;margin-bottom:12px;">⏳</div><h2 style="color:#ffffff;font-size:22px;font-weight:900;margin-bottom:8px;">حسابك قيد المراجعة والاعتماد</h2><p style="color:#fde68a;font-size:14px;line-height:1.6;margin-bottom:20px;">أهلاً بك أ. ${esc(user.displayName || 'المعلم')}. طلب تسجيلك تم استلامه وهو قيد المراجعة والاعتماد من قبل إدارة سكور آر. لا يمكنك دخول استوديو المعلم قبل اعتماد الإدارة وتفعيل البريد.</p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;"><button class="btn dark" onclick="if(window.ScoreARAuth&&window.ScoreARAuth.checkApprovalStatus)window.ScoreARAuth.checkApprovalStatus();" style="padding:12px 20px;font-size:14px;font-weight:900;border-radius:12px;background:#7550ef;cursor:pointer;">تحقق من الاعتماد 🔄</button><a href="#home" class="btn outline" style="padding:12px 20px;font-size:14px;font-weight:900;border-radius:12px;text-decoration:none;display:inline-block;">الرئيسية ↩</a></div></div></div>`;
+      return `<div class="page scorear-open-page" style="padding:56px 20px;">${backdrop}<div class="scorear-experience-panel spotlight" style="max-width:540px;margin:0 auto;text-align:center;padding:38px 28px;">${orb('clock', 'violet')}<span class="launch-pill" style="margin-bottom:14px;"><span class="live-dot"></span> بانتظار المراجعة</span><h2 style="color:#f6f3ff;font-size:24px;font-weight:900;margin:0 0 10px;">حسابك قيد المراجعة <span class="gradient-text">والاعتماد</span></h2><p style="color:#a1a4be;font-size:14px;line-height:1.85;margin-bottom:24px;">أهلاً بك أ. ${esc(user.displayName || 'المعلم')}. تم استلام طلب تسجيلك وهو قيد الاعتماد من إدارة سكور آر لتفعيل صلاحيات الاستوديو.</p><div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;"><button class="btn launch-primary" onclick="if(window.ScoreARAuth&&window.ScoreARAuth.checkApprovalStatus)window.ScoreARAuth.checkApprovalStatus();">${ic('refresh', 16)} تحقق من الاعتماد</button><a href="#home" class="btn launch-outline">${ic('arrow', 16)} الرئيسية</a></div></div></div>`;
     }
     if (user && user.role === 'student') {
-      return `<div class="page" style="text-align:center;padding:70px 20px;"><div style="max-width:520px;margin:0 auto;background:#13152a;border:1px solid rgba(16,185,129,0.4);border-radius:24px;padding:36px 24px;box-shadow:0 12px 40px rgba(0,0,0,0.5);"><div style="font-size:48px;margin-bottom:12px;">🎒</div><h2 style="color:#ffffff;font-size:22px;font-weight:900;margin-bottom:8px;">استوديو المعلم مخصص للمعلمين فقط</h2><p style="color:#a7f3d0;font-size:14px;line-height:1.6;margin-bottom:20px;">أهلاً بك يا بطل (${esc(user.displayName || 'طالب')})! هذا القسم مخصص للمعلمين لإعداد المسابقات وإدارة الفصول. مكانك هو في رحلتك التعليمية وقاعة المنافسات.</p><a href="#journey" class="btn dark" style="padding:12px 24px;font-size:14px;font-weight:900;border-radius:12px;text-decoration:none;display:inline-block;background:#10b981;">الانتقال لرحلتي التعليمية 🌟</a></div></div>`;
+      return `<div class="page scorear-open-page" style="padding:56px 20px;">${backdrop}<div class="scorear-experience-panel tone-cyan spotlight" style="max-width:540px;margin:0 auto;text-align:center;padding:38px 28px;">${orb('graduation', 'cyan')}<span class="launch-pill" style="margin-bottom:14px;"><span class="live-dot"></span> مسار الطالب</span><h2 style="color:#f6f3ff;font-size:24px;font-weight:900;margin:0 0 10px;">استوديو المعلم <span class="gradient-text">مخصص للمعلمين</span></h2><p style="color:#a1a4be;font-size:14px;line-height:1.85;margin-bottom:24px;">أهلاً بك يا بطل (${esc(user.displayName || 'طالب')}). هذا القسم مخصص لإعداد المسابقات وإدارة الفصول؛ مساحتك الخاصة هي رحلتك التعليمية وقاعة المنافسات.</p><a href="#journey" class="btn launch-primary">${ic('route', 16)} الانتقال لرحلتي التعليمية</a></div></div>`;
     }
-    return `<div class="page" style="text-align:center;padding:70px 20px;"><div style="max-width:500px;margin:0 auto;background:#13152a;border:1px solid rgba(142,100,239,0.3);border-radius:24px;padding:36px 24px;box-shadow:0 12px 40px rgba(0,0,0,0.5);"><div style="width:84px;height:84px;margin:0 auto 16px;border-radius:22px;border:2px solid #8e64ef;box-shadow:0 0 20px rgba(142,100,239,0.4);overflow:hidden;background:#1b1c33;"><img src="assets/characters/teacher_ahmed.webp?v=20261106_real" alt="المعلم" style="width:100%;height:100%;object-fit:cover;"></div><h2 style="color:#ffffff;font-size:22px;font-weight:900;margin-bottom:8px;">استوديو المعلم والإدارة محمي 🔒</h2><p style="color:#b1a2e9;font-size:14px;line-height:1.6;margin-bottom:24px;">يتطلب الدخول إلى استوديو المعلم وإنشاء المسابقات تسجيل الدخول بحساب معتمد بصلاحيات المعلم أو المشرف.</p><button class="btn dark" onclick="if(window.ScoreARAuthUI)window.ScoreARAuthUI.openUnifiedLoginModal();else if(window.openTeacherLoginModal)openTeacherLoginModal();" style="padding:14px 28px;font-size:15px;font-weight:900;border-radius:14px;">تسجيل الدخول الآن 🚀</button></div></div>`;
+    return `<div class="page scorear-open-page" style="padding:56px 20px;">${backdrop}<div class="scorear-experience-panel spotlight" style="max-width:520px;margin:0 auto;text-align:center;padding:38px 28px;"><div class="studio-avatar-wrap" style="margin:0 auto 18px;width:82px;height:82px;"><img src="assets/characters/teacher_ahmed.webp?v=20261106_real" alt="المعلم"></div><span class="launch-pill" style="margin-bottom:14px;"><span class="live-dot"></span> وصول مصادق عليه</span><h2 style="color:#f6f3ff;font-size:24px;font-weight:900;margin:0 0 10px;">استوديو المعلم <span class="gradient-text">والإدارة محمي</span></h2><p style="color:#a1a4be;font-size:14px;line-height:1.85;margin-bottom:24px;">يتطلب الدخول إلى استوديو المعلم وإنشاء المسابقات تسجيل الدخول بحساب معتمد بصلاحيات المعلم أو المشرف.</p><button class="btn launch-primary" onclick="if(window.ScoreARAuthUI)window.ScoreARAuthUI.openUnifiedLoginModal();else if(window.openTeacherLoginModal)openTeacherLoginModal();">${ic('logIn', 16)} تسجيل الدخول الآن</button></div></div>`;
   }
   return window.renderTeacherStudio();
 }
 function worldPage(){
+  const ui = window.ScoreARUI;
+  const ic = (n, s = 16) => ui?.icon ? ui.icon(n, { size: s }) : icon(n);
   const shown=state.filter==='all'?worlds:worlds.filter(w=>w.id===state.filter);
-  return `<div class="page worlds-page">
-    <div class="page-title">
-      <div class="eyebrow">قاعة المنافسات</div>
-      <h1>اختر عالم الحصة القادمة.</h1>
-      <p>6 عوالم كرتونية عربية بدقة 2K وفيديو 1080p سينمائي. انطلق بالقاعة أو عاين العالم.</p>
-    </div>
+  const headHtml = ui?.editorialHeader
+    ? ui.editorialHeader({
+        kicker: 'قاعة المنافسات الحية',
+        titleWhite: 'اختر عالم',
+        titleAccent: 'الحصة القادمة.',
+        subtitle: '٦ عوالم كرتونية عربية بدقة 2K وفيديو سينمائي. انطلق بالقاعة أو عاين تفاصيل العالم.',
+        actionHtml: `<button class="btn launch-primary" data-action="setup" data-world="royal">${ic('planet', 17)} جهّز القاعة الآن</button>`
+      })
+    : `<div class="page-title"><div class="eyebrow">قاعة المنافسات</div><h1>اختر عالم الحصة القادمة.</h1></div>`;
+  return `<div class="page worlds-page scorear-open-page">
+    ${ui?.cosmicBackdrop ? ui.cosmicBackdrop() : ''}
+    ${headHtml}
     <div class="section-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:14px;">
-      <div class="tabs" style="margin:0;flex-wrap:wrap;gap:6px;">
-        ${[['all','كل العوالم'],['royal','القصر الملكي'],['oasis','الواحة'],['cosmic','الفضاء'],['treasure','جزيرة الكنز'],['stadium','الاستاد'],['magic','السحر']].map(([id,t])=>`<button class="tab ${state.filter===id?'active':''}" data-action="filter" data-filter="${id}" aria-pressed="${state.filter===id}">${t}</button>`).join('')}
+      <div class="scorear-segmented-tabs" role="tablist" aria-label="تصفية العوالم">
+        ${[['all','كل العوالم'],['royal','القصر الملكي'],['oasis','الواحة'],['cosmic','الفضاء'],['treasure','جزيرة الكنز'],['stadium','الاستاد'],['magic','السحر']].map(([id,t])=>`<button type="button" class="scorear-segmented-tab ${state.filter===id?'active':''}" data-action="filter" data-filter="${id}" aria-pressed="${state.filter===id}">${t}</button>`).join('')}
       </div>
-      <button class="btn dark small" data-action="setup" data-world="royal">جهّز القاعة ${icon('arrow')}</button>
     </div>
-    <div class="world-grid">${shown.map(worldCard).join('')}</div>
+    <div class="world-grid">${shown.map((w, i) => worldCard(w, i)).join('')}</div>
   </div>`;
 }
 
@@ -154,7 +170,7 @@ function journey(){
     return window.ScoreARJourney.renderJourneyPage();
   }
   let done=Object.keys(state.progress.done).length;
-  return `<div class="page">
+  return `<div class="page scorear-open-page">
     <div class="page-title">
       <div class="eyebrow">رحلتي التعليمية</div>
       <h1>خطوتك الصغيرة، تصنع فرقًا.</h1>
@@ -172,7 +188,7 @@ function library(){
   if (window.ScoreARLibraryHub && typeof window.ScoreARLibraryHub.renderPage === 'function') {
     return window.ScoreARLibraryHub.renderPage();
   }
-  return `<div class="page">
+  return `<div class="page scorear-open-page">
     <div class="page-title">
       <div class="eyebrow">مكتبة المحتوى</div>
       <h1>محتواك المنظم، جاهز لكل حصة.</h1>
@@ -189,14 +205,56 @@ function library(){
 }
 
 function about(){
-  return `<div class="page">
-    <div class="page-title">
-      <div class="eyebrow">عن سكور آر</div>
-      <h1>تعلّم عربي، بروح جيل جديد.</h1>
+  const ui = window.ScoreARUI;
+  const ib = (name, tone = 'violet') => ui?.iconBox ? ui.iconBox(name, { size: 'md', tone, tilted: true }) : '';
+  const ic = (name, s = 16) => ui?.icon ? ui.icon(name, { size: s }) : icon(name);
+  const headHtml = ui?.editorialHeader
+    ? ui.editorialHeader({
+        kicker: 'رؤية سكور آر',
+        titleWhite: 'تعلّم عربي،',
+        titleAccent: 'بروح جيل جديد.',
+        subtitle: 'منصة مسابقات تعليمية تفاعلية تعيد تعريف المشاركة الصفية بأسلوب الألعاب الذكية والخيال العربي.',
+        indexLabel: 'ABOUT SCOREAR'
+      })
+    : '';
+  return `<div class="page scorear-open-page">
+    ${ui?.cosmicBackdrop ? ui.cosmicBackdrop() : ''}
+    ${headHtml}
+    <div class="about-hero">
+      <div class="about-copy">
+        <span class="launch-pill" style="margin-bottom:12px;"><span class="live-dot"></span> قصة الفكرة</span>
+        <h2 style="font-size:clamp(24px,3vw,34px);font-weight:900;color:#f6f3ff;margin:0 0 14px;">نصنع من كل حصة <span class="gradient-text">حكاية تُروى.</span></h2>
+        <p><b>سكور آر (ScoreAR)</b> منصة مسابقات تعليمية تفاعلية عربية، أسسها ويشرف عليها الأستاذ <b>أحمد صلاح رميح</b>، لتمكين المعلم من إدارة أنشطة الحصة بأسلوب الألعاب والتحديات المشوقة.</p>
+        <p>تجمع المنصة بين إعداد الأسئلة بالذكاء الاصطناعي، وعرض العوالم الكرتونية بدقة 2K وفيديوهات حية في الخلفية، مع تنافس حي بين شخصيات وأبطال يمثلون كل طالب داخل الفصل.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;">
+          <a href="#worlds" class="btn launch-primary">${ic('planet', 16)} استكشف العوالم</a>
+          <a href="#studio" class="btn launch-outline">${ic('grid', 16)} دخول الاستوديو</a>
+        </div>
+      </div>
+      <div class="scorear-hero-frame" style="aspect-ratio:4/3;">
+        <img src="assets/students.webp" alt="أبطال سكور آر في رحلة المعرفة" loading="lazy">
+        <div class="scorear-hero-frame-shade"></div>
+      </div>
     </div>
-    <div class="panel" style="line-height:2;color:#ddd8ff;font-size:15px;">
-      <p style="margin-bottom:16px;"><b>سكور آر (ScoreAR)</b> منصة مسابقات تعليمية تفاعلية عربية، أسسها ويشرف عليها الأستاذ <b>أحمد صلاح رميح</b>، لتمكين المعلم من إدارة أنشطة الحصة بأسلوب الألعاب والتحديات المشوقة.</p>
-      <p>تجمع المنصة بين إعداد الأسئلة بالذكاء الاصطناعي، وعرض العوالم الكرتونية بدقة 2K وفيديوهات حية في الخلفية، مع تنافس حي بين شخصيات وأبطال يمثلون كل طالب داخل الفصل.</p>
+
+    <div class="scorear-hairline-divider"></div>
+
+    <div class="principles">
+      <article class="scorear-experience-panel spotlight">
+        <div style="margin-bottom:14px;">${ib('spark', 'violet')}</div>
+        <h3>توليد واستيراد ذكي</h3>
+        <p>بناء الأسئلة بالذكاء الاصطناعي من ملفات الدروس أو استيراد Excel وملفات المعلم مع مراجعة تحريرية دقيقة.</p>
+      </article>
+      <article class="scorear-experience-panel tone-cyan spotlight">
+        <div style="margin-bottom:14px;">${ib('planet', 'cyan')}</div>
+        <h3>عوالم وحضور مسرحي</h3>
+        <p>٦ عوالم عربية متكاملة بخلفيات سينمائية و٢٠ بطلاً متحركاً يتفاعلون لحظة بلحظة في اللوبي ومنصة التتويج.</p>
+      </article>
+      <article class="scorear-experience-panel spotlight">
+        <div style="margin-bottom:14px;">${ib('route', 'violet')}</div>
+        <h3>رحلة طالب متأنية</h3>
+        <p>فصل واضح بين التنافس الحي السريع وبين التدريب الهادئ ودفتر الأخطاء المتباعد لترسيخ المهارات اللغوية.</p>
+      </article>
     </div>
   </div>`;
 }
@@ -704,17 +762,19 @@ function openToolModal(route){
 // =========================================================================
 function preview(id){
   const w=worlds.find(w=>w.id===id)||worlds[0];
+  const ui = window.ScoreARUI;
+  const ic = (name, s = 15) => ui?.icon ? ui.icon(name, { size: s }) : icon(name);
   openModal(w.name,`<div class="preview-scene" style="border-radius:18px;overflow:hidden;background:#050f0c;position:relative;">
     <img src="assets/${w.image}.webp" alt="${w.name}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;">
     <video src="assets/videos/worlds/${w.id}.mp4?v=20261106_smooth" poster="assets/${w.image}.webp" autoplay loop muted playsinline style="position:relative;z-index:2;width:100%;height:320px;object-fit:cover;"></video>
-    <span class="preview-badge" style="z-index:3;">🎬 معاينة كرتونية 1080p عالية الدقة · عالم ${w.name}</span>
+    <span class="preview-badge" style="z-index:3;">${ic('play', 12)} معاينة 1080p · عالم ${w.name}</span>
   </div>
   <div class="preview-controls" style="padding-top:14px;">
     <h3 style="color:#fff;font-size:18px;font-weight:800;">عالم ${w.name} — ${w.tag}</h3>
     <p style="color:#b1a2e9;font-size:13px;line-height:1.7;">${w.desc}</p>
     <div class="preview-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;">
-      <button class="btn dark small" onclick="closeModal(); renderLiveLobby('${w.id}', null, true, false);" style="flex:2;justify-content:center;font-weight:900;">🚀 انطلاق القاعة بهذا العالم الآن</button>
-      <button class="btn outline small" data-action="close" style="justify-content:center;">✕ إغلاق</button>
+      <button class="btn launch-primary small" onclick="closeModal(); renderLiveLobby('${w.id}', null, true, false);" style="flex:2;justify-content:center;font-weight:900;">${ic('planet', 15)} انطلاق القاعة بهذا العالم</button>
+      <button class="btn launch-outline small" data-action="close" style="justify-content:center;">${ic('close', 14)} إغلاق</button>
     </div>
   </div>`);
 }

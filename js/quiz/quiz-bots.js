@@ -2,8 +2,6 @@
  * ScoreAR Demo & Bot Students Simulation Engine (quiz-bots.js)
  * Manages 1-30 simulated demo students for host lobby competitions.
  * Probabilistic answering engine inside teacher's browser (strictly Rule 2: pure JS probability, NOT AI).
- * Accuracy: low (30%), medium (60%), high (85%), mixed (25-90%).
- * Speed: fast (2-5s), medium (5-11s), slow (11-16s), mixed (2-16s).
  * Strictly Rule 7 compliant (<500 lines).
  */
 (function(global) {
@@ -11,6 +9,12 @@
 
   function escapeHtml(str) {
     return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function uiIcon(name, size = 16) {
+    return (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function')
+      ? global.ScoreARUI.icon(name, { size })
+      : '';
   }
 
   const ARABIC_NAMES_POOL = [
@@ -42,7 +46,6 @@
     return name;
   }
 
-  // --- 1. Roster Management ---
   function addBots(count = 5, accuracySetting = 'medium', speedSetting = 'medium') {
     const room = getHostRoom();
     if (!room) return;
@@ -54,7 +57,7 @@
     let nameIdx = 0;
 
     for (let i = 0; i < num; i++) {
-      if (room.players.length >= 60) break; // Safe room ceiling
+      if (room.players.length >= 60) break;
 
       let chosenName = availableNames[nameIdx % availableNames.length] || ARABIC_NAMES_POOL[i % ARABIC_NAMES_POOL.length];
       nameIdx++;
@@ -84,7 +87,7 @@
     if (global.ScoreARQuizHost && typeof global.ScoreARQuizHost.refreshLobbyUi === 'function') {
       global.ScoreARQuizHost.refreshLobbyUi();
     }
-    if (global.toast) global.toast(`تمت إضافة ${num} من الأبطال التجريبيين 🤖`);
+    if (global.toast) global.toast(`تمت إضافة ${num} من الأبطال التجريبيين`);
   }
 
   function removeBot(botId) {
@@ -111,10 +114,9 @@
     if (global.ScoreARQuizHost && typeof global.ScoreARQuizHost.refreshLobbyUi === 'function') {
       global.ScoreARQuizHost.refreshLobbyUi();
     }
-    if (global.toast) global.toast(`تم حذف ${removedCount} من الطلاب التجريبيين 🗑️`);
+    if (global.toast) global.toast(`تم حذف ${removedCount} من الطلاب التجريبيين`);
   }
 
-  // --- 2. Probabilistic Simulation Engine ---
   function clearPendingAnswers() {
     pendingTimeouts.forEach(t => clearTimeout(t));
     pendingTimeouts = [];
@@ -144,23 +146,17 @@
       if (cardP?.status) { cardP.status.hasFog = false; cardP.status.timeSliced = false; }
       bot.hasFog = false; bot.timeSliced = false;
 
-      // 1. Calculate delay in seconds based on bot's speed profile
       let delaySec = 6;
-      if (bot.speed === 'fast') {
-        delaySec = 2 + Math.random() * 3; // 2s to 5s
-      } else if (bot.speed === 'slow') {
-        delaySec = 10 + Math.random() * 6; // 10s to 16s
-      } else if (bot.speed === 'mixed') {
-        delaySec = 2 + Math.random() * (Math.max(4, timeLimit - 4));
-      } else { // medium
-        delaySec = 5 + Math.random() * 6; // 5s to 11s
-      }
+      if (bot.speed === 'fast') delaySec = 2 + Math.random() * 3;
+      else if (bot.speed === 'slow') delaySec = 10 + Math.random() * 6;
+      else if (bot.speed === 'mixed') delaySec = 2 + Math.random() * (Math.max(4, timeLimit - 4));
+      else delaySec = 5 + Math.random() * 6;
+
       if (hasFog) delaySec += 4;
       const effectiveLimit = isSliced ? Math.max(3, Math.floor(timeLimit / 2)) : timeLimit;
       if (isSliced && delaySec > effectiveLimit) return;
       delaySec = Math.min(delaySec, Math.max(1.5, effectiveLimit - 1.5));
 
-      // 2. Determine chosen option based on accuracy probability
       const effAcc = hasFog ? ((bot.accuracy || 0.6) * 0.4) : (bot.accuracy || 0.6);
       const isCorrect = Math.random() < effAcc;
       let chosenIndex = correctIdx;
@@ -172,7 +168,6 @@
         chosenIndex = wrongIndices.length ? wrongIndices[Math.floor(Math.random() * wrongIndices.length)] : 0;
       }
 
-      // 3. Schedule the answer dispatch
       const tId = setTimeout(() => {
         if (room.status !== 'question') return;
         const cpNow = global.ScoreARCardArena?.getManager?.()?.players?.[bot.id];
@@ -181,7 +176,6 @@
           bot.isPinned = false;
           return;
         }
-        const remaining = Math.max(1, Math.round(timeLimit - delaySec));
         global.ScoreARQuizHost?.submitBotAnswer?.(bot.id, chosenIndex);
       }, Math.round(delaySec * 1000));
 
@@ -189,13 +183,12 @@
     });
   }
 
-  // --- 3. Management UI Modal ---
   function openModal() {
     let modal = document.getElementById('scorearBotsModal');
     if (!modal) {
       modal = document.createElement('dialog');
       modal.id = 'scorearBotsModal';
-      modal.style.cssText = 'border:none;background:transparent;padding:0;margin:auto;max-width:480px;width:92%;border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,0.85);color:#fff;direction:rtl;font-family:Cairo,Tajawal,sans-serif;';
+      modal.style.cssText = 'border:none;background:transparent;padding:0;margin:auto;max-width:480px;width:92%;border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,0.85);color:#fff;direction:rtl;font-family:Cairo,Tajawal,sans-serif;';
       document.body.appendChild(modal);
       modal.addEventListener('click', e => { if (e.target === modal) modal.close(); });
     }
@@ -204,32 +197,30 @@
     const currentBotsCount = (room && room.players) ? room.players.filter(p => p.isBot).length : 0;
 
     modal.innerHTML = `
-      <div style="background:radial-gradient(circle at top right, rgba(142,100,239,0.3), rgba(15,16,33,0.98));border:1.5px solid #8e64ef;border-radius:24px;padding:26px 24px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px;">
+      <div class="scorear-modal-shell">
+        <div class="scorear-modal-head">
           <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:26px;">🤖</span>
+            <span class="scorear-icon-box size-sm tone-violet">${uiIcon('bot', 18)}</span>
             <div>
-              <h3 style="font-size:18px;font-weight:900;color:#fff;margin:0;">إدارة الطلاب التجريبيين (محاكاة)</h3>
-              <span style="font-size:11px;color:#a89bff;">للمعلم فقط • محاكاة احتمالية ذكية داخل المتصفح</span>
+              <h3 style="font-size:17px;font-weight:900;color:#fff;margin:0;">إدارة الطلاب التجريبيين (محاكاة)</h3>
+              <span style="font-size:11px;color:#a1a4be;">للمعلم فقط • محاكاة احتمالية ذكية داخل المتصفح</span>
             </div>
           </div>
-          <button onclick="document.getElementById('scorearBotsModal').close()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:10px;padding:4px 10px;cursor:pointer;">✕</button>
+          <button type="button" onclick="document.getElementById('scorearBotsModal').close()" class="scorear-gear-btn" style="padding:5px 10px;">✕</button>
         </div>
 
-        <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:20px;">
-          <!-- Count Selector -->
+        <div class="scorear-modal-body" style="display:flex;flex-direction:column;gap:16px;">
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
               <label style="font-size:13px;font-weight:800;color:#ddd8ff;">عدد الطلاب المراد إضافتهم (1 - 30):</label>
-              <b id="botCountDisplay" style="font-size:16px;color:#52d9ed;font-family:monospace;">5</b>
+              <b id="botCountDisplay" style="font-size:16px;color:#58dce3;font-family:Montserrat,monospace;">5</b>
             </div>
             <input id="botCountInput" type="range" min="1" max="30" value="5" oninput="document.getElementById('botCountDisplay').textContent = this.value" style="width:100%;accent-color:#8e64ef;cursor:pointer;">
           </div>
 
-          <!-- Accuracy Selector -->
           <div>
             <label style="display:block;font-size:13px;font-weight:800;color:#ddd8ff;margin-bottom:6px;">مستوى دقة الإجابة (الاحتمالية):</label>
-            <select id="botAccuracySelect" style="width:100%;background:#131428;border:1.5px solid rgba(142,100,239,0.5);border-radius:12px;color:#fff;padding:10px 14px;font-size:13px;font-weight:800;outline:none;">
+            <select id="botAccuracySelect" class="field" style="padding:10px 14px;font-size:13px;font-weight:800;">
               <option value="medium" selected>متوسط (~60% إجابات صحيحة) - توازن طبيعي</option>
               <option value="high">عالٍ (~85% إجابات صحيحة) - منافسة متفوقة</option>
               <option value="low">منخفض (~30% إجابات صحيحة) - إجابات عادية</option>
@@ -237,10 +228,9 @@
             </select>
           </div>
 
-          <!-- Speed Selector -->
           <div>
             <label style="display:block;font-size:13px;font-weight:800;color:#ddd8ff;margin-bottom:6px;">سرعة استجابة الطلاب التجريبيين:</label>
-            <select id="botSpeedSelect" style="width:100%;background:#131428;border:1.5px solid rgba(142,100,239,0.5);border-radius:12px;color:#fff;padding:10px 14px;font-size:13px;font-weight:800;outline:none;">
+            <select id="botSpeedSelect" class="field" style="padding:10px 14px;font-size:13px;font-weight:800;">
               <option value="medium" selected>متوسطة (بين 5 و 11 ثانية)</option>
               <option value="fast">سريعة وحماسية (بين 2 و 5 ثوانٍ)</option>
               <option value="slow">هادئة (بين 10 و 16 ثانية)</option>
@@ -248,25 +238,24 @@
             </select>
           </div>
 
-          <!-- Include in Report Toggle -->
           <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
             <div>
-              <div style="font-size:12px;font-weight:800;color:#fcd34d;">ضمهم للإحصاءات والتقرير الرسمي:</div>
-              <small style="font-size:10px;color:#857aa8;">الافتراضي مطفأ (لا يؤثرون على السجل)</small>
+              <div style="font-size:12px;font-weight:800;color:#eceeff;">ضمهم للإحصاءات والتقرير الرسمي:</div>
+              <small style="font-size:10.5px;color:#878aa6;">الافتراضي مطفأ (لا يؤثرون على السجل)</small>
             </div>
-            <input type="checkbox" id="botIncludeReportCheck" ${includeBotsInReport ? 'checked' : ''} onchange="ScoreARBots.setIncludeInReport(this.checked)" style="width:18px;height:18px;accent-color:#10b981;cursor:pointer;">
+            <input type="checkbox" id="botIncludeReportCheck" ${includeBotsInReport ? 'checked' : ''} onchange="ScoreARBots.setIncludeInReport(this.checked)" style="width:18px;height:18px;accent-color:#7550ef;cursor:pointer;">
           </div>
-        </div>
 
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <button type="button" onclick="ScoreARBots.submitAdd()" style="background:linear-gradient(135deg, #8e64ef, #6d28d9);border:none;border-radius:14px;color:#fff;padding:12px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(142,100,239,0.4);display:flex;align-items:center;justify-content:center;gap:8px;">
-            <span>إضافة الأبطال التجريبيين الآن 🚀</span>
-          </button>
-          ${currentBotsCount > 0 ? `
-            <button type="button" onclick="ScoreARBots.removeAllBots(); document.getElementById('scorearBotsModal').close();" style="background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.4);border-radius:12px;color:#fca5a5;padding:10px;font-size:12px;font-weight:800;cursor:pointer;">
-              حذف جميع الطلاب التجريبيين (${currentBotsCount}) 🗑️
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+            <button type="button" onclick="ScoreARBots.submitAdd()" class="btn launch-primary full" style="border-radius:12px;padding:12px;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;">
+              ${uiIcon('userPlus', 16)} <span>إضافة الأبطال التجريبيين الآن</span>
             </button>
-          ` : ''}
+            ${currentBotsCount > 0 ? `
+              <button type="button" onclick="ScoreARBots.removeAllBots(); document.getElementById('scorearBotsModal').close();" class="scorear-gear-btn" style="border-color:rgba(239,68,68,0.4);color:#fca5a5;padding:10px;">
+                ${uiIcon('trash', 14)} <span>حذف جميع الطلاب التجريبيين (${currentBotsCount})</span>
+              </button>
+            ` : ''}
+          </div>
         </div>
       </div>
     `;

@@ -9,6 +9,8 @@
   let cachedSessions = [];
   let cachedQuizzes = [];
   let currentUid = null;
+  const uiIc = (n, s = 15) => global.ScoreARUI?.icon?.(n, { size: s }) || '';
+  const uiBox = (n, t = 'violet', s = 'md') => global.ScoreARUI?.iconBox?.(n, { size: s, tone: t }) || '';
 
   function getDb() {
     return (global.firebase && global.firebase.database) ? global.firebase.database() : null;
@@ -78,6 +80,7 @@
     currentTab = tab;
     const m = getOrCreateReportsModal();
     m.style.display = 'flex';
+    renderReportsView();
     await refreshReportsData();
     renderReportsView();
   }
@@ -94,29 +97,23 @@
     const draftQuizzes = getResumeWorkDrafts();
 
     m.innerHTML = `
-      <div style="background:#101124;border:2px solid #7550ef;box-shadow:0 0 50px rgba(117,80,239,0.4);border-radius:24px;width:100%;max-width:1100px;overflow:hidden;display:flex;flex-direction:column;max-height:94vh;">
-        <!-- Header -->
-        <header style="background:#171836;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(142,100,239,0.3);flex-wrap:wrap;gap:12px;">
+      <div class="scorear-modal-shell" style="width:100%;max-width:1100px;max-height:94vh;">
+        <header class="scorear-modal-head">
           <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg, #7550ef, #4338ca);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 15px rgba(117,80,239,0.4);">📊</div>
+            ${uiBox('chart', 'violet', 'md')}
             <div>
-              <h2 style="color:#ffffff;font-size:18px;font-weight:900;margin:0;">استوديو تقارير القاعة والنتائج</h2>
+              <h2 style="color:#ffffff;font-size:17px;font-weight:900;margin:0;">استوديو تقارير القاعة والنتائج</h2>
               <p style="color:#a1a4be;font-size:12px;margin:2px 0 0 0;">نسب الصواب المحسوبة من إجابات الطلاب الفعلية، ومتابعة العمل.</p>
             </div>
           </div>
-
-          <!-- Navigation Tabs -->
-          <div style="display:flex;background:#181938;padding:4px;border-radius:12px;border:1px solid rgba(142,100,239,0.3);">
-            <button onclick="ScoreARQuizReports.switchTab('sessions')" style="background:${currentTab==='sessions'?'#7550ef':'transparent'};color:${currentTab==='sessions'?'#fff':'#a1a4be'};border:none;padding:6px 14px;border-radius:8px;font-weight:900;font-size:12px;cursor:pointer;">📈 الجلسات (${cachedSessions.length})</button>
-            <button onclick="ScoreARQuizReports.switchTab('attention')" style="background:${currentTab==='attention'?'#ef4444':'transparent'};color:${currentTab==='attention'?'#fff':'#a1a4be'};border:none;padding:6px 14px;border-radius:8px;font-weight:900;font-size:12px;cursor:pointer;">⚠️ تحتاج انتباهك (${attentionQuestions.length})</button>
-            <button onclick="ScoreARQuizReports.switchTab('drafts')" style="background:${currentTab==='drafts'?'#10b981':'transparent'};color:${currentTab==='drafts'?'#fff':'#a1a4be'};border:none;padding:6px 14px;border-radius:8px;font-weight:900;font-size:12px;cursor:pointer;">📝 أكمل عملك (${draftQuizzes.length})</button>
+          <div class="scorear-segmented-tabs">
+            <button type="button" onclick="ScoreARQuizReports.switchTab('sessions')" class="scorear-segmented-tab ${currentTab==='sessions'?'active':''}">${uiIc('chart', 13)} <span>الجلسات (${cachedSessions.length})</span></button>
+            <button type="button" onclick="ScoreARQuizReports.switchTab('attention')" class="scorear-segmented-tab ${currentTab==='attention'?'active':''}">${uiIc('alert', 13)} <span>تحتاج انتباهك (${attentionQuestions.length})</span></button>
+            <button type="button" onclick="ScoreARQuizReports.switchTab('drafts')" class="scorear-segmented-tab ${currentTab==='drafts'?'active':''}">${uiIc('edit', 13)} <span>أكمل عملك (${draftQuizzes.length})</span></button>
           </div>
-
-          <button onclick="ScoreARQuizReports.closeReportsHub()" style="background:none;border:none;color:#9ca3af;font-size:22px;cursor:pointer;padding:2px 8px;">✕</button>
+          <button type="button" onclick="ScoreARQuizReports.closeReportsHub()" class="scorear-gear-btn" aria-label="إغلاق">${uiIc('close', 16)}</button>
         </header>
-
-        <!-- Main Body -->
-        <main style="padding:20px;overflow-y:auto;flex:1;background:#0e0f22;">
+        <main class="scorear-modal-body" style="background:rgba(12,13,29,0.55);">
           ${currentTab === 'sessions' ? renderSessionsTabHtml() : currentTab === 'attention' ? renderAttentionTabHtml(attentionQuestions) : renderDraftsTabHtml(draftQuizzes)}
         </main>
       </div>
@@ -127,40 +124,24 @@
   function renderSessionsTabHtml() {
     if (!cachedSessions.length) {
       return `
-        <div style="text-align:center;padding:60px 20px;background:#14152e;border:1px dashed rgba(142,100,239,0.4);border-radius:20px;">
-          <div style="font-size:48px;margin-bottom:12px;">🎮</div>
+        <div class="scorear-spotlight-card" style="text-align:center;padding:56px 20px;border-style:dashed;border-color:rgba(172,139,242,0.35);">
+          <div style="display:flex;justify-content:center;margin-bottom:12px;">${uiBox('gamepad', 'violet', 'lg')}</div>
           <h3 style="color:#fff;font-size:16px;font-weight:800;margin:0 0 8px 0;">لا توجد جلسات لعب مسجلة بعد</h3>
-          <p style="color:#94a3b8;font-size:13px;max-width:480px;margin:0 auto 16px auto;line-height:1.6;">
-            عند انطلاق أي مسابقة في القاعة وتنافس الطلاب على هواتفهم، ستظهر لك هنا نسب صواب كل سؤال، والأبطال المتوجين، وتحليلات الأداء الفعلية!
-          </p>
-          <button onclick="ScoreARQuizReports.closeReportsHub(); renderLiveLobby('royal', currentLobbyPin);" style="background:linear-gradient(135deg, #7550ef, #582cd1);color:#fff;border:none;padding:10px 22px;border-radius:12px;font-size:13px;font-weight:900;cursor:pointer;">
-            ابدأ قاعة اختبار الآن 🚀
-          </button>
+          <p style="color:#94a3b8;font-size:13px;max-width:480px;margin:0 auto 16px auto;line-height:1.6;">عند انطلاق أي مسابقة في القاعة وتنافس الطلاب على هواتفهم، ستظهر لك هنا نسب صواب كل سؤال، والأبطال المتوجين، وتحليلات الأداء الفعلية.</p>
+          <button type="button" onclick="ScoreARQuizReports.closeReportsHub(); renderLiveLobby('royal', currentLobbyPin);" class="btn launch-primary" style="padding:10px 22px;font-size:13px;">${uiIc('play', 15)} <span>ابدأ قاعة اختبار الآن</span></button>
         </div>
       `;
     }
 
     return `
       <div style="display:flex;flex-direction:column;gap:18px;">
-        <!-- Global Quick Stats (Strictly calculated, zero mock numbers) -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;">
-          <div style="background:#16183a;border:1px solid rgba(142,100,239,0.3);border-radius:16px;padding:14px;text-align:center;">
-            <span style="color:#a89bff;font-size:12px;font-weight:800;">إجمالي الجلسات الملعوبة</span>
-            <div style="color:#fff;font-size:26px;font-weight:900;margin-top:4px;">${cachedSessions.length}</div>
-          </div>
-          <div style="background:#16183a;border:1px solid rgba(142,100,239,0.3);border-radius:16px;padding:14px;text-align:center;">
-            <span style="color:#a89bff;font-size:12px;font-weight:800;">إجمالي الطلاب المتفاعلين</span>
-            <div style="color:#52d9ed;font-size:26px;font-weight:900;margin-top:4px;">${cachedSessions.reduce((acc, s) => acc + (s.totalStudents || 0), 0)}</div>
-          </div>
-          <div style="background:#16183a;border:1px solid rgba(142,100,239,0.3);border-radius:16px;padding:14px;text-align:center;">
-            <span style="color:#a89bff;font-size:12px;font-weight:800;">متوسط دقة الطلاب العام</span>
-            <div style="color:#34d399;font-size:26px;font-weight:900;margin-top:4px;">${calculateOverallAccuracy()}%</div>
-          </div>
+          <div style="background:rgba(20,22,46,0.72);border:1px solid rgba(255,255,255,0.09);border-radius:16px;padding:14px;text-align:center;"><span style="color:#a89bff;font-size:12px;font-weight:800;">إجمالي الجلسات الملعوبة</span><div style="color:#fff;font-size:26px;font-weight:900;margin-top:4px;">${cachedSessions.length}</div></div>
+          <div style="background:rgba(20,22,46,0.72);border:1px solid rgba(255,255,255,0.09);border-radius:16px;padding:14px;text-align:center;"><span style="color:#a89bff;font-size:12px;font-weight:800;">إجمالي الطلاب المتفاعلين</span><div style="color:#52d9ed;font-size:26px;font-weight:900;margin-top:4px;">${cachedSessions.reduce((acc, s) => acc + (s.totalStudents || 0), 0)}</div></div>
+          <div style="background:rgba(20,22,46,0.72);border:1px solid rgba(255,255,255,0.09);border-radius:16px;padding:14px;text-align:center;"><span style="color:#a89bff;font-size:12px;font-weight:800;">متوسط دقة الطلاب العام</span><div style="color:#34d399;font-size:26px;font-weight:900;margin-top:4px;">${calculateOverallAccuracy()}%</div></div>
         </div>
-
-        <!-- Formula Documentation Banner -->
-        <div style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#c7d2fe;flex-wrap:wrap;gap:8px;">
-          <span style="font-weight:800;">📐 معادلة احتساب النقاط المعتمدة:</span>
+        <div style="background:rgba(117,80,239,0.1);border:1px solid rgba(172,139,242,0.28);border-radius:12px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#ddd8ff;flex-wrap:wrap;gap:8px;">
+          <span class="scorear-inline-icon" style="font-weight:800;">${uiIc('sliders', 14)} معادلة احتساب النقاط المعتمدة:</span>
           <code style="background:rgba(0,0,0,0.35);padding:3px 10px;border-radius:6px;color:#fcd34d;font-family:monospace;font-weight:900;">نقاط = الأساس × عامل الزمن × المضاعف</code>
           <span style="font-size:11px;color:#94a3b8;">(عامل الزمن يتراوح بين 0.5 و 1.0 حسب سرعة الإجابة)</span>
         </div>
@@ -171,25 +152,22 @@
             const dateStr = s.createdAt ? new Date(s.createdAt).toLocaleString('ar-EG') : 'جلسة حديثة';
             const top = s.top3 || [];
             const qStats = s.questionStats || [];
-
-            const ui = global.ScoreARUI || { icon: () => '', iconBox: () => '' };
             return `
               <div class="scorear-spotlight-card" style="padding:16px;overflow:hidden;">
                 <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff14;padding-bottom:12px;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
                   <div>
                     <h3 style="color:#f6f3ff;font-size:15px;font-weight:900;margin:0;">${escapeHtml(s.quizTitle || 'مسابقة سكور آر')}</h3>
                     <div style="color:#a1a4be;font-size:11px;margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                      <span style="display:inline-flex;align-items:center;gap:4px;">${ui.icon('clock', { size: 12 })} ${dateStr}</span>
+                      <span style="display:inline-flex;align-items:center;gap:4px;">${uiIc('clock', 12)} ${dateStr}</span>
                       <span>•</span>
-                      <span style="color:#58dce3;display:inline-flex;align-items:center;gap:4px;">${ui.icon('key', { size: 12 })} رمز القاعة: ${s.pin || '---'}</span>
+                      <span style="color:#58dce3;display:inline-flex;align-items:center;gap:4px;">${uiIc('key', 12)} رمز القاعة: ${s.pin || '---'}</span>
                       <span>•</span>
-                      <span style="display:inline-flex;align-items:center;gap:4px;">${ui.icon('users', { size: 12 })} ${s.totalStudents || 0} طلاب</span>
+                      <span style="display:inline-flex;align-items:center;gap:4px;">${uiIc('users', 12)} ${s.totalStudents || 0} طلاب</span>
                     </div>
                   </div>
-
                   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <button type="button" onclick="ScoreARQuizReports.exportSessionExcel(${sIdx})" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:4px;"><span>📊 كشف Excel</span></button>
-                    ${top.length > 0 ? `<button type="button" onclick="ScoreARQuizReports.printWinnerCertificate(${sIdx})" style="background:linear-gradient(135deg,#d97706,#f59e0b);color:#000;border:none;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:4px;"><span>🏆 شهادة الفائز</span></button>` : ''}
+                    <button type="button" onclick="ScoreARQuizReports.exportSessionExcel(${sIdx})" class="scorear-gear-btn" style="border-color:rgba(88,220,227,0.4);color:#7fe7ce;">${uiIc('spreadsheet', 13)} <span>كشف Excel</span></button>
+                    ${top.length > 0 ? `<button type="button" onclick="ScoreARQuizReports.printWinnerCertificate(${sIdx})" class="scorear-gear-btn" style="border-color:rgba(251,191,36,0.4);color:#fef08a;">${uiIc('award', 13)} <span>شهادة الفائز</span></button>` : ''}
                     ${top.length > 0 ? `
                       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                         ${top.map((p, pIdx) => `
@@ -292,10 +270,10 @@
 
     return `
       <div style="display:flex;flex-direction:column;gap:14px;">
-        <div style="background:#422337;border:1px solid #c38498;border-radius:14px;padding:12px 18px;color:#ffd3e5;font-size:12px;font-weight:800;display:flex;align-items:center;gap:10px;">
-          ${ui.icon('alert', { size: 15 })}
+        <div style="background:#422337;border:1px solid rgba(239,68,68,0.4);border-radius:14px;padding:12px 18px;color:#ffd3e5;font-size:12px;font-weight:800;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          ${uiIc('alert', 15)}
           <span style="flex:1;">ودجت التنبيه: هذه الأسئلة حقق الطلاب فيها نسبة صواب أقل من 60%، مرتبة من الأضعف أولاً لمراجعتها وتعديلها.</span>
-          <button type="button" onclick="ScoreARQuizReports.createRemediationQuiz()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:7px 14px;font-size:11.5px;font-weight:900;cursor:pointer;white-space:nowrap;box-shadow:0 4px 12px rgba(16,185,129,0.35);">🎯 توليد مسابقة علاجية من الأسئلة الأضعف</button>
+          <button type="button" onclick="ScoreARQuizReports.createRemediationQuiz()" class="scorear-gear-btn" style="border-color:rgba(88,220,227,0.45);color:#7fe7ce;">${uiIc('target', 14)} <span>توليد مسابقة علاجية من الأسئلة الأضعف</span></button>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr;gap:12px;">
@@ -400,8 +378,8 @@
     }));
     closeReportsHub();
     if (global.ScoreARQuizBuilder && typeof global.ScoreARQuizBuilder.importQuestions === 'function') {
-      global.ScoreARQuizBuilder.importQuestions(formatted, { title: 'مسابقة علاجية مركزة — الأسئلة الأضعف 🎯', subject: 'مراجعة علاجية' });
-      if (global.toast) global.toast('🎯 تم توليد مسابقة علاجية من ' + formatted.length + ' أسئلة ضعيفة بنجاح!');
+      global.ScoreARQuizBuilder.importQuestions(formatted, { title: 'مسابقة علاجية مركزة — الأسئلة الأضعف', subject: 'مراجعة علاجية' });
+      if (global.toast) global.toast('تم توليد مسابقة علاجية من ' + formatted.length + ' أسئلة ضعيفة بنجاح');
     }
   }
 
@@ -409,7 +387,7 @@
     closeReportsHub();
     if (global.ScoreARQuizBank && global.ScoreARQuizBank.openBankHub) {
       global.ScoreARQuizBank.openBankHub('bank');
-      if (global.toast) global.toast('تم فتح بنك الأسئلة لمراجعة وتعديل السؤال ✏️');
+      if (global.toast) global.toast('تم فتح بنك الأسئلة لمراجعة وتعديل السؤال');
     }
   }
 

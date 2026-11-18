@@ -11,6 +11,13 @@
   let returnHash = '#home';
   let stageElement = null;
 
+  function uiIcon(name, size = 15) {
+    if (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function') {
+      return global.ScoreARUI.icon(name, { size });
+    }
+    return typeof global.icon === 'function' ? global.icon(name) : '';
+  }
+
   function ensureStageElement() {
     if (stageElement && document.body.contains(stageElement)) return stageElement;
     stageElement = document.getElementById('scorearUnifiedModalStage');
@@ -64,11 +71,11 @@
         </div>
 
         <div class="scorear-unified-actions">
-          <button type="button" class="scorear-unified-action-btn ${isCards ? 'is-active-cards' : ''}" onclick="ScoreARUnifiedViews.openView('cards')">🃏 الكروت (٢٠)</button>
-          <button type="button" class="scorear-unified-action-btn ${isHeroes ? 'is-active-heroes' : ''}" onclick="ScoreARUnifiedViews.openView('heroes')">✨ الأبطال (٢٠)</button>
-          <button type="button" class="scorear-unified-action-btn ${isPodium ? 'is-active-podium' : ''}" onclick="ScoreARUnifiedViews.openView('podium')">👑 التتويج</button>
+          <button type="button" class="scorear-unified-action-btn ${isCards ? 'is-active-cards' : ''}" onclick="ScoreARUnifiedViews.openView('cards')">${uiIcon('layers', 14)} <span>الكروت (٢٠)</span></button>
+          <button type="button" class="scorear-unified-action-btn ${isHeroes ? 'is-active-heroes' : ''}" onclick="ScoreARUnifiedViews.openView('heroes')">${uiIcon('spark', 14)} <span>الأبطال (٢٠)</span></button>
+          <button type="button" class="scorear-unified-action-btn ${isPodium ? 'is-active-podium' : ''}" onclick="ScoreARUnifiedViews.openView('podium')">${uiIcon('crown', 14)} <span>التتويج</span></button>
         </div>
-        <button type="button" class="scorear-unified-close-btn" onclick="ScoreARUnifiedViews.closeView()" title="إغلاق العرض المدمج">✕ إغلاق</button>
+        <button type="button" class="scorear-unified-close-btn" onclick="ScoreARUnifiedViews.closeView()" title="إغلاق العرض المدمج">${uiIcon('close', 14)} <span>إغلاق</span></button>
       </header>
     `;
   }
@@ -78,7 +85,7 @@
       ${getUnifiedHeaderHtml('cards', 'قاعة الكروت التكتيكية', '٢٠ كارت ذكاء استراتيجي يقلب موازين القاعة')}
       <main class="character-gallery-page">
         <div class="gallery-title-area" style="margin:14px 0 20px;">
-          <div class="eyebrow" style="margin-bottom:8px;color:#f59e0b;font-weight:900;">🃏 موسوعة حرب الكروت التكتيكية</div>
+          <div class="eyebrow scorear-inline-icon" style="margin-bottom:8px;color:#fbbf24;font-weight:900;">${uiIcon('layers', 14)} <span>موسوعة حرب الكروت التكتيكية</span></div>
           <h1 style="font-family:Cairo,sans-serif;font-size:clamp(22px, 3.6vw, 40px);font-weight:900;margin:8px 0;color:#ffffff;line-height:1.3;">ترسانة الـ ٢٠ كارت.. ذكاء تكتيكي يقلب موازين القاعة.</h1>
           <p style="color:#b1a2e9;font-size:13.5px;max-width:740px;line-height:1.75;margin:0;">تعرّف على أسرار كل كارت في طور حرب الكروت (Card Arena): من انقلاب المراكز بالكامل وسرقة النقاط، إلى فخاخ مرآة القاضي والصد العكسي التلقائي والدروع الذهبية ومساعدات الـ 50/50.</p>
         </div>
@@ -133,7 +140,7 @@
       ${getUnifiedHeaderHtml('heroes', 'قاعة أبطال سكور آر', '٢٠ رفيقاً كرتونياً للمغامرة والتعلم')}
       <main class="character-gallery-page heroes-page">
         <div class="gallery-title-area" style="margin:14px 0 20px;">
-          <div class="eyebrow" style="margin-bottom:8px;color:#52d9ed;font-weight:900;">✨ مستودع الأبطال الرسمي</div>
+          <div class="eyebrow scorear-inline-icon" style="margin-bottom:8px;color:#52d9ed;font-weight:900;">${uiIcon('spark', 14)} <span>مستودع الأبطال الرسمي</span></div>
           <h1 style="font-family:Cairo,sans-serif;font-size:clamp(22px, 3.6vw, 42px);font-weight:900;margin:8px 0;color:#ffffff;line-height:1.3;">أبطال سكور آر.. ٢٠ رفيقاً كرتونياً للمغامرة والتعلم.</h1>
           <p style="color:#b1a2e9;font-size:13.5px;max-width:720px;line-height:1.75;margin:0;">اختر رفيقك في الحصص الحية والمنافسات اليومية. يملك كل بطل حركة تنفس مشوقة وتأثيرات تتويج فريدة تميزك داخل القاعة.</p>
         </div>
@@ -146,14 +153,14 @@
             <div id="studentCustomPreviewTitle"><h3></h3></div>
             <p id="studentCustomPreviewDesc" style="color:#c5c7de;font-size:13px;line-height:1.6;margin:6px 0 10px;"></p>
             <div class="character-controls" style="margin-bottom:14px;">
-              <button type="button" data-character-pose="idle" aria-pressed="true" onclick="ScoreARUnifiedViews.previewHeroPose('idle')">🧍 وقوف</button>
-              <button type="button" data-character-pose="walk" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('walk')">🚶 مشي</button>
-              <button type="button" data-character-pose="run" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('run')">🏃 جري</button>
-              <button type="button" data-character-pose="climb" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('climb')">🧗 تسلق</button>
-              <button type="button" data-character-pose="fly" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('fly')">🚀 طيران</button>
-              <button type="button" data-character-pose="celebrate" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('celebrate')">🎉 احتفال</button>
+              <button type="button" data-character-pose="idle" aria-pressed="true" onclick="ScoreARUnifiedViews.previewHeroPose('idle')">${uiIcon('sparkles', 14)} <span>وقوف</span></button>
+              <button type="button" data-character-pose="walk" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('walk')">${uiIcon('route', 14)} <span>مشي</span></button>
+              <button type="button" data-character-pose="run" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('run')">${uiIcon('zap', 14)} <span>جري</span></button>
+              <button type="button" data-character-pose="climb" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('climb')">${uiIcon('arrowUp', 14)} <span>تسلق</span></button>
+              <button type="button" data-character-pose="fly" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('fly')">${uiIcon('planet', 14)} <span>طيران</span></button>
+              <button type="button" data-character-pose="celebrate" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('celebrate')">${uiIcon('trophy', 14)} <span>احتفال</span></button>
             </div>
-            <button type="button" id="btnSelectHero" onclick="ScoreARUnifiedViews.saveHeroChoice()" style="width:100%;background:linear-gradient(135deg,#7550ef,#582cd1);color:#fff;border:none;border-radius:14px;padding:12px;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 6px 20px rgba(117,80,239,0.4);font-family:inherit;">اعتماد هذا البطل لشخصيتي ⭐</button>
+            <button type="button" id="btnSelectHero" onclick="ScoreARUnifiedViews.saveHeroChoice()" style="width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(110deg,#7550ef,#9665ff);color:#fff;border:1px solid rgba(196,168,255,0.4);border-radius:14px;padding:12px;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 6px 20px rgba(117,80,239,0.35);font-family:inherit;">${uiIcon('star', 16)} <span>اعتماد هذا البطل لشخصيتي</span></button>
           </aside>
 
           <!-- GRID -->
@@ -226,26 +233,26 @@
       const profile = JSON.parse(localStorage.getItem('scorear_student_profile_v1') || '{}');
       profile.avatarId = hero.code;
       localStorage.setItem('scorear_student_profile_v1', JSON.stringify(profile));
-      if (global.toast) global.toast(`✨ تم اعتماد البطل (${hero.name || hero.nameAr || hero.code}) بنجاح!`);
+      if (global.toast) global.toast(`تم اعتماد البطل (${hero.name || hero.nameAr || hero.code}) بنجاح`);
     } catch(e){}
   }
 
   function renderPodiumView(container) {
     container.innerHTML = `
-      ${getUnifiedHeaderHtml('podium', 'منصة التتويج الاحتفالية الكبرى 👑', 'المحاكاة الاحتفالية للتتويج وتكريم الأبطال')}
-      <div class="unified-podium-sim-bar">
+      ${getUnifiedHeaderHtml('podium', 'منصة التتويج الاحتفالية الكبرى', 'المحاكاة الاحتفالية للتتويج وتكريم الأبطال')}
+      <div class="unified-podium-sim-bar scorear-control-bar">
         <div class="unified-podium-sim-scroll">
-          <span style="font-weight:900;color:#fcd34d;font-size:12px;white-space:nowrap;">🎬 محاكاة:</span>
-          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium('cinematic')" style="background:linear-gradient(135deg,#8b5cf6,#4f46e5);color:#fff;border:none;border-radius:9px;padding:5px 10px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap;">🎬 سينمائي</button>
-          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium(3)" style="background:#b45309;color:#fff;border:none;border-radius:9px;padding:5px 10px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">🥉 الثالث</button>
-          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium(2)" style="background:#475569;color:#fff;border:none;border-radius:9px;padding:5px 10px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">🥈 الثاني</button>
-          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium(1)" style="background:#d97706;color:#fff;border:none;border-radius:9px;padding:5px 10px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">🥇 الأول</button>
-          <button type="button" class="btn small" onclick="ScoreARUnifiedViews.simulatePodium('all')" style="background:#7550ef;color:#fff;border:none;border-radius:9px;padding:5px 10px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">⚡ كشف الكل</button>
-          <button type="button" onclick="ScoreARPodiumEffects?.toggleAudioMute?.()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:5px 10px;border-radius:9px;font-size:11.5px;cursor:pointer;white-space:nowrap;">🔊 الصوت</button>
+          <span class="scorear-control-pill" style="color:#fde68a;border-color:rgba(251,191,36,0.28);">${uiIcon('sparkles', 14)} <span>محاكاة:</span></span>
+          <button type="button" class="scorear-gear-btn is-active" onclick="ScoreARUnifiedViews.simulatePodium('cinematic')">${uiIcon('play', 14)} <span>سينمائي</span></button>
+          <button type="button" class="scorear-gear-btn" onclick="ScoreARUnifiedViews.simulatePodium(3)">${uiIcon('medal', 14)} <span>الثالث</span></button>
+          <button type="button" class="scorear-gear-btn" onclick="ScoreARUnifiedViews.simulatePodium(2)">${uiIcon('medal', 14)} <span>الثاني</span></button>
+          <button type="button" class="scorear-gear-btn" onclick="ScoreARUnifiedViews.simulatePodium(1)" style="border-color:rgba(251,191,36,0.35);color:#fef08a;">${uiIcon('crown', 14)} <span>الأول</span></button>
+          <button type="button" class="scorear-gear-btn" onclick="ScoreARUnifiedViews.simulatePodium('all')">${uiIcon('zap', 14)} <span>كشف الكل</span></button>
+          <button type="button" class="scorear-gear-btn" onclick="ScoreARPodiumEffects?.toggleAudioMute?.()">${uiIcon('volume', 14)} <span>الصوت</span></button>
         </div>
       </div>
       <style>
-        .unified-podium-sim-bar { padding:7px 14px;background:rgba(18,20,42,0.95);border-bottom:1px solid rgba(142,100,239,0.3);flex-shrink:0; }
+        .unified-podium-sim-bar { padding:7px 14px;flex-shrink:0; }
         .unified-podium-sim-scroll { display:flex;align-items:center;gap:6px;flex-wrap:wrap; }
         #unifiedPodiumStage { position:relative;width:100%;flex:1 1 0;min-height:0;background:#080914;overflow:hidden;display:flex;flex-direction:column; }
         @media (min-width: 721px) {

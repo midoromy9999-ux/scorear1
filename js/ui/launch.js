@@ -20,8 +20,8 @@ window.renderLaunchHome = function () {
           <a href="#library">المحتوى</a>
         </nav>
         <div class="launch-nav-actions">
-          <button class="nav-join" data-action="join">عندي رمز قاعة</button>
-          <button class="btn launch-primary" data-action="teacher-login">دخول ${icon('arrow')}</button>
+          <button class="nav-join" data-action="join">${icon('key')} دخول القاعة بالرمز</button>
+          <button class="btn launch-primary" data-action="unified-login">دخول / حساب جديد ${icon('arrow')}</button>
           <button class="icon-btn launch-menu" data-action="menu" aria-label="فتح القائمة">${icon('menu')}</button>
         </div>
       </header>
@@ -40,6 +40,7 @@ window.renderLaunchHome = function () {
             </p>
             <div class="launch-ctas reveal">
               <a href="#studio" class="btn launch-primary big">اصنع تجربتك ${icon('arrow')}</a>
+              <button type="button" class="btn launch-student-join big" data-action="join">${icon('key')} دخول القاعة بالرمز</button>
               <button class="launch-watch" data-action="intro">
                 <span>${icon('play')}</span>
                 <div>
@@ -96,37 +97,6 @@ window.renderLaunchHome = function () {
           <p>اختر مسارك الواضح.<br>واترك الباقي لفضولك.</p>
         </div>
 
-        <div class="role-tracks-grid reveal">
-          <div class="role-track-card role-track-student">
-            <div class="role-track-head">
-              <h3>🎯 مسار الطالب البطل</h3>
-              <span class="role-track-badge">انطلاق فوري</span>
-            </div>
-            <p class="role-track-desc">ادخل قاعة المنافسة مباشرة بكود المعلم، وتابع رحلتك وصفوفك واختر بطلك وكروتك التكتيكية.</p>
-            <div class="role-track-actions">
-              <button type="button" class="role-track-chip primary-student" data-action="join">🔑 دخول برمز القاعة</button>
-              <a href="#journey" class="role-track-chip">🎒 رحلتي التعليمية</a>
-              <a href="#classrooms" class="role-track-chip">🏫 ملفي وصفوفي</a>
-              <a href="characters.html" class="role-track-chip">✨ الأبطال (٢٠)</a>
-              <a href="cards.html" class="role-track-chip">🃏 الكروت (٢٠)</a>
-            </div>
-          </div>
-
-          <div class="role-track-card role-track-teacher">
-            <div class="role-track-head">
-              <h3>👨‍🏫 مسار المعلم القائد</h3>
-              <span class="role-track-badge">إدارة كاملة</span>
-            </div>
-            <p class="role-track-desc">أنشئ الاختبارات بالذكاء الاصطناعي أو من ملفاتك، وأدر فصولك وواجباتك وتقارير النتائج من مكان واحد.</p>
-            <div class="role-track-actions">
-              <a href="#studio" class="role-track-chip primary-teacher">🚀 استوديو المعلم</a>
-              <a href="#classrooms" class="role-track-chip">🏫 الفصول والواجبات</a>
-              <a href="#library" class="role-track-chip">📚 المكتبة والتقارير</a>
-              <a href="#worlds" class="role-track-chip">🪐 قاعة المنافسات</a>
-            </div>
-          </div>
-        </div>
-
         <div class="experience-grid">
           <a href="#studio" class="experience-card teacher-card spotlight reveal">
             <img src="assets/classroom.webp" alt="معلم كرتوني مصري يحوّل الكتاب إلى عالم من الأسئلة" loading="lazy">
@@ -135,8 +105,8 @@ window.renderLaunchHome = function () {
             <div class="experience-content">
               <span class="experience-icon">${icon('grid')}</span>
               <h3>إنت صاحب<br>لحظة الإلهام.</h3>
-              <p>من ملف الدرس إلى نشاط يشارك فيه فصلك.</p>
-              <span class="experience-link">ادخل الاستوديو ${icon('arrow')}</span>
+              <p>من ملف الدرس إلى نشاط يشارك فيه فصلك، مع إدارة الفصول والواجبات والتقارير.</p>
+              <span class="experience-link">ادخل استوديو المعلم ${icon('arrow')}</span>
             </div>
           </a>
 
@@ -148,8 +118,8 @@ window.renderLaunchHome = function () {
             </div>
             <div class="experience-content">
               <h3>فصلك.<br>بقوانين المغامرة.</h3>
-              <p>عالم مختلف. تحدٍ جديد. مشاركة للجميع.</p>
-              <span class="experience-link">استكشف العوالم ${icon('arrow')}</span>
+              <p>عالم مختلف، ٢٠ بطلاً متحركاً، و٢٠ كارتاً تكتيكياً لمشاركة الجميع.</p>
+              <span class="experience-link">استكشف العوالم والأبطال ${icon('arrow')}</span>
             </div>
           </a>
 
@@ -164,50 +134,25 @@ window.renderLaunchHome = function () {
             </div>
             <div class="experience-content">
               <h3>كل خطوة،<br>نسخة أقوى منك.</h3>
-              <p>تعلّم، جرّب، وراجع أخطاءك على مهلك.</p>
-              <span class="experience-link">ابدأ رحلتك ${icon('arrow')}</span>
+              <p>تعلّم في رحلتك الفردية، تابع صفوفك، وراجع دفتر أخطائك على مهلك.</p>
+              <span class="experience-link">ابدأ رحلتك التعليمية ${icon('arrow')}</span>
             </div>
           </a>
         </div>
-      </section>
 
-      <section class="launch-register launch-section" id="launchRegister">
-        <div class="launch-section-heading reveal">
-          <div>
-            <span class="section-kicker">✦ بوابة الحسابات · التسجيل والدخول</span>
-            <h2>تسجيل<br><span class="gradient-text">حساب جديد لكل بطل ومعلم.</span></h2>
-          </div>
-          <p>اختر نوع حسابك للانطلاق معنا،<br>أو ادخل مباشرة إذا كان لديك حساب مسجل.</p>
-        </div>
-
-        <div class="experience-grid" style="grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:18px;margin-bottom:24px;">
-          <button type="button" class="experience-card spotlight reveal" data-action="register-teacher" style="text-align:right;cursor:pointer;border:1px solid rgba(142,100,239,0.3);background:linear-gradient(180deg, #18172e 0%, #111226 100%);padding:24px;border-radius:20px;display:flex;flex-direction:column;justify-content:space-between;min-height:220px;">
+        <div id="launchRegister" class="reveal" style="margin-top:24px;background:linear-gradient(135deg, rgba(24,23,46,0.88), rgba(14,16,34,0.94));border:1px solid rgba(172,139,242,0.22);border-radius:20px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;backdrop-filter:blur(16px);">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="scorear-icon-box size-sm tone-violet">${icon('shield')}</span>
             <div>
-              <div style="font-size:36px;margin-bottom:12px;">👨‍🏫</div>
-              <h3 style="color:#ffffff;font-size:20px;font-weight:900;margin-bottom:6px;">معلم جديد</h3>
-              <p style="color:#b1a2e9;font-size:13px;line-height:1.5;">أنشئ قاعاتك التفاعلية، وأطلق المسابقات بالذكاء الاصطناعي، وتابع تقارير فصولك باحترافية.</p>
+              <div style="font-size:15px;font-weight:900;color:#ffffff;">بوابة الدخول والتسجيل الموحدة</div>
+              <div style="font-size:12px;color:#a1a4be;">مكان واحد لدخول وتسجيل المعلم والطالب، أو الانضمام الفوري للقاعة بالرمز.</div>
             </div>
-            <span style="color:#52d9ed;font-weight:800;font-size:13px;display:inline-flex;align-items:center;gap:6px;">ابدأ كمعلم جديد ${icon('arrow')}</span>
-          </button>
-
-          <button type="button" class="experience-card spotlight reveal" data-action="register-student" style="text-align:right;cursor:pointer;border:1px solid rgba(16,185,129,0.3);background:linear-gradient(180deg, #132422 0%, #0d1b19 100%);padding:24px;border-radius:20px;display:flex;flex-direction:column;justify-content:space-between;min-height:220px;">
-            <div>
-              <div style="font-size:36px;margin-bottom:12px;">🎯</div>
-              <h3 style="color:#ffffff;font-size:20px;font-weight:900;margin-bottom:6px;">طالب جديد</h3>
-              <p style="color:#a7f3d0;font-size:13px;line-height:1.5;">احفظ أوسمتك ونقاطك، واختر بطلك المفضل، وانطلق في رحلتك التعليمية الخاصة دون حاجة لرقم هاتف.</p>
-            </div>
-            <span style="color:#34d399;font-weight:800;font-size:13px;display:inline-flex;align-items:center;gap:6px;">سجّل كطالب بطل ${icon('arrow')}</span>
-          </button>
-        </div>
-
-        <div class="reveal" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
-          <div>
-            <div style="font-size:15px;font-weight:900;color:#ffffff;">عندك حساب مسجل بالفعل؟</div>
-            <div style="font-size:12px;color:#94a3b8;">دخول موحد بالبريد أو اسم المستخدم للمعلم والطالب والإدارة.</div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <button class="btn launch-primary" data-action="unified-login" style="padding:10px 22px;font-weight:900;font-size:14px;">دخول بالحساب ${icon('arrow')}</button>
-            <button class="btn launch-outline" data-action="join" style="padding:10px 18px;font-weight:800;font-size:13px;">انضم كضيف برمز القاعة</button>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="btn launch-primary" data-action="unified-login" style="padding:10px 18px;font-weight:800;font-size:12.5px;">تسجيل الدخول ${icon('arrow')}</button>
+            <button type="button" class="btn launch-outline" data-action="register-student" style="padding:10px 15px;font-weight:800;font-size:12px;">طالب جديد</button>
+            <button type="button" class="btn launch-outline" data-action="register-teacher" style="padding:10px 15px;font-weight:800;font-size:12px;">معلم جديد</button>
+            <button type="button" class="nav-join" data-action="join" style="padding:10px 15px;">${icon('key')} رمز القاعة</button>
           </div>
         </div>
       </section>
@@ -281,9 +226,21 @@ window.initLaunch = function (page) {
   launchCleanup.forEach(fn => fn());
   launchCleanup = [];
   document.body.classList.toggle('launch-mode', page === 'home');
-  if (page !== 'home') return;
-
   const reduce = () => document.documentElement.classList.contains('reduced') || matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Bind spotlight hover across both #home and internal editorial views
+  document.querySelectorAll('.spotlight').forEach(el => {
+    const move = e => {
+      if (reduce()) return;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty('--spot-x', `${e.clientX - r.left}px`);
+      el.style.setProperty('--spot-y', `${e.clientY - r.top}px`);
+    };
+    el.addEventListener('pointermove', move);
+    launchCleanup.push(() => el.removeEventListener('pointermove', move));
+  });
+
+  if (page !== 'home') return;
 
   if (window.Motion && !reduce()) {
     const { animate, stagger, inView } = window.Motion;
@@ -295,18 +252,6 @@ window.initLaunch = function (page) {
     }, { margin: '0px 0px -50px 0px' });
     launchCleanup.push(stop);
   }
-
-  // The pointer-relative radial highlight follows the SpotlightCard interaction model.
-  document.querySelectorAll('.spotlight').forEach(el => {
-    const move = e => {
-      if (reduce()) return;
-      const r = el.getBoundingClientRect();
-      el.style.setProperty('--spot-x', `${e.clientX - r.left}px`);
-      el.style.setProperty('--spot-y', `${e.clientY - r.top}px`);
-    };
-    el.addEventListener('pointermove', move);
-    launchCleanup.push(() => el.removeEventListener('pointermove', move));
-  });
 
   document.querySelectorAll('[data-tilt]').forEach(el => {
     const move = e => {

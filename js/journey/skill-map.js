@@ -98,7 +98,7 @@
       const stations = track.stations || [];
       const tIcon = tIdx === 0 ? 'book' : tIdx === 1 ? 'spark' : 'edit';
       html += `
-        <div class="scorear-experience-panel spotlight" style="display:flex;flex-direction:column;gap:14px;box-sizing:border-box;width:100%;">
+        <div class="scorear-experience-panel scorear-track-card spotlight" style="display:flex;flex-direction:column;gap:14px;box-sizing:border-box;width:100%;">
           <div style="display:flex;align-items:center;gap:12px;border-bottom:1px solid #ffffff12;padding-bottom:14px;">
             ${ui.iconBox(tIcon, { size: 'md', tone: 'violet', tilted: true })}
             <div>

@@ -524,27 +524,34 @@ main {
   width: 100%;
 }
 .world-card {
-  background: #15172a !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 20px;
+  background: var(--surface-violet-wash, radial-gradient(ellipse at 50% 0%, rgba(43, 38, 104, 0.45), transparent 68%), #111329) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 22px;
   overflow: hidden;
-  transition: all 0.3s var(--ease);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  transition: transform 0.35s var(--ease), border-color 0.35s var(--ease), box-shadow 0.35s var(--ease);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.42);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-width: 0;
 }
 .world-card:hover {
-  transform: translateY(-6px);
-  border-color: rgba(142, 100, 239, 0.5) !important;
-  box-shadow: 0 18px 45px rgba(117, 80, 239, 0.25);
+  transform: translateY(-5px);
+  border-color: rgba(173, 139, 239, 0.42) !important;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.56), 0 0 32px rgba(128, 92, 246, 0.16);
 }
 .world-thumb {
   position: relative;
-  aspect-ratio: 1.6;
+  aspect-ratio: 1.62;
   overflow: hidden;
   background: #0f1020;
+}
+.world-thumb:after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 48%, rgba(17, 19, 41, 0.94));
+  pointer-events: none;
 }
 .world-thumb > img {
   width: 100%;
@@ -553,20 +560,44 @@ main {
   transition: transform 0.8s var(--ease);
 }
 .world-card:hover .world-thumb > img {
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 .world-chip {
   position: absolute;
   top: 14px;
   right: 14px;
-  background: rgba(17, 18, 37, 0.85);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 2;
+  background: rgba(10, 12, 37, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   padding: 4px 12px;
-  border-radius: 8px;
-  font-size: 10px;
+  border-radius: 999px;
+  font-size: 10.5px;
   font-weight: 800;
-  color: var(--cyan);
+  color: #e2d4fb;
+}
+.world-index {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(236, 238, 255, 0.75);
+  background: rgba(10, 12, 37, 0.55);
+  backdrop-filter: blur(8px);
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.world-mode-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #58dce3;
+  background: rgba(88, 220, 227, 0.08);
+  border: 1px solid rgba(88, 220, 227, 0.22);
+  padding: 2px 9px;
+  border-radius: 999px;
 }
 .world-body {
   padding: 20px;
@@ -2289,12 +2320,9 @@ dialog::backdrop {
    ScoreAR v2.1.0 Non-Destructive Responsive Enhancements
    (Mobile Clarity, Card Shadows, Leaderboard Ergonomics)
    ============================================================ */
-.world-card, .host-question-card, .race-lane-card, .scorear-portal-card {
+.host-question-card, .race-lane-card, .scorear-portal-card {
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 24px rgba(117, 80, 239, 0.15);
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, border-color 0.28s ease;
-}
-.world-card:hover {
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.65), 0 0 32px rgba(117, 80, 239, 0.35);
 }
 
 @media (max-width: 640px) {
@@ -2325,6 +2353,372 @@ dialog::backdrop {
   }
   .scorear-count-up {
     font-size: 19px !important;
+  }
+}
+
+/* ============================================================
+   ScoreAR Phase 1: Unified Homepage-Soul Design System
+   Shared across all internal views & standalone pages
+   ============================================================ */
+.gradient-text {
+  background: var(--gradient-accent, linear-gradient(110deg, #58dce3 5%, #91a5ff 45%, #c28dff 85%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.launch-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 13px;
+  border: 1px solid #ac8bf22e;
+  background: #ac8bf20a;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #c7b8e5;
+  backdrop-filter: blur(12px);
+}
+.launch-pill svg {
+  width: 14px;
+  height: 14px;
+  color: #ba95fa;
+  flex-shrink: 0;
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  display: inline-block;
+  background: #57e1cf;
+  border-radius: 50%;
+  box-shadow: 0 0 12px #57e1cf99;
+  flex: none;
+}
+
+.btn.launch-primary {
+  background: linear-gradient(110deg, #7550ef 0%, #9665ff 52%, #aa70f2 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #c4a8ff50 !important;
+  box-shadow: 0 8px 28px #7c4cf92b, inset 0 1px #ffffff38;
+  position: relative;
+  overflow: hidden;
+}
+.btn.launch-primary:before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  transform: translateX(100%) rotate(20deg);
+  background: linear-gradient(90deg, transparent, #ffffff28, transparent);
+  transition: transform 0.7s var(--ease);
+  pointer-events: none;
+}
+.btn.launch-primary:hover:before {
+  transform: translateX(-100%) rotate(20deg);
+}
+.btn.launch-primary:hover {
+  box-shadow: 0 8px 38px #9569ff66;
+  transform: translateY(-2px);
+}
+
+.btn.launch-outline {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #e4def3 !important;
+}
+.btn.launch-outline:hover {
+  background: rgba(142, 100, 239, 0.14) !important;
+  border-color: #a38ac8 !important;
+  color: #ffffff !important;
+}
+
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: -2;
+  pointer-events: none;
+}
+.aurora span {
+  position: absolute;
+  width: 46vw;
+  height: 46vw;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.22;
+  pointer-events: none;
+}
+.aurora span:first-child { background: #6d35c8; right: -22%; top: -22%; }
+.aurora span:nth-child(2) { background: #173c99; left: 2%; top: 12%; }
+.aurora span:nth-child(3) { background: #087879; left: 20%; bottom: -45%; opacity: 0.14; }
+
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(#ffffff03 1px, transparent 1px), linear-gradient(90deg, #ffffff03 1px, transparent 1px);
+  background-size: 90px 90px;
+  mask-image: linear-gradient(transparent, #0006, transparent);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.scorear-hairline-divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, #8a78b455, transparent);
+  margin: 26px 0;
+  border: 0;
+}
+
+.scorear-hero-frame {
+  position: relative;
+  border-radius: 24px 68px 24px 24px;
+  overflow: hidden;
+  border: 1px solid #cdb5ff38;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55), 0 0 55px rgba(129, 74, 255, 0.14);
+  isolation: isolate;
+}
+.scorear-hero-frame > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.scorear-hero-frame-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 52%, rgba(13, 16, 44, 0.85));
+  pointer-events: none;
+}
+
+.scorear-segmented-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  background: rgba(20, 21, 42, 0.85);
+  border: 1px solid var(--border-hairline, rgba(255, 255, 255, 0.09));
+  border-radius: 14px;
+  padding: 4px;
+  backdrop-filter: blur(12px);
+}
+.scorear-segmented-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  color: var(--muted, #a1a4be);
+  border: 1px solid transparent;
+  padding: 8px 15px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.scorear-segmented-tab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+.scorear-segmented-tab.active,
+.scorear-segmented-tab[aria-pressed="true"] {
+  background: linear-gradient(110deg, #7550ef, #9665ff);
+  color: #ffffff;
+  border-color: rgba(196, 168, 255, 0.35);
+  box-shadow: 0 4px 18px rgba(124, 76, 249, 0.28);
+}
+
+.scorear-modal-shell {
+  background: var(--surface-glass, linear-gradient(180deg, rgba(24, 23, 46, 0.94) 0%, rgba(13, 14, 29, 0.97) 100%));
+  border: 1px solid var(--border-lilac, rgba(172, 139, 242, 0.24));
+  border-radius: var(--radius-panel, 24px);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.72), 0 0 60px rgba(117, 80, 239, 0.14);
+  backdrop-filter: blur(22px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.scorear-modal-head {
+  padding: 16px 24px;
+  background: rgba(17, 18, 37, 0.75);
+  border-bottom: 1px solid var(--border-hairline, rgba(255, 255, 255, 0.09));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.scorear-modal-body {
+  padding: 22px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.scorear-soft-note {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--border-hairline, rgba(255, 255, 255, 0.09));
+  border-radius: 16px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted, #a1a4be);
+  font-size: 12.5px;
+  line-height: 1.75;
+}
+.scorear-soft-note svg {
+  color: var(--lilac, #b1a2e9);
+  flex-shrink: 0;
+}
+
+.scorear-inline-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ============================================================
+   ScoreAR Phase 1 & 2: Unified Auth Hub, Control Gears & Cosmic Race Leaderboard
+   ============================================================ */
+.scorear-auth-portal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: right;
+  direction: rtl;
+}
+.scorear-auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: rgba(12, 14, 30, 0.85);
+  border: 1px solid var(--border-hairline, rgba(255, 255, 255, 0.09));
+  border-radius: 14px;
+  padding: 5px;
+}
+.scorear-auth-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted, #a1a4be);
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.22s var(--ease);
+  font-family: inherit;
+}
+.scorear-auth-tab svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.scorear-auth-tab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+.scorear-auth-tab.is-active {
+  background: linear-gradient(110deg, rgba(117, 80, 239, 0.9), rgba(150, 101, 255, 0.9));
+  color: #ffffff;
+  border-color: rgba(196, 168, 255, 0.38);
+  box-shadow: 0 6px 20px rgba(117, 80, 239, 0.32);
+}
+
+.scorear-control-bar {
+  background: rgba(11, 13, 28, 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+.scorear-control-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(20, 22, 46, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #eceeff;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  backdrop-filter: blur(12px);
+  transition: all 0.2s var(--ease);
+}
+.scorear-control-pill svg {
+  width: 14px;
+  height: 14px;
+  color: #58dce3;
+  flex-shrink: 0;
+}
+.scorear-gear-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #eceeff;
+  padding: 5px 11px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  font-family: inherit;
+}
+.scorear-gear-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.scorear-gear-btn:hover {
+  background: rgba(142, 100, 239, 0.22);
+  border-color: rgba(172, 139, 242, 0.45);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+.scorear-gear-btn.is-active {
+  background: linear-gradient(110deg, rgba(117, 80, 239, 0.72), rgba(150, 101, 255, 0.72));
+  border-color: rgba(196, 168, 255, 0.55);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(117, 80, 239, 0.32);
+}
+
+/* Protected File Modals & Sections Cosmetic Overrides (Zero-touch on protected JS) */
+#scorearGameModeModal > div {
+  background: var(--surface-glass, linear-gradient(180deg, rgba(24, 23, 46, 0.95) 0%, rgba(14, 15, 31, 0.98) 100%)) !important;
+  border: 1px solid var(--border-lilac, rgba(172, 139, 242, 0.28)) !important;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.78), 0 0 50px rgba(117, 80, 239, 0.16) !important;
+  backdrop-filter: blur(22px) !important;
+}
+#scorearStreakContainer > div,
+#practiceTracksSection .scorear-experience-panel {
+  border-color: var(--border-hairline, rgba(255, 255, 255, 0.09)) !important;
+  backdrop-filter: blur(14px);
+}
+
+@media (max-width: 640px) {
+  .scorear-hero-frame {
+    border-radius: 18px 44px 18px 18px;
+  }
+  .scorear-modal-head {
+    padding: 12px 16px;
+  }
+  .scorear-modal-body {
+    padding: 16px;
+  }
+  .scorear-segmented-tab {
+    padding: 7px 11px;
+    font-size: 11.5px;
+  }
+  .scorear-auth-tab {
+    font-size: 11px;
+    padding: 8px 6px;
   }
 }
 

@@ -126,11 +126,11 @@
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <button onclick="ScoreARClassrooms && ScoreARClassrooms.openClassesModal()" class="btn launch-outline" style="padding:7px 12px;font-size:12px;border-color:#38bdf866;color:#7dd3fc;">🏫 فصولي</button>
+          <button onclick="ScoreARClassrooms && ScoreARClassrooms.openClassesModal()" class="btn launch-outline" style="padding:7px 12px;font-size:12px;border-color:#38bdf866;color:#7dd3fc;">${icon('school', { size: 14 })} فصولي</button>
           <button onclick="ScoreARQuizAI.openAiStudio({mode:'hub'})" class="btn launch-outline" style="padding:7px 12px;font-size:12px;border-color:#9665ff66;">${icon('spark', { size: 14 })} توليد AI</button>
           <button onclick="ScoreARQuizImporter.openImporter({mode:'hub'})" class="btn launch-outline" style="padding:7px 12px;font-size:12px;border-color:#58dce355;color:#85f3d8;">${icon('spreadsheet', { size: 14 })} استيراد Excel</button>
           ${primaryAction}
-          <button onclick="ScoreARQuizBank.closeBankHub()" class="icon-btn" style="padding:6px 10px;" aria-label="إغلاق">${icon('close', { size: 15 })}</button>
+          <button onclick="ScoreARQuizBank.closeBankHub()" class="scorear-gear-btn" style="padding:6px 10px;" aria-label="إغلاق">${icon('close', { size: 15 })}</button>
         </div>
       </header>
 
@@ -231,13 +231,13 @@
           </div>
           <div class="scorear-bank-card-actions" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
             <button onclick="ScoreARQuizBank.launchQuiz('${qz.id}')" class="btn launch-primary" style="width:100%;padding:10px 16px;font-size:13.5px;font-weight:900;justify-content:center;box-shadow:0 4px 14px rgba(117,80,239,0.35);">
-              ${icon('play', { size: 15 })} إطلاق المسابقة الحية 🚀
+              ${icon('play', { size: 15 })} إطلاق المسابقة الحية
             </button>
             <div class="scorear-bank-card-foot" style="display:flex;align-items:center;gap:6px;">
-              <button onclick="ScoreARQuizBank.sendAsClassHomework('${qz.id}')" class="btn launch-outline" style="flex:1;padding:6px 8px;font-size:11.5px;font-weight:700;justify-content:center;border-color:#38bdf855;color:#7dd3fc;" title="إرسال كواجب للصف">📝 واجب للصف</button>
+              <button onclick="ScoreARQuizBank.sendAsClassHomework('${qz.id}')" class="btn launch-outline" style="flex:1;padding:6px 8px;font-size:11.5px;font-weight:700;justify-content:center;border-color:#38bdf855;color:#7dd3fc;" title="إرسال كواجب للصف">${icon('edit', { size: 12 })} واجب للصف</button>
               <button onclick="ScoreARQuizBank.editQuiz('${qz.id}')" class="btn launch-outline" style="flex:1;padding:6px 8px;font-size:11.5px;font-weight:700;justify-content:center;">${icon('edit', { size: 12 })} تعديل</button>
-              <button onclick="ScoreARQuizBank.duplicateQuiz('${qz.id}')" class="icon-btn" style="padding:6px 9px;" title="تكرار">${icon('copy', { size: 13 })}</button>
-              <button onclick="ScoreARQuizBank.deleteQuizWithUndo('${qz.id}')" class="icon-btn" style="padding:6px 9px;color:#ffd3e5;" title="حذف">${icon('trash', { size: 13 })}</button>
+              <button onclick="ScoreARQuizBank.duplicateQuiz('${qz.id}')" class="scorear-gear-btn" style="padding:6px 9px;" title="تكرار">${icon('copy', { size: 13 })}</button>
+              <button onclick="ScoreARQuizBank.deleteQuizWithUndo('${qz.id}')" class="scorear-gear-btn" style="padding:6px 9px;color:#ffd3e5;" title="حذف">${icon('trash', { size: 13 })}</button>
             </div>
           </div>
         </article>`;

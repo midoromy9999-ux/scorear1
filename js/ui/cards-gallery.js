@@ -55,15 +55,22 @@
   let selectedId = 'SWAP_STUDENT';
   let activeCat = 'all';
 
+  function uiIcon(name, size = 15) {
+    if (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function') {
+      return global.ScoreARUI.icon(name, { size });
+    }
+    return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9 12 2"/></svg>`;
+  }
+
   const CARD_ICONS = {
-    SWAP_STUDENT: '🔄', POINT_LEECH: '🧲', MULTIPLIER_2X: '⚡', ASK_QUESTION: '❓', SCORE_EQUALIZER: '⚖️',
-    PIN_STUDENT: '❄️', MINUS_50: '💥', SCREEN_FOG: '🌫️', TIME_SLICER: '⏳', BLOCK_DRAW: '🚫',
-    REVERSE_JUDGE: '🪞', STOP_SWAP: '🛡️', UNPIN_STUDENT: '🔓', IMMUNITY_SHIELD: '🔰', STREAK_SAVER: '🔥',
-    PLUS_50: '⭐', ERASER_50_50: '✂️', FREE_GIFT: '🎁', DRAW_ALL: '🎴', BETTER_LUCK: '🍀'
+    SWAP_STUDENT: 'refresh', POINT_LEECH: 'target', MULTIPLIER_2X: 'zap', ASK_QUESTION: 'help', SCORE_EQUALIZER: 'sliders',
+    PIN_STUDENT: 'lock', MINUS_50: 'flame', SCREEN_FOG: 'eyeOff', TIME_SLICER: 'clock', BLOCK_DRAW: 'alert',
+    REVERSE_JUDGE: 'rotateCcw', STOP_SWAP: 'shield', UNPIN_STUDENT: 'unlock', IMMUNITY_SHIELD: 'award', STREAK_SAVER: 'flame',
+    PLUS_50: 'star', ERASER_50_50: 'edit', FREE_GIFT: 'sparkles', DRAW_ALL: 'layers', BETTER_LUCK: 'compass'
   };
 
   function getCardIcon(id) {
-    return CARD_ICONS[id] || '🃏';
+    return CARD_ICONS[id] || 'layers';
   }
 
   function renderGrid(container, cat = 'all', selId = 'SWAP_STUDENT') {
@@ -71,16 +78,16 @@
     const cards = getCards(cat);
     container.innerHTML = cards.map(c => {
       const isSel = (c.id === selId);
-      const icon = getCardIcon(c.id);
+      const iconKey = getCardIcon(c.id);
       return `
-        <article class="character-card scorear-card-thumb ${isSel ? 'active' : ''}" onclick="ScoreARCardsGallery.selectCard('${c.id}')" aria-pressed="${isSel}" style="cursor:pointer;position:relative;background:linear-gradient(160deg,#1b1a32,#131427);border:1.5px solid ${isSel ? c.color : 'rgba(255,255,255,0.08)'};border-radius:20px;padding:12px;transition:all 0.2s cubic-bezier(0.2,0.8,0.2,1);transform:${isSel ? 'translateY(-4px)' : 'none'};box-shadow:${isSel ? `0 10px 28px ${c.color}40` : 'none'};text-align:right;">
-          <div style="position:relative;width:100%;height:130px;border-radius:14px;overflow:hidden;margin-bottom:10px;background:radial-gradient(circle at 50% 35%, ${c.color}30, #0d0e1d 78%);">
-            <div class="scorear-card-fallback" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;text-align:center;">
-              <span style="font-size:34px;line-height:1;filter:drop-shadow(0 4px 12px ${c.color}55);">${icon}</span>
+        <article class="character-card scorear-card-thumb ${isSel ? 'active' : ''}" onclick="ScoreARCardsGallery.selectCard('${c.id}')" aria-pressed="${isSel}" style="cursor:pointer;position:relative;background:linear-gradient(160deg,#1b1a32,#131427);border:1px solid ${isSel ? c.color : 'rgba(255,255,255,0.09)'};border-radius:20px;padding:12px;transition:all 0.2s cubic-bezier(0.2,0.8,0.2,1);transform:${isSel ? 'translateY(-4px)' : 'none'};box-shadow:${isSel ? `0 10px 28px ${c.color}38` : 'none'};text-align:right;">
+          <div style="position:relative;width:100%;height:130px;border-radius:14px;overflow:hidden;margin-bottom:10px;background:radial-gradient(circle at 50% 35%, ${c.color}28, #0d0e1d 78%);">
+            <div class="scorear-card-fallback" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;text-align:center;color:${c.color};">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:16px;background:${c.color}1a;border:1px solid ${c.color}44;">${uiIcon(iconKey, 26)}</span>
               <span style="font-size:10px;font-weight:900;color:${c.color};letter-spacing:0.6px;">${c.titleEn}</span>
             </div>
             <img src="${c.img}" alt="${c.nameAr}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.onerror=null;this.style.display='none';var fb=this.previousElementSibling;if(fb)fb.style.display='flex';">
-            <span style="position:absolute;top:8px;right:8px;background:${c.color};color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.5);">${c.typeAr.split(' ')[0]}</span>
+            <span style="position:absolute;top:8px;right:8px;background:${c.color};color:#fff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.45);">${c.typeAr.split(' ')[0]}</span>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <h4 style="font-size:14px;font-weight:900;color:${isSel ? '#ffffff' : '#e2e8f0'};margin:0;">${c.nameAr}</h4>
@@ -95,13 +102,13 @@
 
   function renderPreview(stageBox, titleBox, cardId) {
     const card = getCardById(cardId);
-    const icon = getCardIcon(card.id);
+    const iconKey = getCardIcon(card.id);
     if (stageBox) {
       stageBox.innerHTML = `
         <div style="perspective:1000px;display:flex;flex-direction:column;align-items:center;">
-          <div id="hologramCardWrapper" style="width:220px;height:300px;border-radius:20px;overflow:hidden;border:2px solid ${card.color};box-shadow:0 15px 45px ${card.color}40, 0 0 25px ${card.color}25;transition:transform 0.15s ease-out;background:radial-gradient(circle at 50% 35%, ${card.color}35, #0d0e1f 75%);position:relative;cursor:pointer;">
-            <div class="scorear-card-fallback" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;padding-bottom:58px;">
-              <span style="font-size:58px;line-height:1;filter:drop-shadow(0 8px 20px ${card.color}66);">${icon}</span>
+          <div id="hologramCardWrapper" style="width:220px;height:300px;border-radius:20px;overflow:hidden;border:1px solid ${card.color}aa;box-shadow:0 15px 45px ${card.color}38, 0 0 25px ${card.color}22;transition:transform 0.15s ease-out;background:radial-gradient(circle at 50% 35%, ${card.color}32, #0d0e1f 75%);position:relative;cursor:pointer;">
+            <div class="scorear-card-fallback" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;padding-bottom:58px;color:${card.color};">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:78px;height:78px;border-radius:24px;background:${card.color}1e;border:1px solid ${card.color}4d;">${uiIcon(iconKey, 38)}</span>
             </div>
             <img src="${card.img}" alt="${card.nameAr}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.onerror=null;this.style.display='none';var fb=this.previousElementSibling;if(fb)fb.style.display='flex';">
             <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(12,13,29,0.92) 0%, transparent 60%);"></div>
@@ -125,22 +132,22 @@
           </div>
           <h2 style="font-size:22px;font-weight:900;color:#ffffff;margin:4px 0 8px;">${card.nameAr} <small style="font-size:13px;color:#a89bff;font-weight:700;">(${card.titleEn})</small></h2>
           
-          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 14px;margin-bottom:12px;line-height:1.65;font-size:13px;color:#ddd8ff;">
-            <b style="color:#52d9ed;display:block;margin-bottom:4px;">🎯 التأثير المباشر في القاعة:</b>
-            ${card.desc}
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:12px 14px;margin-bottom:12px;line-height:1.65;font-size:13px;color:#ddd8ff;">
+            <b class="scorear-inline-icon" style="color:#52d9ed;margin-bottom:4px;">${uiIcon('target', 14)} التأثير المباشر في القاعة:</b>
+            <span style="display:block;">${card.desc}</span>
           </div>
 
           <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px;font-size:12px;">
             <div style="background:rgba(142,100,239,0.12);border:1px solid rgba(142,100,239,0.25);border-radius:12px;padding:10px 12px;color:#e9d5ff;">
-              <b style="color:#c084fc;">⚡ نصيحة التكتيك:</b> ${card.tactics}
+              <b class="scorear-inline-icon" style="color:#c084fc;">${uiIcon('zap', 13)} نصيحة التكتيك:</b> ${card.tactics}
             </div>
             <div style="background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);border-radius:12px;padding:10px 12px;color:#bae6fd;">
-              <b style="color:#38bdf8;">🛡️ الرد العكسي والصد:</b> ${card.counter}
+              <b class="scorear-inline-icon" style="color:#38bdf8;">${uiIcon('shield', 13)} الرد العكسي والصد:</b> ${card.counter}
             </div>
           </div>
 
-          <button type="button" onclick="ScoreARCardsGallery.playCardDemoSound('${card.id}')" style="width:100%;background:linear-gradient(135deg, ${card.color}, #6d28d9);border:none;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px ${card.color}35;">
-            <span>تجربة صوت وتأثير الكارت 🔊</span>
+          <button type="button" onclick="ScoreARCardsGallery.playCardDemoSound('${card.id}')" style="width:100%;background:linear-gradient(135deg, ${card.color}, #6d28d9);border:1px solid rgba(255,255,255,0.16);color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px ${card.color}30;">
+            ${uiIcon('volume', 15)} <span>تجربة صوت وتأثير الكارت</span>
           </button>
         </div>
       `;
@@ -189,7 +196,7 @@
       const sfxType = c.cat === 'attack' ? 'wrong' : (c.cat === 'defense' ? 'whoosh' : 'fanfare');
       global.ScoreARAudio.playSfx(sfxType);
     }
-    if (global.toast) global.toast(`⚡ تم تفعيل محاكاة: ${c.nameAr}`);
+    if (global.toast) global.toast(`تم تفعيل محاكاة: ${c.nameAr}`);
   }
 
   global.ScoreARCardsGallery = {

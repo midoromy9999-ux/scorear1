@@ -15,6 +15,8 @@
 <link rel="stylesheet" href="css/cartoon-motion.css?v=20261112_v12_organized">
 <script src="js/engines/ScoreARMotionEngine.js?v=20261112_v12_organized"></script>
 <script src="js/engines/characters-v4.js?v=20261112_v12_organized"></script>
+<script src="vendor/lucide.js" defer></script>
+<script src="js/ui/ui-icons.js?v=20261112_v12_organized" defer></script>
 <script src="js/ui/nav.js?v=20261112_v12_organized" defer></script>
 <style>
   body {
@@ -136,11 +138,11 @@
     color: #ffffff;
   }
   .character-controls button[aria-pressed=true] {
-    background: #52d9ed !important;
-    color: #0c0d1d !important;
-    border-color: #52d9ed !important;
-    font-weight: 900;
-    box-shadow: 0 0 16px rgba(82, 217, 237, 0.5);
+    background: linear-gradient(110deg, #7550ef, #9665ff) !important;
+    color: #ffffff !important;
+    border-color: rgba(196, 168, 255, 0.5) !important;
+    font-weight: 800;
+    box-shadow: 0 4px 16px rgba(117, 80, 239, 0.38);
   }
   .gallery-mobile-menu {
     display: inline-flex !important;
@@ -226,11 +228,11 @@
   <nav aria-label="القائمة الرئيسية">
     <a href="index.html#home" data-nav="home"><i data-icon="home"></i><span>الرئيسية</span></a>
     <a href="index.html#studio" data-nav="studio"><i data-icon="grid"></i><span>استوديو المعلم</span></a>
-    <a href="index.html#classrooms" data-nav="classrooms"><i data-icon="book"></i><span>ملفي وصفوفي 🏫</span></a>
+    <a href="index.html#classrooms" data-nav="classrooms"><i data-icon="book"></i><span>ملفي وصفوفي</span></a>
     <a href="index.html#worlds" data-nav="worlds"><i data-icon="planet"></i><span>قاعة المنافسات</span></a>
     <a href="characters.html" data-nav="heroes" class="active"><i data-icon="spark"></i><span>قاعة الأبطال (٢٠)</span></a>
-    <a href="cards.html" data-nav="cards"><i data-icon="spark"></i><span>قاعة الكروت (٢٠)</span><span class="nav-chip" style="font-size:9px;background:#f59e0b;color:#000;font-weight:900;padding:1px 6px;border-radius:6px;margin-right:6px;">جديد</span></a>
-    <a href="podium.html" data-nav="podium"><i data-icon="crown"></i><span>منصة التتويج الاحتفالية 👑</span></a>
+    <a href="cards.html" data-nav="cards"><i data-icon="layers"></i><span>قاعة الكروت (٢٠)</span><span class="nav-chip" style="font-size:9px;background:rgba(142,100,239,0.22);border:1px solid rgba(172,139,242,0.4);color:#e2d4fb;font-weight:800;padding:1px 7px;border-radius:999px;margin-right:auto;">جديد</span></a>
+    <a href="podium.html" data-nav="podium"><i data-icon="crown"></i><span>منصة التتويج الاحتفالية</span></a>
     <a href="index.html#journey" data-nav="journey"><i data-icon="route"></i><span>رحلتي التعليمية</span></a>
     <a href="index.html#library" data-nav="library"><i data-icon="book"></i><span>مكتبة المحتوى</span></a>
   </nav>
@@ -255,11 +257,11 @@
         </div>
       </a>
     </div>
-    <div class="gallery-desktop-actions" style="display:flex;gap:10px;align-items:center;">
-      <a href="cards.html" class="btn small" style="text-decoration:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-weight:900;border:none;">🃏 قاعة الكروت (٢٠)</a>
-      <a href="podium.html" class="btn small" style="text-decoration:none;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:900;border:none;">👑 منصة التتويج</a>
-      <a href="index.html#worlds" class="btn dark small" style="text-decoration:none;">🚀 قاعة المنافسات</a>
-      <a href="index.html#home" class="btn light small" style="text-decoration:none;">🏠 الرئيسية</a>
+    <div class="gallery-desktop-actions" style="display:flex;gap:8px;align-items:center;">
+      <a href="cards.html" class="scorear-gear-btn" style="text-decoration:none;padding:7px 13px;"><i data-icon="layers" data-size="14"></i><span>قاعة الكروت (٢٠)</span></a>
+      <a href="podium.html" class="scorear-gear-btn" style="text-decoration:none;padding:7px 13px;"><i data-icon="crown" data-size="14"></i><span>منصة التتويج</span></a>
+      <a href="index.html#worlds" class="scorear-gear-btn" style="text-decoration:none;padding:7px 13px;"><i data-icon="planet" data-size="14"></i><span>قاعة المنافسات</span></a>
+      <a href="index.html#home" class="scorear-gear-btn is-active" style="text-decoration:none;padding:7px 13px;"><i data-icon="home" data-size="14"></i><span>الرئيسية</span></a>
     </div>
     <button type="button" class="mobile-menu gallery-mobile-menu" data-action="menu" aria-label="فتح القائمة" aria-expanded="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -280,10 +282,10 @@
       <div id="studentCustomPreviewTitle" aria-live="polite" style="margin-top:12px;"></div>
       
       <div class="character-controls" aria-label="وضعية البطل" style="margin-top:18px;display:flex;justify-content:center;flex-wrap:wrap;gap:8px;">
-        <button type="button" data-character-pose="idle" onclick="ScoreARCharacters.preview(window.gallerySelected,'idle')" aria-pressed="true">🧍 وقوف</button>
-        <button type="button" data-character-pose="walk" onclick="ScoreARCharacters.preview(window.gallerySelected,'walk')" aria-pressed="false">🚶 مشي</button>
-        <button type="button" data-character-pose="celebrate" onclick="ScoreARCharacters.preview(window.gallerySelected,'celebrate')" aria-pressed="false">🤸 قفز</button>
-        <button type="button" data-character-pose="run" onclick="ScoreARCharacters.preview(window.gallerySelected,'run')" aria-pressed="false">🏃 جري</button>
+        <button type="button" data-character-pose="idle" onclick="ScoreARCharacters.preview(window.gallerySelected,'idle')" aria-pressed="true"><i data-icon="sparkles" data-size="14"></i><span>وقوف</span></button>
+        <button type="button" data-character-pose="walk" onclick="ScoreARCharacters.preview(window.gallerySelected,'walk')" aria-pressed="false"><i data-icon="route" data-size="14"></i><span>مشي</span></button>
+        <button type="button" data-character-pose="celebrate" onclick="ScoreARCharacters.preview(window.gallerySelected,'celebrate')" aria-pressed="false"><i data-icon="trophy" data-size="14"></i><span>قفز</span></button>
+        <button type="button" data-character-pose="run" onclick="ScoreARCharacters.preview(window.gallerySelected,'run')" aria-pressed="false"><i data-icon="zap" data-size="14"></i><span>جري</span></button>
       </div>
       <button type="button" class="character-motion" data-character-motion onclick="ScoreARCharacters.toggleMotion()" style="margin-top:14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);padding:8px 16px;border-radius:10px;color:#ddd8ff;cursor:pointer;">إيقاف الحركة</button>
     </aside>
@@ -303,8 +305,9 @@
       </div>
 
       <div id="avatarsGrid" aria-labelledby="studentAvatarSelectLabel"></div>
-      <p class="character-note" style="color:#b1a2e9;font-size:12px;margin-top:16px;line-height:1.7;">
-        💡 جميع الشخصيات متاحة لجميع الطلاب. اختيارك يحدد مظهر بطلك في قاعة الانتظار وعلى منصة التتويج، بينما المعرفة وسرعة الإجابة هي التي تصنع الفوز.
+      <p class="character-note scorear-soft-note" style="margin-top:16px;">
+        <i data-icon="info" data-size="16"></i>
+        <span>جميع الشخصيات متاحة لجميع الطلاب. اختيارك يحدد مظهر بطلك في قاعة الانتظار وعلى منصة التتويج، بينما المعرفة وسرعة الإجابة هي التي تصنع الفوز.</span>
       </p>
     </div>
   </div>

@@ -48,8 +48,7 @@
 
   function migrateV1ToV2(parsed, now = Date.now()) {
     if (!parsed || !parsed.data) return getCleanDefaultState(now);
-    const old = parsed.data;
-    const def = getCleanDefaultState(now);
+    const old = parsed.data, def = getCleanDefaultState(now);
     const migratedMistakes = (Array.isArray(old.mistakes) ? old.mistakes : []).map(m => {
       const qLookup = findQuestionInCurriculum(m.questionId);
       const isMissing = !qLookup;
@@ -60,33 +59,27 @@
         questionText: (qLookup ? qLookup.q : m.questionText) || 'سؤال تعليمي',
         skill: (qLookup ? qLookup.skill : m.skill) || 'لغة عربية',
         pathId: (qLookup ? qLookup.pathId : m.pathId) || 'general',
-        opts: opts, answer: ans,
-        why: (qLookup ? qLookup.why : m.explanation) || 'تعلّم القاعدة من الشرح',
+        opts, answer: ans, why: (qLookup ? qLookup.why : m.explanation) || 'تعلّم القاعدة من الشرح',
         attemptCount: Number(m.attemptCount) || 1, lastMistakeAt: Number(m.timestamp) || now,
         consecutiveCorrect: 0, lastReviewedAt: null, nextReviewAt: 0,
         mastered: Boolean(m.resolved), masteredAt: m.resolved ? (m.timestamp || now) : null,
         masteryXpAwarded: Boolean(m.resolved), archived: isMissing, archiveReason: isMissing ? 'question_updated' : null
       };
     });
-
     const oldEarned = old.dailyQuietXp?.earned;
     const safeOldEarned = (typeof oldEarned === 'number' && !isNaN(oldEarned)) ? Math.max(0, oldEarned) : 0;
     return {
-      xp: Math.max(0, Number(old.xp) || 0),
-      solvedQuestionIds: old.solvedQuestionIds || {},
+      xp: Math.max(0, Number(old.xp) || 0), solvedQuestionIds: old.solvedQuestionIds || {},
       dailyQuietXp: { date: old.dailyQuietXp?.date || getTodayKey(now), earned: safeOldEarned },
-      completedPaths: old.completedPaths || {},
-      mistakes: migratedMistakes, streak: old.streak || def.streak,
-      quietSessionsCount: Number(old.quietSessionsCount) || 0,
-      contestSessionsCount: 0, lastUpdated: now
+      completedPaths: old.completedPaths || {}, mistakes: migratedMistakes, streak: old.streak || def.streak,
+      quietSessionsCount: Number(old.quietSessionsCount) || 0, contestSessionsCount: 0, lastUpdated: now
     };
   }
 
   function sanitizeV2(rawObj, now = Date.now()) {
     const def = getCleanDefaultState(now);
     if (!rawObj || typeof rawObj !== 'object') return def;
-    const today = getTodayKey(now);
-    const rawEarned = rawObj.dailyQuietXp?.earned;
+    const today = getTodayKey(now), rawEarned = rawObj.dailyQuietXp?.earned;
     const safeEarned = (typeof rawEarned === 'number' && !isNaN(rawEarned)) ? Math.max(0, rawEarned) : 0;
     const daily = rawObj.dailyQuietXp && rawObj.dailyQuietXp.date === today ? { date: today, earned: safeEarned } : { date: today, earned: 0 };
     return {
@@ -135,48 +128,31 @@
     return sanitized;
   }
 
-  function isDueForReview(m, now = Date.now()) {
-    return getScheduler().isDueForReview(m, now);
-  }
-
-  function getActiveMistakes(now = Date.now()) {
-    const state = loadState(now);
-    return state.mistakes.filter(m => !m.archived && isDueForReview(m, now));
-  }
-
-  function getMasteredMistakes(now = Date.now()) {
-    const state = loadState(now);
-    return state.mistakes.filter(m => m.mastered && !m.archived);
-  }
+  function isDueForReview(m, now = Date.now()) { return getScheduler().isDueForReview(m, now); }
+  function getActiveMistakes(now = Date.now()) { return loadState(now).mistakes.filter(m => !m.archived && isDueForReview(m, now)); }
+  function getMasteredMistakes(now = Date.now()) { return loadState(now).mistakes.filter(m => m.mastered && !m.archived); }
 
   function recordMistake(qData, chosenText, now = Date.now()) {
-    const state = loadState(now);
-    const mistakes = [...state.mistakes];
+    const state = loadState(now), mistakes = [...state.mistakes];
     const existing = mistakes.find(m => m.questionId === qData.id);
     if (existing) {
       existing.attemptCount = (existing.attemptCount || 1) + 1;
-      existing.lastMistakeAt = now;
-      existing.consecutiveCorrect = 0;
-      existing.nextReviewAt = 0;
+      existing.lastMistakeAt = now; existing.consecutiveCorrect = 0; existing.nextReviewAt = 0;
       existing.chosenOption = chosenText || existing.chosenOption;
-      existing.mastered = false;
-      existing.archived = false;
+      existing.mastered = false; existing.archived = false;
     } else {
       mistakes.push({
         questionId: qData.id, questionText: qData.q, skill: qData.skill || 'لغة عربية',
         pathId: qData.pathId || 'general', opts: qData.opts, answer: qData.answer, why: qData.why,
-        attemptCount: 1, lastMistakeAt: now, consecutiveCorrect: 0,
-        lastReviewedAt: null, nextReviewAt: 0, mastered: false, masteredAt: null,
-        masteryXpAwarded: false, archived: false, archiveReason: null
+        attemptCount: 1, lastMistakeAt: now, consecutiveCorrect: 0, lastReviewedAt: null,
+        nextReviewAt: 0, mastered: false, masteredAt: null, masteryXpAwarded: false, archived: false, archiveReason: null
       });
     }
     state.mistakes = mistakes;
     saveState(state, now);
   }
 
-  function shuffleOptions(opts, correctIdx) {
-    return getScheduler().shuffleOptions(opts, correctIdx);
-  }
+  function shuffleOptions(opts, correctIdx) { return getScheduler().shuffleOptions(opts, correctIdx); }
 
   function getOrCreateNotebookStage() {
     let el = document.getElementById('scorearNotebookStage');
@@ -190,9 +166,7 @@
     return el;
   }
 
-  function openNotebook(now = Date.now()) {
-    getOrCreateNotebookStage().innerHTML = renderNotebookHtml(now);
-  }
+  function openNotebook(now = Date.now()) { getOrCreateNotebookStage().innerHTML = renderNotebookHtml(now); }
 
   function closeNotebook() {
     const el = document.getElementById('scorearNotebookStage');
@@ -215,14 +189,10 @@
     const mastered = state.mistakes.filter(m => m.mastered && !m.archived);
     const ui = global.ScoreARUI || { icon: () => '', iconBox: () => '' };
     const groups = {};
-    active.forEach(m => {
-      const s = m.skill || 'مهارات عامة';
-      if (!groups[s]) groups[s] = [];
-      groups[s].push(m);
-    });
+    active.forEach(m => { const s = m.skill || 'مهارات عامة'; (groups[s] = groups[s] || []).push(m); });
 
     return `
-      <header style="padding:14px 22px;background:#0c0d1d;border-bottom:1px solid #ffffff14;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <header class="scorear-control-bar" style="padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
         <div style="display:flex;align-items:center;gap:12px;">
           ${ui.iconBox('bookMarked', { size: 'md', tone: 'violet' })}
           <div>
@@ -230,10 +200,10 @@
             <p style="font-size:12px;color:#a1a4be;margin:2px 0 0 0;">مراجعات متباعدة ذكية بدون مؤقت لتثبيت الفهم واكتساب مكافأة الإتقان.</p>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          ${active.length > 0 ? `<button onclick="ScoreARMistakeNotebook.trainWithAI()" class="btn launch-outline" style="padding:9px 16px;font-size:13px;border-color:#a855f7;color:#d8b4fe;">${ui.icon('spark', { size: 15 })} درّبني على أخطائي بالذكاء الاصطناعي ⚡</button>` : ''}
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          ${active.length > 0 ? `<button onclick="ScoreARMistakeNotebook.trainWithAI()" class="scorear-gear-btn" style="padding:9px 15px;font-size:12.5px;border-color:rgba(172,139,242,0.45);color:#e2d4fb;">${ui.icon('spark', { size: 15 })} <span>درّبني على أخطائي بالذكاء الاصطناعي</span></button>` : ''}
           ${due.length > 0 ? `<button onclick="ScoreARMistakeNotebook.startReviewSession()" class="btn launch-primary" style="padding:10px 20px;font-size:13px;">${ui.icon('play', { size: 15 })} راجع أخطائي الآن (${due.length})</button>` : `<button disabled class="btn launch-outline" style="padding:10px 18px;font-size:13px;opacity:0.6;cursor:not-allowed;">${ui.icon('clock', { size: 15 })} لا توجد أخطاء جاهزة للمراجعة</button>`}
-          <button onclick="ScoreARMistakeNotebook.closeNotebook()" class="btn launch-outline" style="padding:8px 14px;font-size:13px;">${ui.icon('close', { size: 15 })} إغلاق</button>
+          <button onclick="ScoreARMistakeNotebook.closeNotebook()" class="scorear-gear-btn" style="padding:9px 14px;font-size:12.5px;">${ui.icon('close', { size: 15 })} <span>إغلاق</span></button>
         </div>
       </header>
       <main style="max-width:960px;width:100%;margin:0 auto;padding:24px 20px;flex:1;display:flex;flex-direction:column;gap:20px;">
@@ -259,14 +229,9 @@
           <div class="scorear-spotlight-card" style="padding:46px 20px;text-align:center;">
             <div style="margin-bottom:14px;">${ui.iconBox('checkCircle', { size: 'lg', tone: 'cyan' })}</div>
             <h2 style="font-size:22px;font-weight:900;color:#f6f3ff;margin:0 0 8px 0;">دفترك ناصع وخالٍ من الأخطاء!</h2>
-            <p style="color:#aaa9c1;font-size:14px;max-width:520px;margin:0 auto 20px auto;line-height:1.8;">
-              لا توجد أخطاء نشطة تحتاج مراجعة حالياً. واصل التدريب الهادئ في المسارات وسيسجل الدفتر أي سؤال يحتاج ترسيخاً تلقائياً.
-            </p>
-            <button onclick="ScoreARMistakeNotebook.closeNotebook()" class="btn launch-primary" style="padding:12px 26px;font-size:14px;">
-              ${ui.icon('route', { size: 16 })} استكشف مسارات التدريب الهادئ
-            </button>
-          </div>
-        ` : `
+            <p style="color:#aaa9c1;font-size:14px;max-width:520px;margin:0 auto 20px auto;line-height:1.8;">لا توجد أخطاء نشطة تحتاج مراجعة حالياً. واصل التدريب الهادئ في المسارات وسيسجل الدفتر أي سؤال يحتاج ترسيخاً تلقائياً.</p>
+            <button onclick="ScoreARMistakeNotebook.closeNotebook()" class="btn launch-primary" style="padding:12px 26px;font-size:14px;">${ui.icon('route', { size: 16 })} استكشف مسارات التدريب الهادئ</button>
+          </div>` : `
           <div style="display:flex;flex-direction:column;gap:18px;">
             ${Object.entries(groups).map(([skill, items]) => `
               <div class="scorear-spotlight-card" style="padding:20px;">
@@ -277,28 +242,17 @@
                   ${items.map(m => {
                     const ready = isDueForReview(m, now);
                     const dateStr = new Date(m.lastMistakeAt).toLocaleDateString('ar-EG');
-                    return `
-                      <div style="background:#0c0d1d;border:1px solid ${ready ? '#9665ff66' : '#ffffff12'};border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-                        <div style="max-width:620px;">
-                          <div style="font-size:15px;font-weight:800;color:#f6f3ff;line-height:1.6;">${m.questionText}</div>
-                          <div style="font-size:11px;color:#a1a4be;margin-top:4px;">آخر محاولة: ${dateStr} • أخطأت فيها ${m.attemptCount} مرات</div>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                          <span style="font-size:11px;padding:4px 10px;border-radius:999px;font-weight:800;background:${ready ? '#1d5c52' : '#272044'};color:${ready ? '#befff2' : '#c9baff'};border:1px solid ${ready ? '#44b8a5' : '#9665ff44'};">
-                            ${ready ? 'جاهزة للمراجعة' : 'مؤجلة 24 ساعة'}
-                          </span>
-                          <span style="font-size:11px;padding:4px 10px;border-radius:999px;font-weight:800;background:#18172e;color:#d7ccea;border:1px solid #ffffff16;">
-                            ${m.consecutiveCorrect === 1 ? 'خطوة 1 من 2' : 'خطوة 0 من 2'}
-                          </span>
-                        </div>
+                    return `<div style="background:#0c0d1d;border:1px solid ${ready ? '#9665ff66' : '#ffffff12'};border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                      <div style="max-width:620px;"><div style="font-size:15px;font-weight:800;color:#f6f3ff;line-height:1.6;">${m.questionText}</div><div style="font-size:11px;color:#a1a4be;margin-top:4px;">آخر محاولة: ${dateStr} • أخطأت فيها ${m.attemptCount} مرات</div></div>
+                      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span style="font-size:11px;padding:4px 10px;border-radius:999px;font-weight:800;background:${ready ? '#1d5c52' : '#272044'};color:${ready ? '#befff2' : '#c9baff'};border:1px solid ${ready ? '#44b8a5' : '#9665ff44'};">${ready ? 'جاهزة للمراجعة' : 'مؤجلة 24 ساعة'}</span>
+                        <span style="font-size:11px;padding:4px 10px;border-radius:999px;font-weight:800;background:#18172e;color:#d7ccea;border:1px solid #ffffff16;">${m.consecutiveCorrect === 1 ? 'خطوة 1 من 2' : 'خطوة 0 من 2'}</span>
                       </div>
-                    `;
+                    </div>`;
                   }).join('')}
                 </div>
-              </div>
-            `).join('')}
-          </div>
-        `}
+              </div>`).join('')}
+          </div>`}
         ${mastered.length > 0 ? `
           <div class="scorear-spotlight-card" style="padding:20px;margin-top:10px;border-color:#44b8a544;">
             <h3 style="font-size:16px;font-weight:900;color:#7fe7ce;margin:0 0 14px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -307,23 +261,14 @@
             <div style="display:flex;flex-direction:column;gap:10px;">
               ${mastered.map(m => {
                 const dueInDays = Math.max(0, Math.ceil(((m.nextReviewAt || 0) - now) / (24*3600*1000)));
-                return `
-                  <div style="background:#0c0d1d;border:1px solid #44b8a533;border-radius:14px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-                    <div style="max-width:620px;">
-                      <div style="font-size:14px;font-weight:700;color:#f6f3ff;">${m.questionText}</div>
-                      <div style="font-size:11px;color:#a1a4be;margin-top:2px;">${m.skill} • أتقنته بإجابتين متتاليتين (+10 XP)</div>
-                    </div>
-                    <span style="font-size:11px;padding:4px 10px;border-radius:999px;font-weight:800;background:#1d5c52;color:#befff2;">
-                      ${dueInDays > 0 ? `مستقر في الذاكرة (مراجعة بعد ${dueInDays} أيام)` : 'جاهز للمراجعة الدورية'}
-                    </span>
-                  </div>
-                `;
+                return `<div style="background:#0c0d1d;border:1px solid #44b8a533;border-radius:14px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                  <div style="max-width:620px;"><div style="font-size:14px;font-weight:700;color:#f6f3ff;">${m.questionText}</div><div style="font-size:11px;color:#a1a4be;margin-top:2px;">${m.skill} • أتقنته بإجابتين متتاليتين (+10 XP)</div></div>
+                  <span style="font-size:11px;padding:4px 10px;border-radius:999px;font-weight:800;background:#1d5c52;color:#befff2;">${dueInDays > 0 ? `مستقر في الذاكرة (مراجعة بعد ${dueInDays} أيام)` : 'جاهز للمراجعة الدورية'}</span>
+                </div>`;
               }).join('')}
             </div>
-          </div>
-        ` : ''}
-      </main>
-    `;
+          </div>` : ''}
+      </main>`;
   }
 
   function startReviewSession(now = Date.now()) {
@@ -333,43 +278,33 @@
     renderReviewQuestionStage();
   }
 
-  function closeReviewSession() {
-    activeReviewSession = null;
-    openNotebook();
-  }
+  function closeReviewSession() { activeReviewSession = null; openNotebook(); }
 
   function renderReviewQuestionStage() {
     const s = activeReviewSession;
     if (!s) return;
-    const stage = getOrCreateNotebookStage();
-    const curMistake = s.mistakesQueue[s.currentIndex];
+    const stage = getOrCreateNotebookStage(), curMistake = s.mistakesQueue[s.currentIndex];
     if (!curMistake) { renderReviewCompletion(stage); return; }
 
     const qLookup = findQuestionInCurriculum(curMistake.questionId);
     if (!qLookup || (!curMistake.opts || curMistake.opts.length < 2)) {
-      curMistake.archived = true;
-      curMistake.archiveReason = 'question_updated';
-      const curState = loadState(s.sessionTime);
-      const targetM = curState.mistakes.find(m => m.questionId === curMistake.questionId);
+      curMistake.archived = true; curMistake.archiveReason = 'question_updated';
+      const curState = loadState(s.sessionTime), targetM = curState.mistakes.find(m => m.questionId === curMistake.questionId);
       if (targetM) { targetM.archived = true; targetM.archiveReason = 'question_updated'; }
-      saveState(curState, s.sessionTime);
-      s.currentIndex++;
-      renderReviewQuestionStage();
-      return;
+      saveState(curState, s.sessionTime); s.currentIndex++; renderReviewQuestionStage(); return;
     }
 
     if (!s.currentShuffled) s.currentShuffled = shuffleOptions(curMistake.opts, curMistake.answer);
-    const { shuffledOpts, newCorrectIdx } = s.currentShuffled;
-    const SHAPES = ['▲', '◆', '●', '■'];
+    const { shuffledOpts, newCorrectIdx } = s.currentShuffled, SHAPES = ['▲', '◆', '●', '■'];
     const ui = global.ScoreARUI || { icon: () => '', iconBox: () => '' };
 
     stage.innerHTML = `
-      <header style="padding:14px 22px;background:#0c0d1d;border-bottom:1px solid #ffffff14;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <header class="scorear-control-bar" style="padding:14px 22px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
         <div style="display:flex;align-items:center;gap:12px;">
           <span class="launch-pill" style="padding:5px 12px;font-size:12px;"><span class="live-dot"></span> جلسة مراجعة الأخطاء</span>
           <span style="font-size:14px;color:#c9baff;">السؤال ${s.currentIndex + 1} من ${s.mistakesQueue.length}</span>
         </div>
-        <button onclick="ScoreARMistakeNotebook.closeReviewSession()" class="btn launch-outline" style="padding:7px 14px;font-size:13px;">${ui.icon('close', { size: 15 })} خروج للمفكرة</button>
+        <button onclick="ScoreARMistakeNotebook.closeReviewSession()" class="scorear-gear-btn" style="padding:8px 14px;font-size:12.5px;">${ui.icon('close', { size: 15 })} <span>خروج للمفكرة</span></button>
       </header>
       <main style="max-width:860px;width:100%;margin:0 auto;padding:24px 20px;flex:1;display:flex;flex-direction:column;gap:18px;">
         <div class="scorear-spotlight-card" style="padding:26px 22px;">
@@ -381,59 +316,46 @@
             <button class="review-opt-btn" onclick="ScoreARMistakeNotebook.handleReviewOptionClick(${i}, ${newCorrectIdx})" style="display:flex;align-items:center;gap:14px;padding:16px 18px;min-height:54px;border-radius:16px;background:#18172e;border:1px solid #ffffff1a;color:#eceeff;font-size:15px;font-weight:800;cursor:pointer;text-align:right;">
               <span style="font-size:16px;width:32px;height:32px;border-radius:10px;background:#2b2543;color:#c9baff;display:grid;place-items:center;">${SHAPES[i % 4]}</span>
               <span style="flex:1;">${opt}</span>
-            </button>
-          `).join('')}
+            </button>`).join('')}
         </div>
         <div id="reviewFeedbackArea" style="display:none;margin-top:4px;"></div>
-      </main>
-    `;
+      </main>`;
   }
 
   function handleReviewOptionClick(chosenIdx, correctIdx, callTime) {
     const s = activeReviewSession;
     if (!s || s.hasAnswered) return;
     s.hasAnswered = true;
-
-    const now = callTime || s.sessionTime || Date.now();
-    const curMistake = s.mistakesQueue[s.currentIndex];
-    const isCorrect = (chosenIdx === correctIdx);
-    const state = loadState(now);
+    const now = callTime || s.sessionTime || Date.now(), curMistake = s.mistakesQueue[s.currentIndex];
+    const isCorrect = (chosenIdx === correctIdx), state = loadState(now);
     if (global.ScoreARStreak) global.ScoreARStreak.recordQuestionAnswered(curMistake.questionId, now);
     const targetIdx = state.mistakes.findIndex(m => m.questionId === curMistake.questionId);
     if (targetIdx === -1) return;
 
-    const rawEarned = state.dailyQuietXp?.earned;
-    const dailyEarned = (typeof rawEarned === 'number' && !isNaN(rawEarned)) ? rawEarned : 0;
-
+    const rawEarned = state.dailyQuietXp?.earned, dailyEarned = (typeof rawEarned === 'number' && !isNaN(rawEarned)) ? rawEarned : 0;
     const outcome = getScheduler().applyReviewOutcome(state.mistakes[targetIdx], isCorrect, { now, dailyEarned });
     state.mistakes[targetIdx] = outcome.updatedMistake;
-
     if (outcome.xpGain > 0) {
       state.xp = Math.max(0, Number(state.xp) || 0) + outcome.xpGain;
       state.dailyQuietXp = { date: getTodayKey(now), earned: Math.max(0, dailyEarned) + outcome.xpGain };
     }
-
     saveState(state, now);
 
     document.querySelectorAll('.review-opt-btn').forEach((b, i) => {
       b.style.pointerEvents = 'none';
-      if (i === correctIdx) {
-        b.style.background = '#1d5c52'; b.style.borderColor = '#44b8a5'; b.style.color = '#befff2';
-      } else if (i === chosenIdx && !isCorrect) {
-        b.style.background = '#6a364e'; b.style.borderColor = '#c38498'; b.style.color = '#ffd3e5'; b.style.opacity = '0.85';
-      } else { b.style.opacity = '0.4'; }
+      if (i === correctIdx) { b.style.background = '#1d5c52'; b.style.borderColor = '#44b8a5'; b.style.color = '#befff2'; }
+      else if (i === chosenIdx && !isCorrect) { b.style.background = '#6a364e'; b.style.borderColor = '#c38498'; b.style.color = '#ffd3e5'; b.style.opacity = '0.85'; }
+      else { b.style.opacity = '0.4'; }
     });
 
-    const ui = global.ScoreARUI || { icon: () => '' };
-    const fb = document.getElementById('reviewFeedbackArea');
+    const ui = global.ScoreARUI || { icon: () => '' }, fb = document.getElementById('reviewFeedbackArea');
     if (fb) {
       fb.style.display = 'block';
       fb.innerHTML = `
         <div class="scorear-spotlight-card" style="padding:20px;border-color:${isCorrect ? '#44b8a5' : '#9665ff55'};display:flex;flex-direction:column;gap:14px;">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
             <div style="font-size:15px;font-weight:900;color:${isCorrect ? '#7fe7ce' : '#ffd3e5'};display:flex;align-items:center;gap:8px;">
-              ${ui.icon(isCorrect ? 'checkCircle' : 'alert', { size: 17 })}
-              <span>${outcome.feedbackMsg}</span>
+              ${ui.icon(isCorrect ? 'checkCircle' : 'alert', { size: 17 })} <span>${outcome.feedbackMsg}</span>
             </div>
             <button onclick="ScoreARMistakeNotebook.nextReviewQuestion()" class="btn launch-primary" style="padding:10px 22px;font-size:14px;">
               ${s.currentIndex + 1 < s.mistakesQueue.length ? 'السؤال التالي' : 'إتمام المراجعة'} ${ui.icon('arrow', { size: 15 })}
@@ -445,39 +367,34 @@
             </div>
             <div style="font-size:14px;color:#d7ccea;line-height:1.7;">${curMistake.why}</div>
             <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-              <button type="button" onclick="ScoreARMistakeNotebook.showSmartTutorDiagnosis()" style="background:rgba(82,217,237,0.14);border:1px solid rgba(82,217,237,0.45);color:#7fe7ce;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:800;cursor:pointer;">🤖 تشخيص الفخ والقاعدة الذهبية (المُعلّم الذكي)</button>
+              <button type="button" onclick="ScoreARMistakeNotebook.showSmartTutorDiagnosis()" class="scorear-gear-btn" style="border-color:rgba(88,220,227,0.4);color:#7fe7ce;">${ui.icon('brain', { size: 14 })} <span>تشخيص الفخ والقاعدة الذهبية (المُعلّم الذكي)</span></button>
             </div>
             <div id="smartTutorDiagnosisBox" style="display:none;margin-top:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.35);border-radius:12px;padding:12px 14px;font-size:13px;color:#e2e8f0;line-height:1.75;"></div>
           </div>
-        </div>
-      `;
+        </div>`;
     }
   }
 
-
   function showSmartTutorDiagnosis() {
-    const s = activeReviewSession;
-    const box = document.getElementById('smartTutorDiagnosisBox');
+    const s = activeReviewSession, box = document.getElementById('smartTutorDiagnosisBox');
     if (!s || !box) return;
     const m = s.mistakesQueue[s.currentIndex];
     if (!m) return;
+    const ui = global.ScoreARUI || { icon: () => '' };
     const correctOpt = (Array.isArray(m.opts) && m.opts[m.answer] !== undefined) ? m.opts[m.answer] : 'الإجابة النموذجية';
     const trapOpt = m.chosenOption || 'الخيار الخاطئ السابق';
     box.style.display = 'block';
     box.innerHTML = `
-      <div style="font-weight:900;color:#fcd34d;margin-bottom:6px;">🧭 تشخيص المُعلّم الذكي في مهارة (${m.skill || 'اللغة العربية'}):</div>
+      <div class="scorear-inline-icon" style="font-weight:900;color:#58dce3;margin-bottom:6px;">${ui.icon('compass', { size: 15 })} <span>تشخيص المُعلّم الذكي في مهارة (${m.skill || 'اللغة العربية'}):</span></div>
       <div>• <b>الفخ الذي وقعت فيه سابقاً:</b> اختيار «<span style="color:#fca5a5;">${trapOpt}</span>» نتيجة التسرع قبل تحديد أركان الجملة.</div>
       <div>• <b>المفتاح الذهبي للصواب:</b> الإجابة «<span style="color:#6ee7b7;font-weight:800;">${correctOpt}</span>» لأن: ${m.why || 'القاعدة تقتضي مطابقة الوظيفة الإعرابية والسياقية.'}</div>
-      <div style="margin-top:6px;color:#a7f3d0;font-size:12px;font-weight:700;">💡 نصيحة: اسأل نفسك دائماً عن علاقة الكلمة بما قبلها (أركان الجملة أو طرفي الصورة البيانية) قبل اختيار الإجابة!</div>
-    `;
+      <div style="margin-top:6px;color:#a7f3d0;font-size:12px;font-weight:700;">نصيحة: اسأل نفسك دائماً عن علاقة الكلمة بما قبلها (أركان الجملة أو طرفي الصورة البيانية) قبل اختيار الإجابة.</div>`;
   }
 
   function nextReviewQuestion() {
     const s = activeReviewSession;
     if (!s) return;
-    s.currentIndex++;
-    s.hasAnswered = false;
-    s.currentShuffled = null;
+    s.currentIndex++; s.hasAnswered = false; s.currentShuffled = null;
     renderReviewQuestionStage();
   }
 
@@ -490,17 +407,13 @@
           <div style="margin-bottom:14px;">${ui.iconBox('award', { size: 'lg', tone: 'cyan' })}</div>
           <h2 style="font-size:24px;font-weight:900;color:#f6f3ff;margin:0 0 8px 0;">أحسنت إتمام المراجعة!</h2>
           <p style="color:#aaa9c1;font-size:14px;margin:0 0 20px 0;line-height:1.8;">كل خطأ راجعته هو خطوة حقيقية نحو ترسيخ القواعد وتجنب تكرارها.</p>
-          <button onclick="ScoreARMistakeNotebook.openNotebook()" class="btn launch-primary" style="padding:12px 26px;font-size:14px;">
-            ${ui.icon('bookMarked', { size: 16 })} العودة لدفتر أخطائي
-          </button>
+          <button onclick="ScoreARMistakeNotebook.openNotebook()" class="btn launch-primary" style="padding:12px 26px;font-size:14px;">${ui.icon('bookMarked', { size: 16 })} العودة لدفتر أخطائي</button>
         </div>
-      </main>
-    `;
+      </main>`;
   }
 
   function trainWithAI() {
-    const state = loadState();
-    const active = state.mistakes.filter(m => !m.archived && !m.mastered);
+    const state = loadState(), active = state.mistakes.filter(m => !m.archived && !m.mastered);
     if (!active.length) { if (global.toast) global.toast('لا توجد أخطاء نشطة حالياً للتدريب عليها.'); return; }
     const remedialText = active.slice(0, 5).map((m, idx) =>
       `[مسألة ${idx + 1} - مهارة: ${m.skill || 'عام'}]\nالسؤال: ${m.questionText}\nخطأ الطالب: ${m.chosenOption || 'لم يجب'}\nالإجابة الصحيحة: ${m.opts ? m.opts[m.answer] : ''}`
@@ -508,10 +421,10 @@
     closeNotebook();
     if (global.ScoreARQuizAI?.openAiStudio) {
       global.ScoreARQuizAI.openAiStudio({
-        mode: 'remedial', initialTitle: 'اختبار علاجي مخصص لمعالجة الأخطاء ⚡',
+        mode: 'remedial', initialTitle: 'اختبار علاجي مخصص لمعالجة الأخطاء',
         initialText: `صغ اختباراً علاجياً تفاعلياً جديداً لتقوية الفهم في المسائل والمفاهيم التالية وفق أخطاء الطالب الفعلية:\n\n${remedialText}`
       });
-      if (global.toast) global.toast('تم فتح أستوديو الذكاء الاصطناعي لاختبارك العلاجي 🌟');
+      if (global.toast) global.toast('تم فتح أستوديو الذكاء الاصطناعي لاختبارك العلاجي');
     }
   }
 
@@ -522,5 +435,4 @@
     isDueForReview, openNotebook, closeNotebook, startReviewSession, closeReviewSession,
     handleReviewOptionClick, showSmartTutorDiagnosis, nextReviewQuestion, renderNotebookHtml, shuffleOptions, trainWithAI
   };
-
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

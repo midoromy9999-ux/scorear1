@@ -63,7 +63,33 @@
     wrench: 'Wrench',
     send: 'Send',
     chevronLeft: 'ChevronLeft',
-    chevronDown: 'ChevronDown'
+    chevronRight: 'ChevronRight',
+    chevronDown: 'ChevronDown',
+    bell: 'Bell',
+    filter: 'ListFilter',
+    logIn: 'LogIn',
+    compass: 'Compass',
+    folderPlus: 'FolderPlus',
+    clipboard: 'ClipboardCopy',
+    link: 'Link',
+    save: 'Save',
+    settings: 'Settings',
+    volume: 'Volume2',
+    volumeOff: 'VolumeX',
+    maximize: 'Maximize2',
+    minimize: 'Minimize2',
+    medal: 'Medal',
+    arrowUp: 'ArrowUp',
+    arrowDown: 'ArrowDown',
+    userPlus: 'UserPlus',
+    logOut: 'LogOut',
+    qrCode: 'QrCode',
+    school: 'School',
+    flag: 'Flag',
+    eyeOff: 'EyeOff',
+    skipForward: 'SkipForward',
+    camera: 'Camera',
+    gamepad: 'Gamepad2'
   };
 
   const FALLBACK_PATHS = {
@@ -111,7 +137,32 @@
     alert: 'm21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3ZM12 9v4m0 4h.01',
     zap: 'M13 2 3 14h9l-1 8 10-12h-9l1-8Z',
     bot: 'M12 8V4H8M4 8h16v12H4zM9 14v.01M15 14v.01',
-    lock: 'M7 11V7a5 5 0 0 1 10 0v4M5 11h14v10H5z'
+    lock: 'M7 11V7a5 5 0 0 1 10 0v4M5 11h14v10H5z',
+    bell: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0',
+    filter: 'M3 6h18M7 12h10M10 18h4',
+    logIn: 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3',
+    compass: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm4.2 5.8-2.4 6.1-6.1 2.4 2.4-6.1 6.1-2.4Z',
+    folderPlus: 'M12 11v6m-3-3h6M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z',
+    link: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',
+    save: 'M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM17 21v-8H7v8M7 3v5h8',
+    graduation: 'M22 10 12 5 2 10l10 5 10-5Zm-16 2v5c3 3 9 3 12 0v-5',
+    settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.4-2.5 1.6-1-1.5-2.6-1.8.4a6 6 0 0 0-1.4-.8L16 6.7h-3l-.3 1.8a6 6 0 0 0-1.4.8l-1.8-.4-1.5 2.6 1.6 1a6 6 0 0 0 0 1.6l-1.6 1 1.5 2.6 1.8-.4c.4.3.9.6 1.4.8l.3 1.8h3l.3-1.8c.5-.2 1-.5 1.4-.8l1.8.4 1.5-2.6-1.6-1a6 6 0 0 0 0-1.6Z',
+    volume: 'M11 5 6 9H2v6h4l5 4V5Zm4.5 3.5a5 5 0 0 1 0 7m2.5-9.5a9 9 0 0 1 0 12',
+    volumeOff: 'M11 5 6 9H2v6h4l5 4V5Zm11 4-6 6m0-6 6 6',
+    maximize: 'M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7',
+    minimize: 'M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7',
+    medal: 'M7.2 15 2.7 7.1a2 2 0 0 1 .2-2.2L4.5 3A2 2 0 0 1 6 2.3h12a2 2 0 0 1 1.5.7l1.6 1.9a2 2 0 0 1 .2 2.2L16.8 15M12 12v3m0 7a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z',
+    arrowUp: 'M12 19V5m-7 7 7-7 7 7',
+    arrowDown: 'M12 5v14m7-7-7 7-7-7',
+    userPlus: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm10-3v6m3-3h-6',
+    logOut: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9',
+    qrCode: 'M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h3v3h-3zM18 18h3v3h-3z',
+    school: 'm4 6 8-4 8 4m-16 0v16h16V6M9 22v-4h6v4',
+    flag: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7',
+    eyeOff: 'm2 2 20 20M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-2.2 3.2m-3.6 2.4A10 10 0 0 1 12 19c-6.4 0-10-7-10-7a16 16 0 0 1 4.2-4.8',
+    skipForward: 'm5 4 10 8-10 8V4Zm14 1v14',
+    camera: 'M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3ZM12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
+    gamepad: 'M6 12h4m-2-2v4m7-1h.01M18 11h.01M4 8h16a2 2 0 0 1 2 2v6a4 4 0 0 1-4 4c-1.5 0-2.8-.8-3.5-2h-5c-.7 1.2-2 2-3.5 2a4 4 0 0 1-4-4v-6a2 2 0 0 1 2-2Z'
   };
 
   function escapeHtml(str) {
@@ -206,6 +257,27 @@
     return `<div class="scorear-file-badge">${iconBox(meta.icon, { size, tone: meta.tone })}<span class="scorear-file-ext-pill">${escapeHtml(meta.extLabel)}</span></div>`;
   }
 
+  function editorialHeader(opts = {}) {
+    const kicker = opts.kicker ? `<span class="launch-pill"><span class="live-dot"></span> ${escapeHtml(opts.kicker)}</span>` : '';
+    const titleAccent = opts.titleAccent ? ` <span class="gradient-text">${escapeHtml(opts.titleAccent)}</span>` : '';
+    const titleBreak = opts.breakLine ? '<br>' : '';
+    const tag = opts.headingTag === 'h2' ? 'h2' : 'h1';
+    const sub = opts.subtitle ? `<p>${escapeHtml(opts.subtitle)}</p>` : '';
+    const right = opts.actionHtml || (opts.indexLabel ? `<span class="scorear-panel-index">${escapeHtml(opts.indexLabel)}</span>` : '');
+    return `<header class="scorear-editorial-head">
+      <div class="scorear-editorial-copy">
+        ${kicker}
+        <${tag}>${escapeHtml(opts.titleWhite || '')}${titleBreak}${titleAccent}</${tag}>
+        ${sub}
+      </div>
+      ${right ? `<div class="scorear-editorial-side">${right}</div>` : ''}
+    </header>`;
+  }
+
+  function softNote(text, iconName = 'info') {
+    return `<div class="scorear-soft-note">${iconBox(iconName, { size: 'sm', tone: 'muted' })}<span>${escapeHtml(text)}</span></div>`;
+  }
+
   window.ScoreARUI = {
     ICON_MAP,
     icon,
@@ -214,6 +286,8 @@
     cosmicBackdrop,
     getFileMeta,
     fileIconBox,
+    editorialHeader,
+    softNote,
     escapeHtml
   };
 })();
