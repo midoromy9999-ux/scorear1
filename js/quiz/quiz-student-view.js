@@ -28,6 +28,43 @@
       : '';
   }
 
+  function renderHeroActionDock(includeCelebrate = false) {
+    const actions = [
+      { e: '🦘', lbl: 'قفزة نصر', clr: '#38bdf8' },
+      { e: '👋', lbl: 'تلويح', clr: '#c084fc' },
+      { e: '🔥', lbl: 'حماس', clr: '#f97316' },
+      { e: '👏', lbl: 'تصفيق', clr: '#34d399' }
+    ];
+    if (includeCelebrate) actions.push({ e: '🎉', lbl: 'احتفال', clr: '#fbbf24' });
+    return `
+      <style id="studentHeroMoveCss">
+        @keyframes stHeroBounce{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(-24px) scale(1.12)}75%{transform:translateY(4px) scale(1.06,0.92)}}
+        @keyframes stHeroWave{0%,100%{transform:rotate(0)}30%{transform:rotate(-12deg) scale(1.06)}65%{transform:rotate(12deg) scale(1.06)}}
+        .st-hero-dock-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.16);color:#fff;border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-family:inherit;transition:transform 0.14s ease,border-color 0.2s ease;}
+        .st-hero-dock-btn:active{transform:scale(0.92);}
+      </style>
+      <div class="student-hero-action-dock" style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:2px auto;background:rgba(16,18,40,0.82);backdrop-filter:blur(12px);padding:7px 10px;border-radius:16px;border:1px solid rgba(172,139,242,0.28);max-width:350px;width:100%;box-sizing:border-box;">
+        ${actions.map(a => `<button type="button" class="st-hero-dock-btn" data-hero-action="${a.e}" onclick="ScoreARQuizStudentView.triggerHeroAction(this, '${a.e}')" style="border-color:${a.clr}55;"><span>${a.e}</span><span>${a.lbl}</span></button>`).join('')}
+      </div>`;
+  }
+
+  function triggerHeroAction(btnEl, emoji) {
+    if (global.ScoreARQuizStudent?.sendReaction) global.ScoreARQuizStudent.sendReaction(emoji);
+    const img = typeof document !== 'undefined' ? document.getElementById('studentHeroAvatarImg') : null;
+    if (img) {
+      img.style.animation = 'none';
+      void img.offsetWidth;
+      img.style.animation = (emoji === '👋') ? 'stHeroWave 0.62s ease-in-out' : 'stHeroBounce 0.62s cubic-bezier(0.22,1,0.36,1)';
+      img.style.filter = (emoji === '🔥') ? 'drop-shadow(0 0 18px #f97316)' : 'drop-shadow(0 8px 18px rgba(56,189,248,0.65))';
+      clearTimeout(img._stTimer);
+      img._stTimer = setTimeout(() => { img.style.animation = ''; img.style.filter = 'drop-shadow(0 6px 14px rgba(0,0,0,0.55))'; }, 680);
+    }
+    if (btnEl?.style) {
+      btnEl.style.transform = 'scale(1.1)';
+      setTimeout(() => { btnEl.style.transform = ''; }, 180);
+    }
+  }
+
   function renderStudentReading(stage, qData, currentWorldId, timeRemaining) {
     const wid = String(currentWorldId || 'royal').trim() || 'royal';
     stage.innerHTML = `
@@ -147,7 +184,7 @@
       <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px;text-align:center;gap:10px;overflow-y:auto;">
         <div style="background:rgba(18,20,44,0.92);backdrop-filter:blur(16px);border:1.5px solid ${isCorrect ? '#10b981' : '#ef4444'};border-radius:20px;padding:14px 16px;width:100%;max-width:360px;box-shadow:0 10px 28px rgba(0,0,0,0.5);">
           <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;">
-            <img src="assets/characters/animated/${escapeHtml(myAvatar)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(myName || 'البطل')}" style="width:54px;height:64px;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.55));">
+            <img id="studentHeroAvatarImg" src="assets/characters/animated/${escapeHtml(myAvatar)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(myName || 'البطل')}" style="width:54px;height:64px;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.55));">
             <div style="font-size:32px;line-height:1;">${isCorrect ? '🎉' : '❌'}</div>
           </div>
           <h2 style="font-size:19px;font-weight:900;color:${isCorrect ? '#34d399' : '#f87171'};margin:0 0 4px 0;">${isCorrect ? 'إجابة صحيحة وممتازة!' : (myChoiceIdx === -1 ? 'انتهى الوقت ولم تُجب!' : 'إجابة خاطئة!')}</h2>
@@ -174,6 +211,7 @@
           <div><div style="font-size:11px;color:#a1a4be;font-weight:700;">ترتيبك الحالي</div><div style="font-size:17px;font-weight:900;color:#fcd34d;">المركز ${currentRank}</div></div>
         </div>
         <div style="font-size:11px;color:#c9baff;font-weight:800;">${deltaIcon} ${deltaText} • انتظر السؤال التالي من المعلم</div>
+        ${renderHeroActionDock(false)}
       </main>`;
 
     return { isCorrect, earned, currentRank, updatedScore: Number(myResult?.totalScore ?? currentScore) };
@@ -192,19 +230,14 @@
       <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 25%, rgba(42,34,84,0.34) 0%, rgba(10,11,22,0.72) 100%);z-index:2;"></div>
       <header class="scorear-control-bar" style="position:relative;z-index:10;padding:12px;text-align:center;"><span style="font-size:15px;font-weight:900;color:#fcd34d;display:inline-flex;align-items:center;gap:6px;">${uiIcon('crown', 16)} نهاية التحدي والتتويج</span></header>
       <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:12px;">
-        <img src="assets/characters/animated/${currentStudent?.avatarId || 'char_01'}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(currentStudent?.name || 'البطل')}" style="width:100px;height:120px;object-fit:contain;animation:character-joy 1.1s ease-in-out infinite;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));">
+        <img id="studentHeroAvatarImg" src="assets/characters/animated/${currentStudent?.avatarId || 'char_01'}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(currentStudent?.name || 'البطل')}" style="width:100px;height:120px;object-fit:contain;animation:character-joy 1.1s ease-in-out infinite;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));">
         <h2 style="font-size:19px;font-weight:900;color:#ffffff;margin:0;">أحسنت يا ${escapeHtml(currentStudent?.name || 'البطل')}!</h2>
         <div style="background:rgba(18,20,44,0.9);backdrop-filter:blur(16px);border:1px solid rgba(251,191,36,0.45);border-radius:18px;padding:14px;width:100%;max-width:310px;">
           <div style="font-size:11px;color:#a1a4be;">مجموع نقاطك النهائي:</div>
           <div style="font-size:26px;font-weight:900;color:#f5c518;margin:2px 0;">${currentScore} نقطة</div>
           ${myFinalRank !== '-' ? `<div style="font-size:12px;font-weight:900;color:#34d399;">بطل في منصة التتويج (المركز ${myFinalRank})</div>` : ''}
         </div>
-        <div style="display:flex;gap:12px;margin:2px 0;background:rgba(20,22,46,0.78);backdrop-filter:blur(12px);padding:6px 16px;border-radius:999px;border:1px solid rgba(255,255,255,0.12);">
-          <button type="button" onclick="ScoreARQuizStudent.sendReaction('👏')" style="background:none;border:none;font-size:20px;cursor:pointer;padding:2px 4px;">👏</button>
-          <button type="button" onclick="ScoreARQuizStudent.sendReaction('🔥')" style="background:none;border:none;font-size:20px;cursor:pointer;padding:2px 4px;">🔥</button>
-          <button type="button" onclick="ScoreARQuizStudent.sendReaction('❤️')" style="background:none;border:none;font-size:20px;cursor:pointer;padding:2px 4px;">❤️</button>
-          <button type="button" onclick="ScoreARQuizStudent.sendReaction('🎉')" style="background:none;border:none;font-size:20px;cursor:pointer;padding:2px 4px;">🎉</button>
-        </div>
+        ${renderHeroActionDock(true)}
         ${(myFinalRank !== '-' && myFinalRank <= 3) ? `<button data-scorear-certificate="true" class="btn launch-primary" style="font-weight:900;font-size:13px;border-radius:12px;padding:10px 20px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">${uiIcon('award', 15)} تحميل شهادتي التقديرية (PNG)</button>` : ''}
         <button onclick="ScoreARQuizStudent.closeStudentSession()" class="scorear-gear-btn" style="padding:10px 22px;font-size:13px;">${uiIcon('home', 14)} العودة للرئيسية</button>
       </main>`;
@@ -294,7 +327,7 @@
         <span class="scorear-control-pill" style="padding:3px 10px;font-size:11px;">المتسابقون: <b style="color:#58dce3;">${total}</b></span>
       </header>
       <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px;text-align:center;gap:10px;overflow-y:auto;">
-        <img src="assets/characters/animated/${escapeHtml(charAvatarId)}-idle.webp" onerror="this.onerror=null;this.src='assets/characters/${escapeHtml(charAvatarId)}_full.webp';this.onerror=function(){this.src='assets/characters/animated/char_01-idle.webp';};" alt="${escapeHtml(myName)}" style="width:78px;height:90px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));flex-shrink:0;">
+        <img id="studentHeroAvatarImg" src="assets/characters/animated/${escapeHtml(charAvatarId)}-idle.webp" onerror="this.onerror=null;this.src='assets/characters/${escapeHtml(charAvatarId)}_full.webp';this.onerror=function(){this.src='assets/characters/animated/char_01-idle.webp';};" alt="${escapeHtml(myName)}" style="width:78px;height:90px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));flex-shrink:0;">
         <h3 style="font-size:17px;font-weight:900;color:#ffffff;margin:0;">أحسنت يا ${escapeHtml(myName)}</h3>
 
         <div style="width:100%;max-width:350px;background:rgba(18,20,44,0.88);backdrop-filter:blur(18px);border:1px solid rgba(172,139,242,0.32);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 14px 36px rgba(0,0,0,0.5);">
@@ -348,6 +381,7 @@
           </div>
         ` : ''}
 
+        ${renderHeroActionDock(false)}
         <div style="font-size:11.5px;color:#a1a4be;font-weight:800;">
           المعلم يراجع النتائج ويستعد للسؤال التالي...
         </div>
@@ -378,7 +412,8 @@
     renderStudentResult,
     renderStudentLeaderboardCard,
     renderStudentFinalPodium,
-    renderStudentRoomClosed
+    renderStudentRoomClosed,
+    triggerHeroAction
   };
 
   global.ScoreARQuizStudentView = ScoreARQuizStudentView;

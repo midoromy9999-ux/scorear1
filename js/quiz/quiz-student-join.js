@@ -129,6 +129,7 @@
           state.name = e.target.value.slice(0, 40);
         });
       }
+      if (global.ScoreARHeroCosmetics?.bindCompactSelector) global.ScoreARHeroCosmetics.bindCompactSelector(containerEl);
     }
   }
 
@@ -212,6 +213,7 @@
           </div>
         </div>
 
+        ${global.ScoreARHeroCosmetics?.renderCompactSelectorHtml ? global.ScoreARHeroCosmetics.renderCompactSelectorHtml() : ''}
         <div style="display:flex;gap:8px;">
           ${!state.fromQr ? `<button type="button" class="scorear-gear-btn" onclick="ScoreARStudentJoin.goToStep(1)" style="flex:1;padding:12px;border-radius:12px;font-size:12.5px;">تغيير الرمز</button>` : ''}
           <button type="button" id="studentStep2NextBtn" class="btn launch-primary" onclick="ScoreARStudentJoin.submitStep2()" ${state.loading?'disabled':''} style="flex:2;padding:12px;border-radius:12px;font-weight:900;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;">
@@ -381,10 +383,12 @@
 
     try {
       const chosenAvatar = state.avatarId || 'char_01';
+      const cosmetics = global.ScoreARHeroCosmetics?.getEquipped ? global.ScoreARHeroCosmetics.getEquipped() : null;
       const student = await global.ScoreARAuth.joinStudent(state.pin, state.name, chosenAvatar);
       student.avatarId = chosenAvatar;
       student.characterId = chosenAvatar;
       student.avatar = chosenAvatar;
+      if (cosmetics) student.cosmetics = cosmetics;
       if (state.isReconnect && state.savedActiveSession && state.savedActiveSession.uid) {
         student.uid = state.savedActiveSession.uid;
         student.isReconnect = true;
@@ -399,7 +403,7 @@
       }
       if (global.ScoreARRealtime && typeof global.ScoreARRealtime.publish === 'function') {
         global.ScoreARRealtime.publish('STUDENT_JOIN', {
-          player: { id: student.uid, name: student.name, avatarId: chosenAvatar, characterId: chosenAvatar, isRegistered: !!state.isRegistered },
+          player: { id: student.uid, name: student.name, avatarId: chosenAvatar, characterId: chosenAvatar, cosmetics, isRegistered: !!state.isRegistered },
           pin: state.pin
         });
       }

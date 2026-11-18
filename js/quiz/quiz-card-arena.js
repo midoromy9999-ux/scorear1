@@ -172,6 +172,7 @@
       });
     }
     showHostCardBanner(ev.message, ev.type);
+    if (global.ScoreARStageFx?.playCardProjectile) global.ScoreARStageFx.playCardProjectile(ev);
     if (!isHostRole && mgr?.players?.[currentStudentId] && global.ScoreARQuizStudent?.syncScoreFromHost) {
       global.ScoreARQuizStudent.syncScoreFromHost(mgr.players[currentStudentId].score);
     }

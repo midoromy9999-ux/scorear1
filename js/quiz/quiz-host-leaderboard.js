@@ -117,12 +117,23 @@
           0% { opacity: 0; transform: translateY(18px) scale(0.98); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
+        @keyframes raceHeroRushIn {
+          0% { opacity: 0; transform: translate3d(38px, 6px, 0) scale(0.9) skewX(-8deg); }
+          60% { opacity: 1; transform: translate3d(-6px, -8px, 0) scale(1.08); }
+          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1) skewX(0deg); }
+        }
+        @keyframes raceHeroOvertakeLeap {
+          0% { opacity: 0; transform: translate3d(44px, 10px, 0) scale(0.88); }
+          45% { opacity: 1; transform: translate3d(6px, -22px, 0) scale(1.16) rotate(-5deg); }
+          78% { transform: translate3d(-2px, 4px, 0) scale(1.06, 0.94); }
+          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+        }
         @keyframes speedLinesMotion {
           0%, 100% { transform: translateX(0); opacity: 0.22; }
           50% { transform: translateX(-14px); opacity: 0.52; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .race-lane-card, .char-procedural-rig, .speed-lines-svg { animation: none !important; transform: none !important; }
+          .race-lane-card, .char-procedural-rig, .speed-lines-svg, .race-track-fill { animation: none !important; transform: none !important; transition: none !important; }
         }
       </style>
 
@@ -203,10 +214,14 @@
               : ('char_' + String((!isNaN(avNum) && avNum >= 1 && avNum <= 20) ? avNum : 1).padStart(2, '0'));
             const actionType = (worldId === 'treasure') ? 'climb' : (worldId === 'magic') ? 'fly' : 'run';
             const raceProgressPct = Math.min(92, Math.max(8, Math.round(((p.score || 0) / maxLeaderScore) * 88)));
+            const startRacePct = Math.min(92, Math.max(6, Math.round((startScore / maxLeaderScore) * 88)));
+            const rigAnim = p._rankDelta > 0
+              ? `raceHeroOvertakeLeap 0.72s cubic-bezier(0.22,1,0.36,1) ${delaySec}s both`
+              : (ptsGained > 0 ? `raceHeroRushIn 0.58s cubic-bezier(0.22,1,0.36,1) ${delaySec}s both` : 'none');
 
             return `
               ${gapHtml}
-              <div class="race-lane-card" style="animation:raceLaneSlideIn 0.48s cubic-bezier(0.16, 1, 0.3, 1) ${delaySec}s both;position:relative;background:${theme.bgGradient};backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid ${isTop1 ? 'rgba(251,191,36,0.65)' : theme.laneBorder};border-radius:18px;padding:9px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:${isTop1 ? '0 14px 36px rgba(0,0,0,0.55), 0 0 28px rgba(251,191,36,0.18)' : '0 10px 28px rgba(0,0,0,0.45)'};min-height:70px;overflow:hidden;">
+              <div class="race-lane-card" data-player-id="${escapeHtml(p.id || ('lb_' + idx))}" data-player-name="${escapeHtml(p.name || '')}" style="animation:raceLaneSlideIn 0.48s cubic-bezier(0.16, 1, 0.3, 1) ${delaySec}s both;position:relative;background:${theme.bgGradient};backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid ${isTop1 ? 'rgba(251,191,36,0.65)' : theme.laneBorder};border-radius:18px;padding:9px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:${isTop1 ? '0 14px 36px rgba(0,0,0,0.55), 0 0 28px rgba(251,191,36,0.18)' : '0 10px 28px rgba(0,0,0,0.45)'};min-height:70px;overflow:hidden;">
 
                 <svg class="speed-lines-svg" width="140" height="44" viewBox="0 0 140 44" fill="none" style="position:absolute;left:135px;opacity:0.28;animation:speedLinesMotion 2.2s infinite ease-in-out;pointer-events:none;">
                   <line x1="0" y1="12" x2="110" y2="12" stroke="${theme.speedColor}" stroke-width="1.5" stroke-dasharray="18 10"/>
@@ -220,8 +235,8 @@
                     <span style="margin-top:3px;">${arrowHtml}</span>
                   </div>
 
-                  <div class="char-procedural-rig" style="position:relative;width:62px;height:68px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;">
-                    <div id="hostLbHero_${idx}" data-char-code="${cleanCode}" data-action="${actionType}" style="width:60px;height:66px;display:flex;align-items:flex-end;justify-content:center;position:relative;">
+                  <div class="char-procedural-rig" style="animation:${rigAnim};position:relative;width:62px;height:68px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;">
+                    <div id="hostLbHero_${idx}" data-char-code="${cleanCode}" data-action="${actionType}" data-speed="${p._rankDelta > 0 ? 1.45 : (ptsGained > 0 ? 1.2 : 0.85)}" style="width:60px;height:66px;display:flex;align-items:flex-end;justify-content:center;position:relative;">
                       <img src="assets/characters/animated/${cleanCode}-idle.webp" onerror="this.onerror=null;this.src='assets/characters/${cleanCode}_full.webp';this.onerror=function(){this.src='assets/characters/animated/char_01-idle.webp';};" alt="${escapeHtml(p.name)}" style="width:58px;height:64px;object-fit:contain;display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,0.65));">
                     </div>
                   </div>
@@ -232,8 +247,10 @@
                       ${isTop1 ? `<span style="color:#fbbf24;display:inline-flex;">${uiIcon('crown', 16)}</span>` : ''}
                       ${badges.join('')}
                     </div>
-                    <div style="margin-top:7px;width:100%;height:7px;background:rgba(8,10,24,0.62);border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;">
-                      <div style="width:${raceProgressPct}%;height:100%;background:linear-gradient(90deg, ${theme.accentColor}, ${theme.speedColor});border-radius:999px;transition:width 0.8s cubic-bezier(0.2,0.8,0.2,1);box-shadow:0 0 12px ${theme.speedColor};"></div>
+                    <div style="margin-top:7px;width:100%;height:8px;background:rgba(8,10,24,0.62);border-radius:999px;overflow:visible;border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;position:relative;">
+                      <div class="race-track-fill" data-target-pct="${raceProgressPct}" style="width:${startRacePct}%;height:100%;background:linear-gradient(90deg, ${theme.accentColor}, ${theme.speedColor});border-radius:999px;transition:width 0.82s cubic-bezier(0.22,1,0.36,1);box-shadow:0 0 12px ${theme.speedColor};position:relative;">
+                        <span style="position:absolute;left:-4px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:#ffffff;box-shadow:0 0 12px #ffffff, 0 0 20px ${theme.speedColor};display:${raceProgressPct > 8 ? 'block' : 'none'};"></span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -260,13 +277,20 @@
         if (!slot) return;
         const code = slot.getAttribute('data-char-code') || 'char_01';
         const act = slot.getAttribute('data-action') || 'run';
+        const spd = parseFloat(slot.getAttribute('data-speed')) || 1.1;
         try {
-          global.ScoreARMotionEngine.mount(slot, code, act, { width: 60, height: 66, enableParticles: false, enableShadow: true });
+          global.ScoreARMotionEngine.mount(slot, code, act, { width: 60, height: 66, speed: spd, enableParticles: true, enableShadow: true });
         } catch (e) {}
       });
     }
 
     setTimeout(() => {
+      if (typeof stage.querySelectorAll === 'function') {
+        stage.querySelectorAll('.race-track-fill').forEach(fill => {
+          const t = fill.getAttribute('data-target-pct');
+          if (t) fill.style.width = t + '%';
+        });
+      }
       const countEls = stage.querySelectorAll('.scorear-count-up');
       countEls.forEach(el => {
         const start = Number(el.getAttribute('data-start')) || 0;

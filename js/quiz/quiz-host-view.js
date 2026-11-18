@@ -14,6 +14,7 @@
       el.setAttribute('data-cur-pose', currentLobbyPose);
       global.ScoreARMotionEngine?.mount?.(el, code, currentLobbyPose, { width: 140, height: 185 });
     });
+    if (global.ScoreARLobbyDirector?.setMode) global.ScoreARLobbyDirector.setMode(currentLobbyPose);
     document.querySelectorAll('[data-lobby-pose]').forEach(btn => {
       const act = btn.getAttribute('data-lobby-pose') === currentLobbyPose;
       btn.classList.toggle('is-active', act);
@@ -167,7 +168,14 @@
         slot.setAttribute('data-char-code', code);
         slot.setAttribute('data-cur-pose', currentLobbyPose || 'walk');
         global.ScoreARMotionEngine?.mount?.(slot, code, currentLobbyPose || 'walk', { width: 140, height: 185 });
+        if (p.cosmetics?.aura && global.ScoreARHeroCosmetics?.applyAura) {
+          global.ScoreARHeroCosmetics.applyAura(slot.parentElement || slot, p.cosmetics.aura);
+        }
       });
+      const arena = document.getElementById('hostCharactersArena');
+      if (arena && global.ScoreARLobbyDirector?.syncArena) {
+        global.ScoreARLobbyDirector.syncArena(arena, currentRoom.players, currentLobbyPose || 'walk');
+      }
     }, 35);
   }
 
@@ -197,7 +205,7 @@
       const isBot = Boolean(p.isBot || p.isDemo), safeName = escapeHtml(p.name);
       const urls = getHeroAssetUrls(p.avatarId || p.characterId || p.avatar || p.player?.avatarId || p.player?.characterId || 'char_01');
       const delAction = p.isBot ? `ScoreARBots && ScoreARBots.removeBot('${escapeHtml(p.id)}')` : `ScoreARQuizHost.kickPlayer('${escapeHtml(p.id)}')`;
-      return `<div class="animate-enter-fullbody host-lobby-hero-slot" style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:auto;animation-delay:${idx*0.06}s;min-width:125px;">
+      return `<div class="animate-enter-fullbody host-lobby-hero-slot" data-player-id="${escapeHtml(p.id)}" style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:auto;animation-delay:${idx*0.06}s;min-width:125px;">
         <div class="player-name-floating-pill" style="margin-bottom:10px;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;" title="إزالة اللاعب من القاعة">
           <span style="font-size:11px;color:#7550ef;">${isBot ? 'BOT' : '●'}</span>
           <span style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;">${safeName}</span>
@@ -212,6 +220,7 @@
 
   /* ── 2. 3-STAGE CINEMATIC TRANSFER SEQUENCE ── */
   function renderContestIntroSequence(stage, currentRoom, quizTitle, totalQuestions, onDone) {
+    if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
     const worldId = currentRoom?.world?.id || 'royal', wName = currentRoom?.world?.name || 'القصر الملكي';
     const title = quizTitle || 'كأس التفوق — مسابقة سكور آر التفاعلية';
     let finished = false;
@@ -263,6 +272,7 @@
 
   /* ── 3. QUESTION READING & ANSWERING STAGE (Preserving 100% Question Card & 4-Color Choices) ── */
   function renderHostQuestionView(stage, phase, qData, currentQIndex, total, worldId, timeRemaining, readingTimeRemaining) {
+    if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
     const isReading = (phase === 'reading'), opts = qData.options || qData.opts || [];
     const questionText = qData.text || qData.q || '', imgUrl = qData.imageUrl || qData.img || null;
     const wid = String(worldId || 'royal').trim() || 'royal';

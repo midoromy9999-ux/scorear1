@@ -11,8 +11,10 @@
   const sfx = n => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n); };
   const $   = id => document.getElementById(id);
   const ic  = (n, sz = 14) => (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function') ? global.ScoreARUI.icon(n, { size: sz }) : '';
+  const scenes = () => global.ScoreARPodiumScenes || null;
+  const getTheme = () => ($('podiumStageRoot')?.getAttribute('data-ceremony-theme')) || (typeof localStorage !== 'undefined' && localStorage.getItem('scorear_ceremony_mode')) || 'chests';
 
-  const POSES = ['idle', 'walk', 'celebrate'];
+  const POSES = ['idle', 'walk', 'celebrate', 'run', 'climb', 'fly'];
   let revealStep = 0, players = [], room = null, rafId = null, partTimer = null, spotCanvas = null, currentPose = 'celebrate', cTimer = null, sTimer = null;
 
   function charCode(avatarId) {
@@ -55,7 +57,9 @@
       3: { face: 'linear-gradient(180deg, #3b0f75 0%, #240a4d 100%)', top: 'linear-gradient(135deg, #4c1d95 0%, #2e1065 100%)', pentBg: 'linear-gradient(135deg, #f97316 0%, #c2410c 100%)', pentBorder: '#fed7aa' }
     };
     const t = themes[rank], pentSize = rank === 1 ? 94 : (rank === 2 ? 82 : 76);
+    const pedProps = scenes()?.getPedestalPropsHtml ? scenes().getPedestalPropsHtml(rank) : '';
     return `<div id="podiumPedestal_${rank}" class="kahoot-3d-pedestal ped-rank-${rank}" style="height:${heightPx}px;width:${widthPx}px;position:relative;transition:all 0.65s cubic-bezier(0.16,1,0.3,1);filter:drop-shadow(0 20px 38px rgba(0,0,0,0.82));">
+      ${pedProps}
       <div style="position:absolute;top:-22px;left:0;right:0;height:24px;background:${t.top};clip-path:polygon(12% 0%, 88% 0%, 100% 100%, 0% 100%);z-index:6;"></div>
       <div style="position:absolute;inset:0;background:${t.face};border-top:2px solid rgba(255,255,255,0.22);border-radius:0 0 10px 10px;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:18px 10px 14px;overflow:hidden;box-shadow:inset 0 10px 24px rgba(255,255,255,0.12), inset 0 -18px 28px rgba(0,0,0,0.5);">
         <div style="width:${pentSize}px;height:${pentSize}px;background:${t.pentBorder};clip-path:polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);display:grid;place-items:center;padding:4px;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.55));">
@@ -194,6 +198,7 @@
     84%  { transform: translate(-50%, -34%) scale(1.08); opacity: 0.85; }
     100% { transform: translate(-50%, -34%) scale(1.12); opacity: 0; }
   }
+  ${scenes()?.getSceneStylesHtml ? scenes().getSceneStylesHtml() : ''}
 </style>
 <div id="podiumStageRoot">
   <div style="position:absolute;inset:0;z-index:0;overflow:hidden;background:url('assets/worlds/${wid}/podium.jpg') center/cover no-repeat;">
@@ -202,6 +207,7 @@
   </div>
   <canvas id="scSpot" style="position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;"></canvas>
   <canvas id="scPart" style="position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;opacity:0.85;"></canvas>
+  ${scenes()?.getStageOverlaysHtml ? scenes().getStageOverlaysHtml() : ''}
 
   <div id="scDarknessOverlay" style="position:absolute;inset:0;background:rgba(4,2,14,0.86);opacity:0;pointer-events:none;transition:opacity 0.6s ease;z-index:18;"></div>
   <div id="scRovingSpotlight" style="display:none;position:absolute;top:38%;left:50%;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle, rgba(255,250,220,0.62) 0%, rgba(251,191,36,0.26) 40%, rgba(167,139,250,0.10) 62%, rgba(255,255,255,0) 76%);filter:blur(16px);mix-blend-mode:screen;opacity:0;transition:opacity 0.55s ease;pointer-events:none;z-index:24;"></div>
@@ -230,27 +236,30 @@
     <div id="podiumCameraRig" data-id="podiumCameraRig" style="position:relative;width:100%;max-width:1180px;height:clamp(420px,68vh,620px);margin:0 auto;z-index:5;">
       <div id="climax${wid.charAt(0).toUpperCase() + wid.slice(1)}" style="display:none;position:absolute;inset:0;pointer-events:none;z-index:7;"></div>
 
-      <div id="col_2" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.95 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
-        <div id="podiumHeroArea_2" style="display:none;flex-direction:column;align-items:center;animation:heroPopIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both;">
+      <div id="col_2" class="podium-col" data-player-id="${esc(p2.id||'')}" data-player-name="${esc(p2.name||'')}" onclick="ScoreARPodiumEffects.triggerHeroStunt(2)" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.95 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
+        <div id="podiumHeroArea_2" style="display:none;flex-direction:column;align-items:center;position:relative;animation:heroPopIn 0.55s cubic-bezier(0.34,1.56,0.64,1) both;">
+          ${scenes()?.getColumnPropsHtml ? scenes().getColumnPropsHtml(2) : ''}
           <div class="podium-name-pill" style="font-size:25px;font-weight:900;color:#ffffff;text-shadow:0 2px 10px rgba(0,0,0,0.85);">${esc(p2.name)}</div>
-          <div id="hm_2" style="height:255px;width:210px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p2.avatarId, p2.name, 'celebrate')}</div>
+          <div id="hm_2" style="height:255px;width:210px;display:flex;align-items:flex-end;justify-content:center;position:relative;z-index:5;">${heroImg(p2.avatarId, p2.name, 'celebrate')}</div>
         </div>
         ${P2}
       </div>
 
-      <div id="col_1" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.92 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;z-index:30;">
+      <div id="col_1" class="podium-col" data-player-id="${esc(p1.id||'')}" data-player-name="${esc(p1.name||'')}" onclick="ScoreARPodiumEffects.triggerHeroStunt(1)" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.92 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;z-index:30;">
         <div id="podiumHeroArea_1" style="display:none;flex-direction:column;align-items:center;position:relative;animation:heroPopIn 0.65s cubic-bezier(0.34,1.56,0.64,1) both;">
-          <span id="championCrownEl" style="font-size:38px;line-height:1;visibility:hidden;animation:crownDrop 0.8s cubic-bezier(0.34,1.56,0.64,1);filter:drop-shadow(0 0 24px #fef08a);margin-bottom:-2px;">👑<span id="scCrown" style="display:none;"></span></span>
+          ${scenes()?.getColumnPropsHtml ? scenes().getColumnPropsHtml(1) : ''}
+          <span id="championCrownEl" style="font-size:38px;line-height:1;visibility:hidden;animation:crownDrop 0.8s cubic-bezier(0.34,1.56,0.64,1);filter:drop-shadow(0 0 24px #fef08a);margin-bottom:-2px;position:relative;z-index:42;">👑<span id="scCrown" style="display:none;"></span></span>
           <div class="podium-name-pill" style="font-size:30px;font-weight:900;color:#fef08a;text-shadow:0 2px 12px rgba(0,0,0,0.9);">${esc(p1.name)}</div>
-          <div id="hm_1" style="height:295px;width:245px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p1.avatarId, p1.name, 'celebrate')}</div>
+          <div id="hm_1" style="height:295px;width:245px;display:flex;align-items:flex-end;justify-content:center;position:relative;z-index:5;">${heroImg(p1.avatarId, p1.name, 'celebrate')}</div>
         </div>
         ${P1}
       </div>
 
-      <div id="col_3" class="podium-col" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.91 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
-        <div id="podiumHeroArea_3" style="display:none;flex-direction:column;align-items:center;animation:heroPopIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">
+      <div id="col_3" class="podium-col" data-player-id="${esc(p3.id||'')}" data-player-name="${esc(p3.name||'')}" onclick="ScoreARPodiumEffects.triggerHeroStunt(3)" style="position:absolute;bottom:0;left:50%;transform:translate(-50%, 120%) scale(calc(0.91 * var(--pod-s, 1)));opacity:0;pointer-events:none;transition:transform 0.85s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease, filter 0.6s ease;display:flex;flex-direction:column;align-items:center;">
+        <div id="podiumHeroArea_3" style="display:none;flex-direction:column;align-items:center;position:relative;animation:heroPopIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;">
+          ${scenes()?.getColumnPropsHtml ? scenes().getColumnPropsHtml(3) : ''}
           <div class="podium-name-pill" style="font-size:24px;font-weight:900;color:#ffffff;text-shadow:0 2px 10px rgba(0,0,0,0.85);">${esc(p3.name)}</div>
-          <div id="hm_3" style="height:235px;width:195px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p3.avatarId, p3.name, 'celebrate')}</div>
+          <div id="hm_3" style="height:235px;width:195px;display:flex;align-items:flex-end;justify-content:center;position:relative;z-index:5;">${heroImg(p3.avatarId, p3.name, 'celebrate')}</div>
         </div>
         ${P3}
       </div>
@@ -291,8 +300,9 @@
 </div>`;
 
     setTimeout(() => {
-      const sc = $('scSpot'), pc = $('scPart');
+      const sc = $('scSpot'), pc = $('scPart'), sCanvas = $('scSceneCanvas');
       if (sc) runSpotlights(sc, wid, 0);
+      if (scenes()?.initStage) scenes().initStage(sCanvas, getTheme());
       applyCreativeCeremonyTheme();
       if (pc) particles(pc);
     }, 50);
@@ -314,10 +324,10 @@
       if (sc) runSpotlights(sc, wid, 1);
       if (c3) { c3.style.pointerEvents = 'auto'; c3.style.zIndex = '25'; c3.style.opacity = '1'; c3.style.transform = 'translate(-50%, 0) scale(calc(1.08 * var(--pod-s, 1)))'; }
       setTimeout(() => {
-        const h3 = $('podiumHeroArea_3');
-        if (h3) { h3.style.display = 'flex'; mountHero($('hm_3'), players[2]?.avatarId, currentPose); }
+        if (scenes()?.animateHeroEntry) scenes().animateHeroEntry(3, getTheme(), mountHero, players[2]);
+        else { const h3 = $('podiumHeroArea_3'); if (h3) { h3.style.display = 'flex'; mountHero($('hm_3'), players[2]?.avatarId, currentPose); } }
         setMysteryScore(3, players[2]?.score || 0, '#fed7aa');
-      }, 300);
+      }, 260);
       if (btn) btn.innerHTML = `${ic('medal', 15)} <span>كشف المركز الثاني</span>`;
     } else if (revealStep === 2) {
       sfx('whoosh');
@@ -327,11 +337,11 @@
         sfx('pop');
         if (c2) { c2.style.pointerEvents = 'auto'; c2.style.zIndex = '25'; c2.style.opacity = '1'; c2.style.transform = 'translate(-50%, 0) scale(calc(1.08 * var(--pod-s, 1)))'; }
         setTimeout(() => {
-          const h2 = $('podiumHeroArea_2');
-          if (h2) { h2.style.display = 'flex'; mountHero($('hm_2'), players[1]?.avatarId, currentPose); }
+          if (scenes()?.animateHeroEntry) scenes().animateHeroEntry(2, getTheme(), mountHero, players[1]);
+          else { const h2 = $('podiumHeroArea_2'); if (h2) { h2.style.display = 'flex'; mountHero($('hm_2'), players[1]?.avatarId, currentPose); } }
           setMysteryScore(2, players[1]?.score || 0, '#e2e8f0');
-        }, 280);
-      }, 350);
+        }, 250);
+      }, 340);
       if (btn) btn.innerHTML = `${ic('crown', 15)} <span>كشف بطل المركز الأول!</span>`;
     } else if (revealStep === 3) {
       if (btn) btn.disabled = true;
@@ -341,14 +351,15 @@
         sfx('drumroll');
         if (dark) dark.style.opacity = '1';
         if (c2) { c2.style.transform = 'translate(calc(-50% - var(--pod-dx, 260px)), 14px) scale(calc(0.95 * var(--pod-s, 1)))'; c2.style.opacity = '0.28'; c2.style.filter = 'brightness(0.55)'; }
-        if (c3) { c3.style.transform = 'translate(calc(-50% + var(--pod-dx, 260px)), 20px) scale(calc(0.91 * var(--pod-s, 1)))'; c3.style.opacity = '0.28'; c3.style.filter = 'brightness(0.55)'; }
+        if (c3) { c3.style.transform = 'translate(calc(-50% + var(--pod-dx, 260px)), 20px) scale(calc(0.91 * var(--pod-s, 1)))'; c2.style.opacity = '0.28'; c3.style.filter = 'brightness(0.55)'; }
         if (c1) { c1.style.pointerEvents = 'auto'; c1.style.zIndex = '30'; c1.style.opacity = '1'; c1.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))'; }
         if (roving) { roving.style.animation = 'none'; void roving.offsetWidth; roving.style.display = 'block'; roving.style.opacity = '1'; roving.style.animation = 'theatricalSpotRoam 2.3s cubic-bezier(0.42, 0, 0.58, 1) forwards'; }
         sTimer = setTimeout(() => {
           sfx('fanfare');
           if (sc) runSpotlights(sc, wid, 3);
-          const h1 = $('podiumHeroArea_1'), crown = $('championCrownEl');
-          if (h1) { h1.style.display = 'flex'; mountHero($('hm_1'), players[0]?.avatarId, currentPose); }
+          const crown = $('championCrownEl');
+          if (scenes()?.animateHeroEntry) scenes().animateHeroEntry(1, getTheme(), mountHero, players[0]);
+          else { const h1 = $('podiumHeroArea_1'); if (h1) { h1.style.display = 'flex'; mountHero($('hm_1'), players[0]?.avatarId, currentPose); } }
           if (crown) crown.style.visibility = 'visible';
           setMysteryScore(1, players[0]?.score || 0, '#fef08a');
           setTimeout(() => {
@@ -393,10 +404,12 @@
     if (c2) { c2.style.pointerEvents = 'auto'; c2.style.opacity = '1'; c2.style.filter = 'brightness(1)'; c2.style.transform = 'translate(calc(-50% - var(--pod-dx, 260px)), 14px) scale(calc(0.95 * var(--pod-s, 1)))'; }
     if (c3) { c3.style.pointerEvents = 'auto'; c3.style.opacity = '1'; c3.style.filter = 'brightness(1)'; c3.style.transform = 'translate(calc(-50% + var(--pod-dx, 260px)), 20px) scale(calc(0.91 * var(--pod-s, 1)))'; }
     if (c1) { c1.style.pointerEvents = 'auto'; c1.style.opacity = '1'; c1.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))'; }
-    [3, 2, 1].forEach(r => {
+    const activeTheme = getTheme();
+    [3, 2, 1].forEach((r, idx) => {
       const h = $(`podiumHeroArea_${r}`), hm = $(`hm_${r}`), pl = players[r === 1 ? 0 : r === 2 ? 1 : 2];
       if (h) h.style.display = 'flex';
-      if (pl && hm) mountHero(hm, pl.avatarId, currentPose);
+      if (scenes()?.animateHeroEntry) setTimeout(() => scenes().animateHeroEntry(r, activeTheme, mountHero, pl), idx * 90);
+      else if (pl && hm) mountHero(hm, pl.avatarId, currentPose);
       setMysteryScore(r, pl?.score || 0, r === 1 ? '#fef08a' : r === 2 ? '#e2e8f0' : '#fed7aa');
     });
     const crown = $('championCrownEl'); if (crown) crown.style.visibility = 'visible';
@@ -406,6 +419,7 @@
   }
 
   function applyCreativeCeremonyTheme(themeId) {
+    const isUserClick = Boolean(themeId);
     const mode = themeId || (typeof localStorage !== 'undefined' && localStorage.getItem('scorear_ceremony_mode')) || 'chests';
     try { localStorage.setItem('scorear_ceremony_mode', mode); } catch (e) {}
     const root = document.getElementById('podiumStageRoot');
@@ -415,8 +429,18 @@
       const act = b.getAttribute('data-ceremony-btn') === mode;
       b.classList.toggle('is-active', act);
     });
-    const poseMap = { chests: 'celebrate', cards: 'celebrate', rockets: 'celebrate', finishline: 'walk', portal: 'celebrate' };
+    const poseMap = { chests: 'celebrate', cards: 'celebrate', rockets: 'celebrate', finishline: 'run', portal: 'celebrate' };
+    if (isUserClick && revealStep === 0) {
+      revealAll();
+    } else if (scenes()?.setMode) {
+      scenes().setMode(mode, revealStep, mountHero, players, isUserClick);
+    }
     setHeroPose(poseMap[mode] || 'celebrate');
+  }
+
+  function triggerHeroStunt(rank) {
+    const pl = players[rank === 1 ? 0 : rank === 2 ? 1 : 2];
+    if (scenes()?.triggerHeroStunt) scenes().triggerHeroStunt(rank, mountHero, pl);
   }
 
   function setHeroPose(pose) {
@@ -431,7 +455,8 @@
   function toggleAudioMute() { if (global.ScoreARAudio?.toggleMute) { const m = global.ScoreARAudio.toggleMute(); const b = $('scAudioBtn'); if (b) b.innerHTML = ic(m ? 'volumeOff' : 'volume', 14); } }
   function triggerSnapshot() { global.ScoreARPodiumCapture?.capturePodiumSnapshot?.($('scorearQuizHostStage') || document.body, room, players); }
   function triggerCertificates() { global.ScoreARPodiumCapture?.downloadAllTop3Certificates?.(players, room?.world?.id || 'royal'); }
-  function handleStudentReaction(emoji, name) {
+  function handleStudentReaction(emoji, name, studentId) {
+    global.ScoreARStageFx?.performStudentMove?.(emoji, name, studentId, players, revealStep, triggerHeroStunt);
     const c = $('scReact'); if (!c) return;
     const b = document.createElement('div');
     b.style.cssText = `position:absolute;bottom:80px;left:${10 + Math.random() * 80}%;font-size:32px;display:flex;flex-direction:column;align-items:center;pointer-events:none;animation:floatUp 2.5s ease-out forwards;z-index:200;`;
@@ -455,7 +480,7 @@
     if (typeof global.render === 'function') global.render();
   }
 
-  const ScoreARPodiumEffects = { renderHostPodium, startPodiumShow, renderHero, advanceReveal, startCinematicShow, revealAll, setHeroPose, switchCeremonyTheme: applyCreativeCeremonyTheme, toggleAudioMute, triggerSnapshot, triggerCertificates, navigateAfterPodium, handleStudentReaction, mountHeroMotion: mountHero };
+  const ScoreARPodiumEffects = { renderHostPodium, startPodiumShow, renderHero, advanceReveal, startCinematicShow, revealAll, setHeroPose, switchCeremonyTheme: applyCreativeCeremonyTheme, triggerHeroStunt, toggleAudioMute, triggerSnapshot, triggerCertificates, navigateAfterPodium, handleStudentReaction, mountHeroMotion: mountHero };
   global.ScoreARPodiumEffects = ScoreARPodiumEffects;
   try { if (typeof globalThis !== 'undefined') globalThis.ScoreARPodiumEffects = ScoreARPodiumEffects; } catch(e){}
   if (typeof module !== 'undefined' && module.exports) module.exports = ScoreARPodiumEffects;

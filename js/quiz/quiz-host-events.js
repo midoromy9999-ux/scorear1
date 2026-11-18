@@ -236,12 +236,14 @@
         }
         room.players.push({
           id: p.id, name: p.name, avatarId: p.avatarId || 'char_01',
+          cosmetics: p.cosmetics || null,
           score: 0, streak: 0, lastPointsGained: 0, isRegistered: !!p.isRegistered, isDemo: false
         });
         if (typeof ctx.onPlayerJoined === 'function') ctx.onPlayerJoined(p);
       } else if (exists && (msg.isReconnect || msg.type === 'STUDENT_JOIN')) {
         // Identity is immutable; only the same authenticated UID can reconnect.
         if (p.avatarId) exists.avatarId = p.avatarId;
+        if (p.cosmetics) exists.cosmetics = p.cosmetics;
         if (typeof ctx.onPlayerReconnected === 'function') ctx.onPlayerReconnected(exists);
       }
       if (global.ScoreARCardArena?.syncHostRoster) global.ScoreARCardArena.syncHostRoster(room.players);
