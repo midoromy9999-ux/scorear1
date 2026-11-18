@@ -140,7 +140,7 @@
     stage.innerHTML = `
 <style>
   #podiumStageRoot{--pod-dx:245px;--pod-recede:260px;--pod-s:1;position:absolute;inset:0;display:flex;flex-direction:column;font-family:Cairo,Tajawal,Arial,sans-serif;background:#1a0b3b;overflow:hidden;box-sizing:border-box;}
-#podiumStageRoot main{max-width:none;margin:0;padding:20px 12px 14px;}
+#podiumStageRoot main{max-width:none;margin:0;padding:4px 12px 6px;}
   #podiumStageRoot .podium-col{transform-origin:bottom center;}
   #podiumStageRoot .podium-footer-bar button{padding:7px 12px !important;font-size:11.5px !important;}
   #podiumStageRoot[data-ceremony-theme="chests"] .sc-ceremony-aura{background:radial-gradient(circle at 50% 62%,rgba(245,158,11,0.34),transparent 65%);}
@@ -148,24 +148,7 @@
   #podiumStageRoot[data-ceremony-theme="rockets"] .sc-ceremony-aura{background:radial-gradient(circle at 50% 72%,rgba(14,165,233,0.42),rgba(99,102,241,0.16) 45%,transparent 72%);}
   #podiumStageRoot[data-ceremony-theme="finishline"] .sc-ceremony-aura{background:repeating-linear-gradient(90deg,rgba(255,255,255,0.16) 0 18px,rgba(16,185,129,0.22) 18px 36px);height:16px !important;top:auto !important;bottom:8px;border-radius:999px;max-width:740px;margin:0 auto;}
   #podiumStageRoot[data-ceremony-theme="portal"] .sc-ceremony-aura{background:radial-gradient(circle at 50% 52%,rgba(254,240,138,0.38),rgba(139,92,246,0.24) 44%,transparent 72%);}
-  .sc-ceremony-chooser{position:absolute;inset:0;z-index:48;display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(7,8,20,0.68);backdrop-filter:blur(8px);}
-  .sc-ceremony-dialog{width:min(580px,100%);max-height:100%;overflow-y:auto;background:linear-gradient(160deg,rgba(24,25,54,0.96),rgba(12,13,30,0.98));border:1.5px solid rgba(251,191,36,0.42);border-radius:22px;padding:16px 18px;box-shadow:0 24px 60px rgba(0,0,0,0.75);text-align:center;color:#fff;}
-  .sc-ceremony-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin:12px 0 14px;}
-  .sc-ceremony-card{background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.15);border-radius:14px;padding:10px 8px;color:#fff;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform 0.16s ease,border-color 0.16s ease,background 0.16s ease;}
-  .sc-ceremony-card:hover{transform:translateY(-2px);border-color:#c4b5fd;}
-  .sc-ceremony-card.is-selected{background:linear-gradient(135deg,rgba(245,158,11,0.28),rgba(180,83,9,0.28));border-color:#fef08a;box-shadow:0 0 18px rgba(251,191,36,0.3);}
-  @media (max-width:520px){
-    .sc-ceremony-dialog{padding:12px;border-radius:16px;}
-    .sc-ceremony-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0 10px;}
-    .sc-ceremony-card{padding:7px 6px;font-size:11px;}
-  }
   .podium-name-pill{background:rgba(10,12,28,0.82);border:1px solid rgba(255,255,255,0.22);border-radius:999px;padding:2px 14px;margin-bottom:16px;position:relative;z-index:40;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,0.65);}
-  @media (max-height:760px) and (min-width:721px){
-    #podiumStageRoot #podiumCameraRig{height:410px !important;}
-    #podiumStageRoot{--pod-s:0.84;}
-    #podiumStageRoot .podium-header-bar{padding:6px 14px !important;}
-    #podiumStageRoot .podium-footer-bar{padding:7px 14px !important;gap:6px !important;}
-  }
   @media (max-width:720px){
     #podiumStageRoot{--pod-dx:100px;--pod-recede:112px;--pod-s:0.46;max-width:100vw !important;overflow-x:hidden !important;box-sizing:border-box !important;}
     #podiumStageRoot main{padding:2px 6px 16px !important;min-height:250px !important;max-width:100vw !important;overflow-x:hidden !important;box-sizing:border-box !important;}
@@ -226,9 +209,9 @@
   </header>
 
   <!-- Main 3D Podium Stage (Columns Positioned via Absolute Center Choreography) -->
-  <main style="position:relative;z-index:22;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;overflow:hidden;padding-bottom:10px;">
+  <main style="position:relative;z-index:22;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;overflow:visible;padding-bottom:10px;">
     <div class="sc-ceremony-aura" style="position:absolute;inset:0;pointer-events:none;z-index:2;transition:all 0.35s ease;"></div>
-    <div id="podiumCameraRig" data-id="podiumCameraRig" style="position:relative;width:100%;max-width:980px;height:470px;margin:0 auto;z-index:5;">
+    <div id="podiumCameraRig" data-id="podiumCameraRig" style="position:relative;width:100%;max-width:980px;height:480px;margin:0 auto;z-index:5;">
       <div id="climax${wid.charAt(0).toUpperCase() + wid.slice(1)}" style="display:none;position:absolute;inset:0;pointer-events:none;z-index:7;"></div>
 
       <!-- 2nd Place Column (Starts hidden below center, rises in center on Step 2, moves Left on Step 3) -->
@@ -257,32 +240,6 @@
           <div id="hm_3" style="height:185px;width:150px;display:flex;align-items:flex-end;justify-content:center;">${heroImg(p3.avatarId, p3.name, 'celebrate')}</div>
         </div>
         ${P3}
-      </div>
-    </div>
-
-    <!-- Interactive Ceremony Type Chooser (teacher chooses style BEFORE starting animation) -->
-    <div id="scCeremonyChooser" class="sc-ceremony-chooser">
-      <div class="sc-ceremony-dialog">
-        <div style="font-size:18px;font-weight:900;color:#fef08a;margin-bottom:3px;">🏆 حانت لحظة التتويج الكبرى!</div>
-        <div style="font-size:12px;color:#cbd5e1;font-weight:700;">اختر نوع وطريقة الاحتفال بالأبطال ثم ابدأ العرض:</div>
-        <div class="sc-ceremony-grid">
-          ${[
-            { id: 'chests', icon: '💎', name: 'خزائن الكنز الثلاث', desc: 'بريق الذهب والكنوز' },
-            { id: 'cards', icon: '🃏', name: 'بطاقات الأساطير 3D', desc: 'هالة نيون أسطورية' },
-            { id: 'rockets', icon: '🚀', name: 'صواريخ الفضاء', desc: 'انطلاق كوني مضيء' },
-            { id: 'finishline', icon: '🏁', name: 'اختراق خط النهاية', desc: 'شريط خط السباق' },
-            { id: 'portal', icon: '👑', name: 'بوابة النور والعرش', desc: 'توهّج العرش الملكي' }
-          ].map(c => `<button type="button" class="sc-ceremony-card" data-ceremony-card="${c.id}" onclick="ScoreARPodiumEffects.switchCeremonyTheme('${c.id}')">
-            <span style="font-size:22px;line-height:1;">${c.icon}</span>
-            <b style="font-size:12px;">${c.name}</b>
-            <small style="font-size:10px;color:#a89bff;">${c.desc}</small>
-          </button>`).join('')}
-        </div>
-        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-          <button type="button" onclick="ScoreARPodiumEffects.startCinematicShow()" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#090a16;font-size:13px;font-weight:900;border:1px solid #fef08a;border-radius:12px;padding:9px 20px;cursor:pointer;font-family:inherit;box-shadow:0 6px 20px rgba(245,158,11,0.4);">🎬 بدء الاحتفال السينمائي</button>
-          <button type="button" onclick="ScoreARPodiumEffects.advanceReveal()" style="background:rgba(142,100,239,0.28);color:#fff;font-size:12px;font-weight:800;border:1px solid rgba(196,181,253,0.45);border-radius:12px;padding:9px 14px;cursor:pointer;font-family:inherit;">🥉 كشف خطوة بخطوة</button>
-          <button type="button" onclick="ScoreARPodiumEffects.revealAll()" style="background:rgba(255,255,255,0.1);color:#f1f5f9;font-size:12px;font-weight:800;border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:9px 14px;cursor:pointer;font-family:inherit;">⚡ كشف الكل</button>
-        </div>
       </div>
     </div>
 
@@ -334,14 +291,8 @@
     }
   }
 
-  function hideChooser() {
-    const ch = $('scCeremonyChooser');
-    if (ch) ch.style.display = 'none';
-  }
-
   /* ── Exact Kahoot Center-to-Side Choreography + Blackout + Roving Spotlight ── */
   function advanceReveal() {
-    hideChooser();
     revealStep++;
     const btn = $('scRevBtn'), wid = room?.world?.id || room?.worldId || 'royal';
     const sc = $('scSpot'), c1 = $('col_1'), c2 = $('col_2'), c3 = $('col_3');
@@ -468,7 +419,6 @@
   }
 
   function startCinematicShow() {
-    hideChooser();
     if (cTimer) { clearTimeout(cTimer); cTimer = null; }
     const btn = $('scCinBtn'); if (btn) btn.disabled = true;
     revealStep = 0;
@@ -477,7 +427,6 @@
   }
 
   function revealAll() {
-    hideChooser();
     if (cTimer) { clearTimeout(cTimer); cTimer = null; }
     if (sTimer) { clearTimeout(sTimer); sTimer = null; }
     revealStep = 3;
@@ -509,9 +458,6 @@
       b.style.background = act ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'rgba(255,255,255,0.08)';
       b.style.color = act ? '#090a16' : '#f8fafc';
       b.style.borderColor = act ? '#fef08a' : 'rgba(255,255,255,0.18)';
-    });
-    document.querySelectorAll('[data-ceremony-card]').forEach(c => {
-      c.classList.toggle('is-selected', c.getAttribute('data-ceremony-card') === mode);
     });
     const poseMap = { chests: 'celebrate', cards: 'celebrate', rockets: 'celebrate', finishline: 'walk', portal: 'celebrate' };
     setHeroPose(poseMap[mode] || 'celebrate');
