@@ -406,6 +406,23 @@
       </main>`;
   }
 
+  function ensureLobbyHeroDock() {
+    if (typeof document === 'undefined') return;
+    const stg = document.getElementById('scorearStudentStage');
+    if (!stg || stg.querySelector('.student-hero-action-dock') || stg.querySelector('#studentOptionsContainer')) return;
+    const fb = stg.querySelector('#studentFeedbackBox');
+    if (!fb || !fb.parentElement) return;
+    const heroImg = stg.querySelector('main img');
+    if (heroImg && !heroImg.id) heroImg.id = 'studentHeroAvatarImg';
+    fb.insertAdjacentHTML('beforebegin', `<div style="margin-top:12px;width:100%;max-width:350px;"><div style="font-size:11px;color:#58dce3;font-weight:800;margin-bottom:4px;">🎮 حرّك بطلك الآن على شاشة المعلم:</div>${renderHeroActionDock(false)}</div>`);
+  }
+
+  if (typeof document !== 'undefined' && typeof MutationObserver !== 'undefined') {
+    const obs = new MutationObserver(() => ensureLobbyHeroDock());
+    if (document.body) obs.observe(document.body, { childList: true, subtree: true });
+    else document.addEventListener?.('DOMContentLoaded', () => { if (document.body) obs.observe(document.body, { childList: true, subtree: true }); });
+  }
+
   const ScoreARQuizStudentView = {
     renderStudentReading,
     renderStudentQuestion,
@@ -413,7 +430,8 @@
     renderStudentLeaderboardCard,
     renderStudentFinalPodium,
     renderStudentRoomClosed,
-    triggerHeroAction
+    triggerHeroAction,
+    ensureLobbyHeroDock
   };
 
   global.ScoreARQuizStudentView = ScoreARQuizStudentView;

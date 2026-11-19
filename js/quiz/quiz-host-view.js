@@ -167,7 +167,7 @@
         const code = normalizeAvatarCode(p.avatarId || p.characterId || p.avatar || p.player?.avatarId || p.player?.characterId || 'char_01');
         slot.setAttribute('data-char-code', code);
         slot.setAttribute('data-cur-pose', currentLobbyPose || 'walk');
-        global.ScoreARMotionEngine?.mount?.(slot, code, currentLobbyPose || 'walk', { width: 140, height: 185 });
+        global.ScoreARMotionEngine?.mount?.(slot, code, currentLobbyPose || 'walk', { width: 140, height: 185, enableParticles: false, enableShadow: true });
         if (p.cosmetics?.aura && global.ScoreARHeroCosmetics?.applyAura) {
           global.ScoreARHeroCosmetics.applyAura(slot.parentElement || slot, p.cosmetics.aura);
         }
@@ -205,13 +205,13 @@
       const isBot = Boolean(p.isBot || p.isDemo), safeName = escapeHtml(p.name);
       const urls = getHeroAssetUrls(p.avatarId || p.characterId || p.avatar || p.player?.avatarId || p.player?.characterId || 'char_01');
       const delAction = p.isBot ? `ScoreARBots && ScoreARBots.removeBot('${escapeHtml(p.id)}')` : `ScoreARQuizHost.kickPlayer('${escapeHtml(p.id)}')`;
-      return `<div class="animate-enter-fullbody host-lobby-hero-slot" data-player-id="${escapeHtml(p.id)}" style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:auto;animation-delay:${idx*0.06}s;min-width:125px;">
-        <div class="player-name-floating-pill" style="margin-bottom:10px;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;" title="إزالة اللاعب من القاعة">
+      return `<div class="animate-enter-fullbody host-lobby-hero-slot" data-player-id="${escapeHtml(p.id)}" data-player-name="${safeName}" style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:auto;animation-delay:${idx*0.06}s;min-width:132px;">
+        <div class="player-name-floating-pill" style="margin-bottom:-30px;position:relative;z-index:24;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;box-shadow:0 8px 20px rgba(0,0,0,0.55);" title="إزالة اللاعب من القاعة">
           <span style="font-size:11px;color:#7550ef;">${isBot ? 'BOT' : '●'}</span>
           <span style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;">${safeName}</span>
           <button type="button" onclick="${delAction}" style="background:#ef4444;border:0;color:#fff;width:18px;height:18px;border-radius:50%;font-size:11px;font-weight:900;cursor:pointer;display:inline-grid;place-items:center;margin-right:4px;" title="إزالة اللاعب">✕</button>
         </div>
-        <div class="host-lobby-hero-figure" onclick="ScoreARHostView.cycleSingleHeroPose(${idx})" style="cursor:pointer;position:relative;width:145px;height:210px;display:flex;align-items:flex-end;justify-content:center;" title="تبديل الوضعية">
+        <div class="host-lobby-hero-figure" onclick="ScoreARHostView.cycleSingleHeroPose(${idx})" style="cursor:pointer;position:relative;width:145px;height:184px;display:flex;align-items:flex-end;justify-content:center;" title="تبديل الوضعية">
           <span id="hostHeroSlot_${idx}" class="scorear-character host-lobby-hero-char character-${currentLobbyPose}" style="--character-atlas:url('${urls.atlas}');width:136px;height:182px;position:relative;display:flex;align-items:flex-end;justify-content:center;transform-origin:bottom center;filter:drop-shadow(0 14px 22px rgba(0,0,0,0.65));"><img id="hostHeroImg_${idx}" class="host-hero-img" src="${urls.idle}" onerror="this.onerror=null;this.src='${urls.full}';this.onerror=function(){this.src='${urls.fallback}';};" alt="${safeName}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;"><span class="character-frames" aria-hidden="true"></span></span>
         </div>
       </div>`;

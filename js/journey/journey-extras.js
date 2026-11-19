@@ -372,6 +372,7 @@
       <div class="scorear-stat-ribbon">
         ${metrics.map(m => `<div class="scorear-ribbon-item scorear-metric-card" style="background:transparent;border:none;">${iconBox(m.icon, { size: 'sm', tone: m.tone })}<div><b>${m.val}</b><span>${m.lbl}</span></div></div>`).join('')}
       </div>
+      ${global.ScoreARHeroCosmetics?.renderLockerHtml ? global.ScoreARHeroCosmetics.renderLockerHtml() : ''}
       <div class="scorear-bento-two">
         <section class="scorear-experience-panel tone-cyan spotlight" style="display:flex;flex-direction:column;justify-content:space-between;gap:14px;">
           <div>
@@ -408,7 +409,6 @@
           ${badges.map(b => `<div class="scorear-badge-card ${b.earned ? 'earned' : 'locked'}">${iconBox(b.icon, { size: 'md', tone: b.earned ? 'cyan' : 'muted', tilted: b.earned })}<div style="min-width:0;"><strong style="display:block;color:#f6f3ff;font-size:13px;font-weight:800;">${escapeHtml(b.title)}</strong><small style="display:block;color:#a1a4be;font-size:11px;line-height:1.5;">${escapeHtml(b.desc)}</small></div></div>`).join('')}
         </div>
       </section>
-      ${global.ScoreARHeroCosmetics?.renderLockerHtml ? global.ScoreARHeroCosmetics.renderLockerHtml() : ''}
       <section class="scorear-experience-panel tone-cyan spotlight" style="margin-top:18px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:10px;">${iconBox('history', { size: 'sm', tone: 'cyan' })}<div><h3 style="color:#f6f3ff;font-size:17px;font-weight:900;margin:0;">أحدث محاولاتك (${recent.length})</h3><small style="color:#a1a4be;font-size:11px;">يحتفظ النظام بآخر 50 محاولة ويعرض أحدث 5 محاولات</small></div></div>
@@ -462,7 +462,7 @@
     let bottomSlot = document.getElementById('journeyExtrasBottom');
     if (!bottomSlot) { bottomSlot = document.createElement('div'); bottomSlot.id = 'journeyExtrasBottom'; page.appendChild(bottomSlot); }
     bottomSlot.innerHTML = renderExtrasBottomHtml(state);
-    if (global.ScoreARHeroCosmetics?.bindLocker) global.ScoreARHeroCosmetics.bindLocker(bottomSlot);
+    if (global.ScoreARHeroCosmetics?.bindLocker) global.ScoreARHeroCosmetics.bindLocker(topSlot);
     polishLegacyJourneyIcons(page);
   }
 

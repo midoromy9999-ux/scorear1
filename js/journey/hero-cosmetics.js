@@ -13,7 +13,7 @@
     { id: 'default',  title: 'القفزة الكلاسيكية',     icon: '⚡', color: '#a855f7', req: 'متاح مجاناً للجميع', check: () => true },
     { id: 'rocket',   title: 'الدخول الصاروخي النفاث', icon: '🚀', color: '#38bdf8', req: '50 XP أو إكمال مسار تدريبي', check: s => s.xp >= 50 || s.paths >= 1 },
     { id: 'portal',   title: 'بوابة الزمن الكونية',    icon: '🌀', color: '#c084fc', req: 'سلسلة 3 أيام أو 150 XP', check: s => s.streak >= 3 || s.xp >= 150 },
-    { id: 'goldrain', title: 'أمطار الذهب الملكية',    icon: '🪙', color: '#fbbf24', req: '250 XP أو سلسلة 5 أيام أو إتقان 3 أخطاء', check: s => s.xp >= 250 || s.streak >= 5 || s.mastered >= 3 }
+    { id: 'goldrain', title: 'أمطار الذهب الملكية',    icon: '💰', color: '#fbbf24', req: '250 XP أو سلسلة 5 أيام أو إتقان 3 أخطاء', check: s => s.xp >= 250 || s.streak >= 5 || s.mastered >= 3 }
   ];
 
   const AURAS = [

@@ -70,23 +70,21 @@
 
   function createActor(id, idx, isNew) {
     const dir = idx % 2 === 0 ? 1 : -1;
-    const speed = 26 + Math.random() * 20;
+    const speed = 58 + (idx % 3) * 14 + Math.random() * 14;
     const now = performance.now ? performance.now() : Date.now();
     return {
-      id: String(id), idx, x: 0, y: isNew ? -42 : 0, vy: isNew ? 1.5 : 0,
+      id: String(id), idx, x: dir * (12 + (idx % 3) * 10), y: isNew ? -38 : 0, vy: isNew ? 1.5 : 0,
       facing: dir, vx: dir * speed, speed, state: isNew ? 'hop' : 'walk',
-      stateUntil: now + (isNew ? 1100 : 1800 + Math.random() * 2600),
+      stateUntil: now + (isNew ? 650 : 2200 + Math.random() * 2400),
       dustTimer: 0, lastPoseApplied: null
     };
   }
 
   function getMaxWanderX(arena, count) {
-    const w = arena?.clientWidth || 960;
-    const totalUsed = count * 150;
-    const freeSpace = Math.max(24, w - totalUsed);
-    if (count <= 1) return Math.min(180, w * 0.22);
-    if (count <= 4) return Math.min(115, Math.max(36, freeSpace * 0.32));
-    return Math.min(34, Math.max(10, freeSpace * 0.14));
+    const w = arena?.clientWidth || 1100;
+    if (count <= 1) return Math.min(240, w * 0.26);
+    if (count <= 4) return Math.min(155, Math.max(72, (w - count * 135) * 0.42));
+    return Math.min(75, Math.max(28, (w - count * 120) * 0.25));
   }
 
   function applyActorDom(actor, slotEl, heroCharEl, poseToApply) {
@@ -138,7 +136,7 @@
 
       if (disabled || currentGlobalPose === 'idle' || currentGlobalPose === 'celebrate') {
         const pose = (!disabled && currentGlobalPose === 'celebrate') ? 'celebrate' : 'idle';
-        const nx = actor.x * Math.exp(-9 * dtSec);
+        const nx = actor.x * Math.exp(-15 * dtSec);
         actor.x = Math.abs(nx) < 0.6 ? 0 : nx;
         actor.y = 0; actor.facing = 1;
         setGreetingBubble(slotEl, null);
@@ -186,8 +184,11 @@
         desiredPose = 'idle';
       } else if (actor.state === 'hop') {
         desiredPose = 'celebrate';
+        actor.x += actor.vx * dtSec * 0.42;
+        if (actor.x >= maxWander) { actor.x = maxWander; actor.facing = -1; actor.vx = -actor.speed; }
+        else if (actor.x <= -maxWander) { actor.x = -maxWander; actor.facing = 1; actor.vx = actor.speed; }
         actor.y = Math.min(0, actor.y + actor.vy);
-        actor.vy += 0.35;
+        actor.vy += 0.38;
         if (actor.y >= 0) {
           actor.y = 0;
           actor.vy = -5.2;

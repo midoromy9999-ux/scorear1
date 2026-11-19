@@ -247,9 +247,12 @@
                       ${isTop1 ? `<span style="color:#fbbf24;display:inline-flex;">${uiIcon('crown', 16)}</span>` : ''}
                       ${badges.join('')}
                     </div>
-                    <div style="margin-top:7px;width:100%;height:8px;background:rgba(8,10,24,0.62);border-radius:999px;overflow:visible;border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;position:relative;">
-                      <div class="race-track-fill" data-target-pct="${raceProgressPct}" style="width:${startRacePct}%;height:100%;background:linear-gradient(90deg, ${theme.accentColor}, ${theme.speedColor});border-radius:999px;transition:width 0.82s cubic-bezier(0.22,1,0.36,1);box-shadow:0 0 12px ${theme.speedColor};position:relative;">
-                        <span style="position:absolute;left:-4px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:#ffffff;box-shadow:0 0 12px #ffffff, 0 0 20px ${theme.speedColor};display:${raceProgressPct > 8 ? 'block' : 'none'};"></span>
+                    <div style="margin-top:9px;width:100%;height:12px;background:rgba(8,10,24,0.78);border-radius:999px;overflow:visible;border:1px solid rgba(255,255,255,0.16);display:flex;align-items:center;position:relative;padding-inline-end:18px;box-sizing:border-box;">
+                      <span style="position:absolute;left:4px;top:50%;transform:translateY(-50%);font-size:11px;opacity:0.85;pointer-events:none;">🏁</span>
+                      <div class="race-track-fill" data-target-pct="${raceProgressPct}" style="width:${startRacePct}%;height:100%;background:linear-gradient(90deg, ${theme.accentColor}, ${theme.speedColor});border-radius:999px;transition:width 0.82s cubic-bezier(0.22,1,0.36,1);box-shadow:0 0 14px ${theme.speedColor};position:relative;">
+                        <span style="position:absolute;left:-14px;top:50%;transform:translateY(-56%);width:28px;height:28px;border-radius:50%;background:rgba(15,18,40,0.95);border:2px solid #ffffff;box-shadow:0 0 14px #ffffff, 0 0 22px ${theme.speedColor};display:${raceProgressPct > 6 ? 'flex' : 'none'};align-items:center;justify-content:center;overflow:hidden;z-index:4;">
+                          <img src="assets/characters/animated/${cleanCode}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="" style="width:24px;height:26px;object-fit:contain;transform:scaleX(-1);">
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -279,7 +282,7 @@
         const act = slot.getAttribute('data-action') || 'run';
         const spd = parseFloat(slot.getAttribute('data-speed')) || 1.1;
         try {
-          global.ScoreARMotionEngine.mount(slot, code, act, { width: 60, height: 66, speed: spd, enableParticles: true, enableShadow: true });
+          global.ScoreARMotionEngine.mount(slot, code, act, { width: 60, height: 66, speed: spd, enableParticles: false, enableShadow: true });
         } catch (e) {}
       });
     }

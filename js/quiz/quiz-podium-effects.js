@@ -40,7 +40,7 @@
     const validPose = POSES.includes(pose) ? pose : 'celebrate';
     const w = el.offsetWidth || parseInt(el.style?.width, 10) || 220;
     const h = el.offsetHeight || parseInt(el.style?.height, 10) || 260;
-    if (global.ScoreARMotionEngine?.mount) global.ScoreARMotionEngine.mount(el, charCode(avatarId), validPose, { width: w, height: h });
+    if (global.ScoreARMotionEngine?.mount) global.ScoreARMotionEngine.mount(el, charCode(avatarId), validPose, { width: w, height: h, enableParticles: false, enableShadow: true });
     else el.innerHTML = heroImg(avatarId, '', validPose);
   }
 
@@ -431,6 +431,7 @@
     });
     const poseMap = { chests: 'celebrate', cards: 'celebrate', rockets: 'celebrate', finishline: 'run', portal: 'celebrate' };
     if (isUserClick && revealStep === 0) {
+      if (scenes()?.setMode) scenes().setMode(mode, 0, mountHero, players, true);
       revealAll();
     } else if (scenes()?.setMode) {
       scenes().setMode(mode, revealStep, mountHero, players, isUserClick);
