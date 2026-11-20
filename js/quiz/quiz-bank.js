@@ -445,10 +445,13 @@
   function launchQuiz(quizId) {
     const qz = global.ScoreARQuizBankData?.getQuizzes().find(x => x.id === quizId);
     if (!qz?.questions?.length) { alert('المسابقة لا تحتوي على أسئلة جاهزة للإطلاق.'); return; }
+    const realTitle = (qz.title || '').trim() || 'مسابقة سكور آر';
+    global.activeQuizTitle = realTitle;
+    try { sessionStorage.setItem('scorear_active_quiz_title', realTitle); } catch(e){}
     closeBankHub();
     global.ScoreARWorldFlow?.openWorldPicker?.({
-      defaultWorldId: localStorage.getItem('scorear_last_world') || 'royal', quizTitle: qz.title || 'مسابقة',
-      onConfirm: (chosenWorld) => { global.contestQuestions = JSON.parse(JSON.stringify(qz.questions)); global.ScoreARQuizHost?.startHostLobby?.(chosenWorld, null, true); }
+      defaultWorldId: localStorage.getItem('scorear_last_world') || 'royal', quizTitle: realTitle,
+      onConfirm: (chosenWorld) => { global.activeQuizTitle = realTitle; global.contestQuestions = JSON.parse(JSON.stringify(qz.questions)); global.ScoreARQuizHost?.startHostLobby?.(chosenWorld, null, true); }
     });
   }
   function editQuiz(quizId) { const qz = global.ScoreARQuizBankData?.getQuizzes().find(x => x.id === quizId); if (qz) { closeBankHub(); global.ScoreARQuizBuilder?.openBuilder?.(qz); } }

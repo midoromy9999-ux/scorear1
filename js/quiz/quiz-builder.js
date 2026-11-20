@@ -212,6 +212,9 @@
     if (alertBox) alertBox.style.display = 'none';
     currentQuiz.status = 'published';
     await performSave();
+    const realTitle = (currentQuiz.title || '').trim() || 'مسابقة جديدة';
+    global.activeQuizTitle = realTitle;
+    try { sessionStorage.setItem('scorear_active_quiz_title', realTitle); } catch(e){}
     global.contestQuestions = JSON.parse(JSON.stringify(currentQuiz.questions));
     closeBuilder();
     if (global.toast) global.toast('تم اعتماد ونشر المسابقة بنجاح. اختر عالم المنافسة.');
@@ -219,8 +222,9 @@
       const lastWorld = (typeof localStorage !== 'undefined') ? (localStorage.getItem('scorear_last_world') || 'royal') : 'royal';
       global.ScoreARWorldFlow.openWorldPicker({
         defaultWorldId: lastWorld,
-        quizTitle: currentQuiz.title || 'مسابقة جديدة',
+        quizTitle: realTitle,
         onConfirm: (chosenWorld) => {
+          global.activeQuizTitle = realTitle;
           try { if (typeof localStorage !== 'undefined') localStorage.setItem('scorear_last_world', chosenWorld); } catch(e){}
           if (global.ScoreARQuizHost && global.ScoreARQuizHost.startHostLobby) global.ScoreARQuizHost.startHostLobby(chosenWorld, null, true);
         }

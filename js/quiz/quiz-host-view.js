@@ -2,7 +2,7 @@
 (function(global) {
   'use strict';
 
-  const ALLOWED_POSES = ['idle', 'walk', 'celebrate'];
+  const ALLOWED_POSES = ['idle', 'walk', 'jump', 'clap', 'win', 'celebrate'];
   let currentLobbyPose = 'walk';
   const uiIcon = (name, size = 14) => (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function') ? global.ScoreARUI.icon(name, { size }) : '';
 
@@ -12,7 +12,8 @@
       el.className = 'scorear-character host-lobby-hero-char character-' + currentLobbyPose;
       const code = el.getAttribute('data-char-code') || 'char_01';
       el.setAttribute('data-cur-pose', currentLobbyPose);
-      global.ScoreARMotionEngine?.mount?.(el, code, currentLobbyPose, { width: 140, height: 185 });
+      const loopFlag = currentLobbyPose !== 'jump';
+      global.ScoreARMotionEngine?.mount?.(el, code, currentLobbyPose, { width: 140, height: 185, loop: loopFlag });
     });
     if (global.ScoreARLobbyDirector?.setMode) global.ScoreARLobbyDirector.setMode(currentLobbyPose);
     document.querySelectorAll('[data-lobby-pose]').forEach(btn => {
@@ -30,7 +31,7 @@
     const nextPose = ALLOWED_POSES[(ALLOWED_POSES.indexOf(cur) + 1) % ALLOWED_POSES.length];
     s.setAttribute('data-cur-pose', nextPose);
     s.className = 'scorear-character host-lobby-hero-char character-' + nextPose;
-    global.ScoreARMotionEngine?.mount?.(s, s.getAttribute('data-char-code') || 'char_01', nextPose, { width: 140, height: 185 });
+    global.ScoreARMotionEngine?.mount?.(s, s.getAttribute('data-char-code') || 'char_01', nextPose, { width: 140, height: 185, loop: nextPose !== 'jump' });
   }
 
   function toggleQrZoom(pin) {
@@ -69,13 +70,32 @@
     return `<div id="hostWorldTimerContainer" style="width:94px;height:94px;border-radius:50%;background:#3b147a;border:4px solid rgba(255,255,255,0.22);box-shadow:0 12px 30px rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;position:relative;"><svg width="94" height="94" viewBox="0 0 100 100" style="transform:rotate(-90deg);position:absolute;inset:0;"><circle cx="50" cy="50" r="41" stroke="rgba(255,255,255,0.12)" stroke-width="7" fill="none" /><circle id="hostQuestionTimerRing" cx="50" cy="50" r="41" stroke="#ffffff" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="257.6" stroke-dashoffset="0" style="transition:stroke-dashoffset 1s linear;" /></svg><span id="hostQuestionTimerNum" style="position:relative;z-index:2;font-size:36px;font-weight:900;color:#ffffff;font-family:Montserrat,Arial,monospace;">${timeRemaining}</span></div>`;
   }
 
+  function resolveRealQuizTitle(currentRoom, explicitTitle) {
+    const GENERIC = 'كأس التفوق — مسابقة سكور آر التفاعلية';
+    const clean = v => (typeof v === 'string' ? v.trim() : '');
+    const cands = [
+      clean(explicitTitle),
+      clean(currentRoom?.quizTitle),
+      clean(global.activeQuizTitle),
+      (() => { try { return clean(sessionStorage.getItem('scorear_active_quiz_title')); } catch { return ''; } })()
+    ];
+    const real = cands.find(t => t && t !== GENERIC);
+    if (real) return real;
+    const firstSkill = clean(global.contestQuestions?.[0]?.skill);
+    return firstSkill ? `مسابقة ${firstSkill}` : 'مسابقة سكور آر التفاعلية';
+  }
+
   /* ── 1. LOBBY WITH COSMIC GLASS CONTROLS + FIXED WHITE PIN/QR BANNER & 3D START BUTTON ── */
   function renderHostLobby(stage, currentRoom, isRoomLocked) {
     const worldId = (currentRoom && currentRoom.world && currentRoom.world.id) ? currentRoom.world.id : 'royal';
     const w = currentRoom.world || { name: 'المنافسة', tag: 'جاهز' };
+    if (currentRoom && !currentRoom.quizTitle) currentRoom.quizTitle = resolveRealQuizTitle(currentRoom, '');
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + window.location.pathname + '?pin=' + currentRoom.pin)}`;
     const activeGameMode = (global.ScoreARGameModes && typeof global.ScoreARGameModes.getMode === 'function') ? global.ScoreARGameModes.getMode() : 'SOLO';
     const modeLabel = activeGameMode === 'CARD_ARENA' ? 'طور حرب الكروت' : (activeGameMode === 'SQUADS' ? 'وضع الفريق' : 'التحدي الفردي');
+    const celStyle = global.ScoreARMotionV3?.stampRoomCelebrationStyle
+      ? global.ScoreARMotionV3.stampRoomCelebrationStyle(currentRoom)
+      : (currentRoom?.celebrationStyle || 'classic');
 
     stage.innerHTML = `
       <div style="position:absolute;inset:0;background:url('assets/worlds/${worldId}/lobby.jpg') center/cover no-repeat;z-index:1;"></div>
@@ -86,6 +106,11 @@
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="scorear-control-pill">${uiIcon('planet', 14)} <span>عالم ${escapeHtml(w.name)}</span></span>
           <button id="hostGameModeBtn" type="button" class="scorear-gear-btn" onclick="ScoreARGameModes && ScoreARGameModes.openModePicker({ worldId: '${worldId}', pin: '${currentRoom.pin}' })" style="border-color:rgba(172,139,242,0.38);color:#e2d4fb;">${uiIcon('sliders', 13)} <span id="hostGameModeBtnText">${modeLabel}</span> ${uiIcon('chevronDown', 12)}</button>
+          <div id="hostCelebrationPicker" role="group" aria-label="طريقة الاحتفال" style="display:inline-flex;align-items:center;gap:4px;background:rgba(14,16,34,0.86);border:1px solid rgba(251,191,36,0.32);border-radius:999px;padding:3px 6px;">
+            <span style="font-size:11px;font-weight:800;color:#fde68a;padding-inline:4px;">الاحتفال:</span>
+            <button type="button" data-cel-style-btn="classic" data-styled="pill" aria-pressed="${celStyle === 'classic'}" onclick="ScoreARMotionV3?.setCelebrationStyle?.('classic')" style="border-radius:999px;padding:3px 10px;font-size:11px;font-weight:900;cursor:pointer;border:1px solid ${celStyle === 'classic' ? '#fde047' : 'rgba(255,255,255,0.18)'};background:${celStyle === 'classic' ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'rgba(255,255,255,0.06)'};color:${celStyle === 'classic' ? '#090d16' : '#e2e8f0'};">كلاسيكي</button>
+            <button type="button" data-cel-style-btn="hall" data-styled="pill" aria-pressed="${celStyle === 'hall'}" onclick="ScoreARMotionV3?.setCelebrationStyle?.('hall')" style="border-radius:999px;padding:3px 10px;font-size:11px;font-weight:900;cursor:pointer;border:1px solid ${celStyle === 'hall' ? '#fde047' : 'rgba(255,255,255,0.18)'};background:${celStyle === 'hall' ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'rgba(255,255,255,0.06)'};color:${celStyle === 'hall' ? '#090d16' : '#e2e8f0'};">احتفال القاعة</button>
+          </div>
         </div>
         <div style="font-size:19px;font-weight:900;letter-spacing:0.4px;color:#ffffff;font-family:Montserrat,Cairo,sans-serif;">ScoreAR<span style="color:#58dce3;">.</span></div>
         <div style="display:flex;align-items:center;gap:7px;direction:ltr;">
@@ -136,7 +161,9 @@
           <span style="font-size:11.5px;font-weight:800;color:#b1a2e9;margin-left:4px;display:inline-flex;align-items:center;gap:5px;">${uiIcon('gamepad', 14)} حركة الأبطال:</span>
           <button type="button" data-lobby-pose="idle" class="scorear-gear-btn" onclick="ScoreARHostView.setLobbyHeroesPose('idle')" style="padding:4px 10px;font-size:11.5px;">الوقوف</button>
           <button type="button" data-lobby-pose="walk" class="scorear-gear-btn is-active" onclick="ScoreARHostView.setLobbyHeroesPose('walk')" style="padding:4px 10px;font-size:11.5px;">المشي</button>
-          <button type="button" data-lobby-pose="celebrate" class="scorear-gear-btn" onclick="ScoreARHostView.setLobbyHeroesPose('celebrate')" style="padding:4px 10px;font-size:11.5px;">القفز</button>
+          <button type="button" data-lobby-pose="jump" class="scorear-gear-btn" onclick="ScoreARHostView.setLobbyHeroesPose('jump')" style="padding:4px 10px;font-size:11.5px;">القفز</button>
+          <button type="button" data-lobby-pose="clap" class="scorear-gear-btn" onclick="ScoreARHostView.setLobbyHeroesPose('clap')" style="padding:4px 10px;font-size:11.5px;">التصفيق</button>
+          <button type="button" data-lobby-pose="win" class="scorear-gear-btn" onclick="ScoreARHostView.setLobbyHeroesPose('win')" style="padding:4px 10px;font-size:11.5px;">الاحتفال</button>
         </div>
       </div>
     `;
@@ -218,16 +245,40 @@
     }).join('');
   }
 
-  /* ── 2. 3-STAGE CINEMATIC TRANSFER SEQUENCE ── */
+  /* ── 2. ORIGINAL 3-STAGE PRE-CONTEST INTRO + REAL QUIZ TITLE + INTEGRATED HERO PATH PARADE ── */
   function renderContestIntroSequence(stage, currentRoom, quizTitle, totalQuestions, onDone) {
     if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
-    const worldId = currentRoom?.world?.id || 'royal', wName = currentRoom?.world?.name || 'القصر الملكي';
-    const title = quizTitle || 'كأس التفوق — مسابقة سكور آر التفاعلية';
+    if (global.ScoreARWorldHalls?.cleanup) global.ScoreARWorldHalls.cleanup();
+    if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
+
+    const worldId = currentRoom?.world?.id || currentRoom?.worldId || 'royal';
+    const wName = currentRoom?.world?.name || 'القصر الملكي';
+    const title = resolveRealQuizTitle(currentRoom, quizTitle);
+    if (currentRoom) currentRoom.quizTitle = title;
+    const isReduced = Boolean(global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+
     let finished = false;
     const timers = [];
-    const finishNow = () => { if (finished) return; finished = true; timers.forEach(t => clearTimeout(t)); if (typeof onDone === 'function') onDone(); };
+    const finishNow = () => {
+      if (finished) return;
+      finished = true;
+      timers.forEach(t => clearTimeout(t));
+      if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
+      if (typeof onDone === 'function') onDone();
+    };
     global._skipScoreARIntro = finishNow;
 
+    if (isReduced) {
+      stage.innerHTML = `<div style="position:fixed;inset:0;background:#0b0c1b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:100;direction:rtl;text-align:center;padding:24px;">
+        <span class="launch-pill">${escapeHtml(wName)} · ${totalQuestions} أسئلة</span>
+        <h1 style="margin:0;font-size:36px;font-weight:900;color:#fff;">${escapeHtml(title)}</h1>
+        <button type="button" class="btn launch-primary" onclick="window._skipScoreARIntro && window._skipScoreARIntro()" style="padding:10px 28px;border-radius:12px;font-weight:900;">ابدأ الآن</button>
+      </div>`;
+      timers.push(setTimeout(finishNow, 1100));
+      return;
+    }
+
+    // Stage 1: Preserved Iconic ScoreAR 4-Color Spinning Diamond Logo
     stage.innerHTML = `<style>@keyframes transferZoomIn{0%{transform:scale(0.82);opacity:0;}100%{transform:scale(1);opacity:1;}}@keyframes diamondSpinSlow{0%{transform:rotate(0deg) scale(0.92);}50%{transform:rotate(180deg) scale(1.06);}100%{transform:rotate(360deg) scale(0.92);}}@keyframes titleBarFill{0%{width:0%;}100%{width:100%;}}</style>
       <div style="position:fixed;inset:0;background:radial-gradient(ellipse at 50% 30%, #2b2260 0%, #0b0c1b 75%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;direction:rtl;">
         <button type="button" class="scorear-gear-btn" onclick="window._skipScoreARIntro && window._skipScoreARIntro()" style="position:absolute;top:22px;left:24px;padding:7px 16px;font-size:12px;">${uiIcon('skipForward', 14)} <span>تخطي المقدمة</span></button>
@@ -241,38 +292,48 @@
         </div>
       </div>`;
 
+    // Stage 2: Preserved Real Quiz Title Card + Integrated Grounded Hero Path Parade along the World Floor
     timers.push(setTimeout(() => {
       if (finished) return;
-      stage.innerHTML = `<div style="position:fixed;inset:0;background:url('assets/worlds/${worldId}/question.jpg') center/cover no-repeat;"><div style="position:absolute;inset:0;background:rgba(10,14,34,0.82);backdrop-filter:blur(12px);"></div></div>
+      stage.innerHTML = `<div style="position:fixed;inset:0;overflow:hidden;"><img src="assets/halls/${escapeHtml(worldId)}-hall.jpg" onerror="this.onerror=null;this.src='assets/worlds/${escapeHtml(worldId)}/question.jpg';" alt="" style="width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.55) saturate(1.08);"><div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 28%,rgba(12,16,38,0.45),rgba(7,10,24,0.82));"></div></div>
         <button type="button" class="scorear-gear-btn" onclick="window._skipScoreARIntro && window._skipScoreARIntro()" style="position:absolute;top:22px;left:24px;z-index:30;padding:7px 16px;font-size:12px;">${uiIcon('skipForward', 14)} <span>تخطي المقدمة</span></button>
-        <div style="position:relative;z-index:20;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;direction:rtl;">
-          <span class="launch-pill" style="font-size:14px;padding:8px 22px;margin-bottom:18px;"><span class="live-dot"></span> عالم ${escapeHtml(wName)} · ${totalQuestions} أسئلة تفاعلية</span>
-          <div style="background:rgba(14,16,38,0.86);backdrop-filter:blur(18px);border:1px solid rgba(172,139,242,0.3);padding:42px 64px;border-radius:24px;box-shadow:0 24px 65px rgba(0,0,0,0.75);max-width:940px;width:92%;animation:transferZoomIn 0.7s cubic-bezier(0.22,1,0.36,1) both;">
-            <div style="font-size:14px;font-weight:800;color:#58dce3;margin-bottom:10px;">عنوان المسابقة</div>
-            <h1 style="font-size:42px;font-weight:900;color:#ffffff;margin:0;line-height:1.4;">${escapeHtml(title)}</h1>
-            <div style="margin-top:26px;width:100%;height:6px;background:rgba(255,255,255,0.1);border-radius:999px;overflow:hidden;"><div style="height:100%;background:linear-gradient(90deg,#58dce3,#8e64ef,#fbbf24);animation:titleBarFill 4.0s linear forwards;"></div></div>
+        <div style="position:relative;z-index:20;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;padding:42px 24px 16px;direction:rtl;">
+          <span class="launch-pill" style="font-size:14px;padding:7px 22px;margin-bottom:14px;"><span class="live-dot"></span> عالم ${escapeHtml(wName)} · ${totalQuestions} أسئلة تفاعلية</span>
+          <div style="background:rgba(12,16,38,0.86);backdrop-filter:blur(18px);border:1px solid rgba(172,139,242,0.34);padding:28px 50px;border-radius:24px;box-shadow:0 24px 65px rgba(0,0,0,0.75);max-width:900px;width:92%;animation:transferZoomIn 0.65s cubic-bezier(0.22,1,0.36,1) both;">
+            <div style="font-size:13.5px;font-weight:800;color:#58dce3;margin-bottom:8px;">عنوان المسابقة</div>
+            <h1 id="introRealQuizTitle" style="font-size:clamp(26px,3.8vw,40px);font-weight:900;color:#ffffff;margin:0;line-height:1.35;">${escapeHtml(title)}</h1>
+            <div style="margin-top:20px;width:100%;height:6px;background:rgba(255,255,255,0.12);border-radius:999px;overflow:hidden;"><div style="height:100%;background:linear-gradient(90deg,#58dce3,#8e64ef,#fbbf24);animation:titleBarFill 4.2s linear forwards;"></div></div>
           </div>
+          <div id="introHeroPathStage" style="position:relative;width:min(1040px,96%);flex:1;min-height:185px;margin-top:8px;overflow:hidden;pointer-events:none;"></div>
         </div>`;
-    }, 2800));
+      if (global.ScoreARWorldCinematics?.mountPathParade) {
+        global.ScoreARWorldCinematics.mountPathParade(document.getElementById('introHeroPathStage'), currentRoom, worldId);
+      }
+    }, 2400));
 
+    // Stage 3: Preserved 3-2-1 Ready Countdown
     timers.push(setTimeout(() => {
       if (finished) return;
-      stage.innerHTML = `<div style="position:fixed;inset:0;background:url('assets/worlds/${worldId}/question.jpg') center/cover no-repeat;"><div style="position:absolute;inset:0;background:rgba(10,14,34,0.84);backdrop-filter:blur(12px);"></div></div>
+      if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
+      stage.innerHTML = `<div style="position:fixed;inset:0;overflow:hidden;"><img src="assets/halls/${escapeHtml(worldId)}-hall.jpg" onerror="this.onerror=null;this.src='assets/worlds/${escapeHtml(worldId)}/question.jpg';" alt="" style="width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.45) blur(2px);"></div>
         <button type="button" class="scorear-gear-btn" onclick="window._skipScoreARIntro && window._skipScoreARIntro()" style="position:absolute;top:22px;left:24px;z-index:30;padding:7px 16px;font-size:12px;">${uiIcon('skipForward', 14)} <span>تخطي</span></button>
         <div style="position:relative;z-index:20;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;direction:rtl;">
-          <div style="font-size:26px;font-weight:900;color:#58dce3;margin-bottom:12px;">انتباه يا أبطال</div>
-          <h2 style="font-size:42px;font-weight:900;color:#ffffff;margin:0 0 24px;">المسابقة تبدأ الآن... استعدوا!</h2>
+          <div style="font-size:16px;font-weight:800;color:#fde68a;margin-bottom:6px;">${escapeHtml(title)}</div>
+          <div style="font-size:26px;font-weight:900;color:#58dce3;margin-bottom:10px;">انتباه يا أبطال</div>
+          <h2 style="font-size:clamp(28px,4vw,42px);font-weight:900;color:#ffffff;margin:0 0 24px;">المسابقة تبدأ الآن... استعدوا!</h2>
           <div id="introReadyCount" style="width:132px;height:132px;border-radius:50%;background:linear-gradient(135deg,#7550ef,#3b147a);border:3px solid rgba(255,255,255,0.28);color:#ffffff;font-size:64px;font-weight:900;display:grid;place-items:center;box-shadow:0 18px 50px rgba(0,0,0,0.65);font-family:Montserrat,monospace;">3</div>
         </div>`;
-      timers.push(setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '2'; }, 1200));
-      timers.push(setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '1'; }, 2400));
-      timers.push(setTimeout(() => finishNow(), 3600));
-    }, 7000));
+      timers.push(setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '2'; }, 1050));
+      timers.push(setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '1'; }, 2100));
+      timers.push(setTimeout(() => finishNow(), 3150));
+    }, 6600));
   }
 
   /* ── 3. QUESTION READING & ANSWERING STAGE (Preserving 100% Question Card & 4-Color Choices) ── */
   function renderHostQuestionView(stage, phase, qData, currentQIndex, total, worldId, timeRemaining, readingTimeRemaining) {
     if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
+    if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
+    if (global.ScoreARWorldHalls?.cleanup) global.ScoreARWorldHalls.cleanup();
     const isReading = (phase === 'reading'), opts = qData.options || qData.opts || [];
     const questionText = qData.text || qData.q || '', imgUrl = qData.imageUrl || qData.img || null;
     const wid = String(worldId || 'royal').trim() || 'royal';

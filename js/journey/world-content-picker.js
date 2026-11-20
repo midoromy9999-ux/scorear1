@@ -308,6 +308,18 @@
     }
 
     closeContentPicker();
+    let chosenTitle = '';
+    if (selectedQuizId && global.ScoreARQuizBankData) {
+      const qz = global.ScoreARQuizBankData.getQuizzes().find(q => q.id === selectedQuizId);
+      if (qz && qz.title) chosenTitle = String(qz.title).trim();
+    }
+    if (!chosenTitle) {
+      chosenTitle = (subjectFilter && subjectFilter !== 'all')
+        ? ('مسابقة ' + subjectFilter)
+        : (combined[0]?.skill ? ('مسابقة ' + combined[0].skill) : 'مسابقة بنك الأسئلة');
+    }
+    global.activeQuizTitle = chosenTitle;
+    try { sessionStorage.setItem('scorear_active_quiz_title', chosenTitle); } catch(e){}
     global.contestQuestions = combined;
 
     if (global.toast) {

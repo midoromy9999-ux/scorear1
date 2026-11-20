@@ -71,7 +71,7 @@
   function getCharFullSrc(player) {
     const raw = player?.avatarId || player?.avatar || 'char_01';
     const num = Math.max(1, Math.min(20, parseInt(String(raw).replace(/\D/g, '') || '1', 10)));
-    return `assets/characters/char_${String(num).padStart(2, '0')}_full.webp`;
+    return `assets/motion-v3/originals/char_${String(num).padStart(2, '0')}.png`;
   }
 
   /**
@@ -87,8 +87,9 @@
     const pal = WORLD_PALETTES[worldId] || WORLD_PALETTES.royal;
     const worldName = WORLD_NAMES_AR[worldId] || WORLD_NAMES_AR.royal;
 
+    const bgPrimary = `assets/halls/${worldId}-hall.jpg`;
     const [bgImg, img2, img1, img3] = await Promise.all([
-      loadImg(`assets/worlds/${worldId}/podium.jpg`),
+      loadImg(bgPrimary).then(img => img || loadImg(`assets/worlds/${worldId}/podium.jpg`)),
       loadImg(getCharFullSrc(p2)),
       loadImg(getCharFullSrc(p1)),
       loadImg(getCharFullSrc(p3))

@@ -48,8 +48,30 @@
       </div>`;
   }
 
+  const STUDENT_WORLD_ACCENTS = {
+    royal: { border: '#fbbf24', bg: 'rgba(10,22,48,0.92)', accent: '#fbbf24' },
+    oasis: { border: '#34d399', bg: 'rgba(7,34,25,0.92)', accent: '#34d399' },
+    cosmic: { border: '#22d3ee', bg: 'rgba(9,19,38,0.92)', accent: '#22d3ee' },
+    treasure: { border: '#f59e0b', bg: 'rgba(34,19,8,0.92)', accent: '#fbbf24' },
+    stadium: { border: '#38bdf8', bg: 'rgba(9,24,54,0.92)', accent: '#38bdf8' },
+    magic: { border: '#c084fc', bg: 'rgba(26,11,54,0.92)', accent: '#c084fc' }
+  };
+
+  function mountStudentV3Hero(elId, avatarId, moveName, w, h, loopFlag = false) {
+    if (typeof document === 'undefined' || !global.ScoreARMotionV3?.mount) return;
+    const el = document.getElementById(elId);
+    if (!el) return;
+    global.ScoreARMotionV3.mount(el, avatarId || 'char_01', moveName || 'idle', { width: w, height: h, loop: loopFlag });
+  }
+
   function triggerHeroAction(btnEl, emoji) {
     if (global.ScoreARQuizStudent?.sendReaction) global.ScoreARQuizStudent.sendReaction(emoji);
+    const v3Map = { '🦘': 'jump', '👋': 'wave', '🔥': 'runRight', '👏': 'clap', '🎉': 'win' };
+    const slot = typeof document !== 'undefined' ? document.getElementById('studentHeroAvatarV3') : null;
+    const inst = slot && global.ScoreARMotionV3?.getInstance ? global.ScoreARMotionV3.getInstance(slot) : null;
+    if (inst && typeof inst.setAction === 'function') {
+      inst.setAction(v3Map[emoji] || 'win', { loop: false });
+    }
     const img = typeof document !== 'undefined' ? document.getElementById('studentHeroAvatarImg') : null;
     if (img) {
       img.style.animation = 'none';
@@ -184,7 +206,7 @@
       <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px;text-align:center;gap:10px;overflow-y:auto;">
         <div style="background:rgba(18,20,44,0.92);backdrop-filter:blur(16px);border:1.5px solid ${isCorrect ? '#10b981' : '#ef4444'};border-radius:20px;padding:14px 16px;width:100%;max-width:360px;box-shadow:0 10px 28px rgba(0,0,0,0.5);">
           <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;">
-            <img id="studentHeroAvatarImg" src="assets/characters/animated/${escapeHtml(myAvatar)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(myName || 'البطل')}" style="width:54px;height:64px;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.55));">
+            <div id="studentHeroAvatarV3" style="width:76px;height:90px;display:flex;align-items:flex-end;justify-content:center;"><img id="studentHeroAvatarImg" src="assets/characters/animated/${escapeHtml(myAvatar)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(myName || 'البطل')}" style="width:68px;height:82px;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.55));"></div>
             <div style="font-size:32px;line-height:1;">${isCorrect ? '🎉' : '❌'}</div>
           </div>
           <h2 style="font-size:19px;font-weight:900;color:${isCorrect ? '#34d399' : '#f87171'};margin:0 0 4px 0;">${isCorrect ? 'إجابة صحيحة وممتازة!' : (myChoiceIdx === -1 ? 'انتهى الوقت ولم تُجب!' : 'إجابة خاطئة!')}</h2>
@@ -214,6 +236,7 @@
         ${renderHeroActionDock(false)}
       </main>`;
 
+    mountStudentV3Hero('studentHeroAvatarV3', myAvatar, isCorrect ? 'clap' : 'sad', 76, 90, false);
     return { isCorrect, earned, currentRank, updatedScore: Number(myResult?.totalScore ?? currentScore) };
   }
 
@@ -230,7 +253,7 @@
       <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 25%, rgba(42,34,84,0.34) 0%, rgba(10,11,22,0.72) 100%);z-index:2;"></div>
       <header class="scorear-control-bar" style="position:relative;z-index:10;padding:12px;text-align:center;"><span style="font-size:15px;font-weight:900;color:#fcd34d;display:inline-flex;align-items:center;gap:6px;">${uiIcon('crown', 16)} نهاية التحدي والتتويج</span></header>
       <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:12px;">
-        <img id="studentHeroAvatarImg" src="assets/characters/animated/${currentStudent?.avatarId || 'char_01'}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(currentStudent?.name || 'البطل')}" style="width:100px;height:120px;object-fit:contain;animation:character-joy 1.1s ease-in-out infinite;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));">
+        <div id="studentHeroAvatarV3" style="width:120px;height:148px;display:flex;align-items:flex-end;justify-content:center;"><img id="studentHeroAvatarImg" src="assets/characters/animated/${currentStudent?.avatarId || 'char_01'}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(currentStudent?.name || 'البطل')}" style="width:100px;height:120px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));"></div>
         <h2 style="font-size:19px;font-weight:900;color:#ffffff;margin:0;">أحسنت يا ${escapeHtml(currentStudent?.name || 'البطل')}!</h2>
         <div style="background:rgba(18,20,44,0.9);backdrop-filter:blur(16px);border:1px solid rgba(251,191,36,0.45);border-radius:18px;padding:14px;width:100%;max-width:310px;">
           <div style="font-size:11px;color:#a1a4be;">مجموع نقاطك النهائي:</div>
@@ -242,6 +265,7 @@
         <button onclick="ScoreARQuizStudent.closeStudentSession()" class="scorear-gear-btn" style="padding:10px 22px;font-size:13px;">${uiIcon('home', 14)} العودة للرئيسية</button>
       </main>`;
 
+    mountStudentV3Hero('studentHeroAvatarV3', currentStudent?.avatarId || 'char_01', (myFinalRank !== '-' && myFinalRank <= 3) ? 'win' : 'clap', 120, 148, true);
     let isGuest = true;
     try {
       const u = (global.ScoreARAuth && (global.ScoreARAuth.getUser || global.ScoreARAuth.getCurrentUser)) ? (global.ScoreARAuth.getUser || global.ScoreARAuth.getCurrentUser)() : null;
@@ -315,22 +339,23 @@
       : (myInfo.gapToAbove > 0 ? `تفصلك ${myInfo.gapToAbove} نقطة عن المركز الأعلى` : 'أداء رائع، استمر في التحدي!');
 
     const charAvatarId = currentStudent?.avatarId || 'char_01';
+    const wAccent = STUDENT_WORLD_ACCENTS[currentWorldId] || STUDENT_WORLD_ACCENTS.royal;
     const topContestants = (Array.isArray(msg.top5) && msg.top5.length)
       ? msg.top5
       : (Array.isArray(msg.allRanks) ? msg.allRanks.slice(0, 5) : []);
 
     stage.innerHTML = `
-      <div style="position:absolute;inset:0;background:url('assets/worlds/${currentWorldId}/results.jpg') center/cover no-repeat;filter:brightness(0.78) saturate(1.1);z-index:1;"></div>
-      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 22%, rgba(43,33,73,0.38) 0%, rgba(10,11,22,0.78) 100%);z-index:2;"></div>
-      <header class="scorear-control-bar" style="position:relative;z-index:10;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;">
-        <span style="font-size:14px;font-weight:900;color:#ffffff;display:inline-flex;align-items:center;gap:6px;"><span style="color:#58dce3;">${uiIcon('trophy', 15)}</span> لوحة الترتيب بعد السؤال</span>
-        <span class="scorear-control-pill" style="padding:3px 10px;font-size:11px;">المتسابقون: <b style="color:#58dce3;">${total}</b></span>
+      <div style="position:absolute;inset:0;background:url('assets/boards/${escapeHtml(currentWorldId || 'royal')}-board-scene.jpg'),url('assets/worlds/${currentWorldId}/results.jpg');background-size:cover;background-position:center;filter:brightness(0.68) saturate(1.1);z-index:1;"></div>
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 22%, rgba(20,26,56,0.42) 0%, rgba(7,10,22,0.86) 100%);z-index:2;"></div>
+      <header class="scorear-control-bar" style="position:relative;z-index:10;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid ${wAccent.border}55;">
+        <span style="font-size:14px;font-weight:900;color:#ffffff;display:inline-flex;align-items:center;gap:6px;"><span style="color:${wAccent.accent};">${uiIcon('trophy', 15)}</span> لوحة الترتيب بعد السؤال</span>
+        <span class="scorear-control-pill" style="padding:3px 10px;font-size:11px;border-color:${wAccent.border}66;">المتسابقون: <b style="color:${wAccent.accent};">${total}</b></span>
       </header>
       <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px;text-align:center;gap:10px;overflow-y:auto;">
-        <img id="studentHeroAvatarImg" src="assets/characters/animated/${escapeHtml(charAvatarId)}-idle.webp" onerror="this.onerror=null;this.src='assets/characters/${escapeHtml(charAvatarId)}_full.webp';this.onerror=function(){this.src='assets/characters/animated/char_01-idle.webp';};" alt="${escapeHtml(myName)}" style="width:78px;height:90px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));flex-shrink:0;">
+        <div id="studentHeroAvatarV3" style="width:92px;height:106px;display:flex;align-items:flex-end;justify-content:center;flex-shrink:0;"><img id="studentHeroAvatarImg" src="assets/motion-v3/originals/${escapeHtml(charAvatarId)}.png" onerror="this.onerror=null;this.src='assets/characters/animated/${escapeHtml(charAvatarId)}-idle.webp';" alt="${escapeHtml(myName)}" style="width:78px;height:90px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));"></div>
         <h3 style="font-size:17px;font-weight:900;color:#ffffff;margin:0;">أحسنت يا ${escapeHtml(myName)}</h3>
 
-        <div style="width:100%;max-width:350px;background:rgba(18,20,44,0.88);backdrop-filter:blur(18px);border:1px solid rgba(172,139,242,0.32);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 14px 36px rgba(0,0,0,0.5);">
+        <div style="width:100%;max-width:350px;background:${wAccent.bg};backdrop-filter:blur(18px);border:1.5px solid ${wAccent.border}88;border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 14px 36px rgba(0,0,0,0.5);">
           <div style="display:flex;justify-content:space-around;align-items:center;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:10px;">
             <div>
               <div style="font-size:11px;color:#a1a4be;font-weight:700;">ترتيبي الشخصي</div>
@@ -386,6 +411,8 @@
           المعلم يراجع النتائج ويستعد للسؤال التالي...
         </div>
       </main>`;
+    const stMove = rankNum === 1 ? 'win' : (myInfo.delta > 0 ? 'clap' : 'idle');
+    mountStudentV3Hero('studentHeroAvatarV3', charAvatarId, stMove, 92, 106, stMove !== 'idle');
   }
 
   function renderStudentRoomClosed(stage, reason, currentStudent, currentScore, currentWorldId) {

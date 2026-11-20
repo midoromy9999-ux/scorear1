@@ -1,7 +1,7 @@
 {
   "projects": {
-    "default": "scorear2",
-    "production": "scorear2",
+    "default": "scorear1",
+    "production": "scorear1",
     "scorear-e4186": "scorear-e4186",
     "staging": "scorear-staging-test"
   },

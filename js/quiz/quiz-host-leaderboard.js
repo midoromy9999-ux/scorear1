@@ -1,74 +1,77 @@
 /**
- * ScoreAR Quiz Host Leaderboard Race Module (quiz-host-leaderboard.js)
- * Cosmic Glass Race Leaderboard (Top 5 Contenders) with Procedural Hero Motion,
- * Ambient Aurora Speed Vector, Odometer Count-Up, and Zero-Shame Private Broadcast.
- * Strictly Rule 7 Compliant (<450 lines).
+ * ScoreAR Post-Question Ranking Board — 6 World Visual Identities (quiz-host-leaderboard.js)
+ * Single component faithful to 04-Live-Ranking-Boards.png with ornate world framing,
+ * circular original character portraits, golden #1 laurel emblem, safe Arabic RTL layout,
+ * competition ties, textual rank-delta (hidden on Q1 / no prior rank), Next Question button,
+ * and preserved LEADERBOARD_UPDATE real-time student sync + Batch 4 test compatibility.
+ * Strictly Rule 7 Compliant (< 360 lines).
  */
-(function(global) {
+(function (global) {
   'use strict';
 
-  const previousRanks = new Map();
+  let previousRanks = new Map();
+  let lastSessionToken = null;
 
   const WORLD_RACE_THEMES = {
     royal: {
-      name: 'القصر الملكي الأندلسي',
-      trackTitle: 'طريق السجادة الحمراء نحو العرش',
-      targetIcon: 'crown',
-      targetLabel: 'العرش الملكي',
-      bgGradient: 'linear-gradient(110deg, rgba(28, 19, 56, 0.88) 0%, rgba(58, 24, 78, 0.84) 65%, rgba(120, 53, 15, 0.78) 100%)',
-      laneBorder: 'rgba(245, 158, 11, 0.38)',
-      speedColor: '#fbbf24',
-      accentColor: '#f59e0b'
-    },
-    cosmic: {
-      name: 'محطة الفضاء العربية',
-      trackTitle: 'مسارات الصواريخ المدارية',
-      targetIcon: 'planet',
-      targetLabel: 'المحطة المدارية',
-      bgGradient: 'linear-gradient(110deg, rgba(14, 18, 40, 0.90) 0%, rgba(18, 52, 77, 0.84) 65%, rgba(76, 29, 149, 0.82) 100%)',
-      laneBorder: 'rgba(88, 220, 227, 0.38)',
-      speedColor: '#58dce3',
-      accentColor: '#06b6d4'
-    },
-    treasure: {
-      name: 'جزيرة الكنز الأسطورية',
-      trackTitle: 'تسلق الجرف الصخري نحو الكنز',
-      targetIcon: 'award',
-      targetLabel: 'صندوق الكنز',
-      bgGradient: 'linear-gradient(110deg, rgba(26, 20, 38, 0.90) 0%, rgba(78, 42, 18, 0.84) 65%, rgba(146, 64, 14, 0.80) 100%)',
-      laneBorder: 'rgba(251, 191, 36, 0.38)',
-      speedColor: '#fde047',
-      accentColor: '#f59e0b'
-    },
-    stadium: {
-      name: 'استاد الأبطال الرياضي',
-      trackTitle: 'مضمار الجري الرياضي بحارات السرعة',
-      targetIcon: 'trophy',
-      targetLabel: 'خط النهاية والكأس',
-      bgGradient: 'linear-gradient(110deg, rgba(15, 23, 42, 0.90) 0%, rgba(16, 64, 52, 0.84) 65%, rgba(14, 116, 144, 0.80) 100%)',
-      laneBorder: 'rgba(74, 222, 128, 0.38)',
-      speedColor: '#4ade80',
-      accentColor: '#10b981'
+      name: 'القصر الملكي', trackTitle: 'قاعة الأوسمة الأندلسية', emblem: '👑',
+      bgGradient: 'linear-gradient(135deg,#07132c 0%,#0d224a 55%,#142d5e 100%)',
+      panelBg: 'rgba(9, 20, 46, 0.94)', rowBg: 'rgba(13, 29, 64, 0.88)',
+      speedColor: '#fbbf24', accentColor: '#fbbf24', border: '#e5a93c',
+      btnBg: 'linear-gradient(180deg,#183a74,#0d2148)', btnBorder: '#fbbf24', btnText: '#fef3c7',
+      boardScene: 'assets/boards/royal-board-scene.jpg',
+      framePattern: 'radial-gradient(circle at 8px 8px,rgba(251,191,36,0.55) 1.5px,transparent 2px),repeating-linear-gradient(45deg,rgba(251,191,36,0.22) 0 4px,transparent 4px 12px),repeating-linear-gradient(-45deg,rgba(251,191,36,0.22) 0 4px,transparent 4px 12px)',
+      archRadius: '110px 110px 14px 14px'
     },
     oasis: {
-      name: 'واحة النخيل والرمال',
-      trackTitle: 'مجرى النهر الفيروزي نحو الواحة',
-      targetIcon: 'compass',
-      targetLabel: 'الواحة والينبوع',
-      bgGradient: 'linear-gradient(110deg, rgba(14, 26, 34, 0.90) 0%, rgba(15, 76, 72, 0.84) 65%, rgba(16, 112, 90, 0.80) 100%)',
-      laneBorder: 'rgba(88, 220, 227, 0.38)',
-      speedColor: '#6ee7b7',
-      accentColor: '#10b981'
+      name: 'الواحة العربية', trackTitle: 'ساحة الفوانيس والنخيل', emblem: '🏮',
+      bgGradient: 'linear-gradient(135deg,#041d15 0%,#083829 55%,#0e4a37 100%)',
+      panelBg: 'rgba(6, 36, 26, 0.94)', rowBg: 'rgba(9, 49, 36, 0.88)',
+      speedColor: '#34d399', accentColor: '#f59e0b', border: '#d97706',
+      btnBg: 'linear-gradient(180deg,#0f5c43,#063525)', btnBorder: '#fbbf24', btnText: '#fef3c7',
+      boardScene: 'assets/boards/oasis-board-scene.jpg',
+      framePattern: 'repeating-linear-gradient(90deg,rgba(185,28,28,0.45) 0 10px,rgba(245,158,11,0.45) 10px 16px,rgba(16,185,129,0.4) 16px 26px)',
+      archRadius: '18px'
+    },
+    cosmic: {
+      name: 'محطة الفضاء', trackTitle: 'مرصد المدار الكوني', emblem: '🛸',
+      bgGradient: 'linear-gradient(135deg,#050b18 0%,#0c1f3c 55%,#112a4f 100%)',
+      panelBg: 'rgba(10, 22, 42, 0.94)', rowBg: 'rgba(14, 33, 60, 0.88)',
+      speedColor: '#22d3ee', accentColor: '#22d3ee', border: '#38bdf8',
+      btnBg: 'linear-gradient(180deg,#0e5d7a,#083348)', btnBorder: '#22d3ee', btnText: '#ecfeff',
+      boardScene: 'assets/boards/cosmic-board-scene.jpg',
+      framePattern: 'linear-gradient(90deg,rgba(34,211,238,0.35),rgba(148,163,184,0.22),rgba(34,211,238,0.35))',
+      archRadius: '14px'
+    },
+    treasure: {
+      name: 'جزيرة الكنز', trackTitle: 'رصيف الكنز والخريطة', emblem: '🧭',
+      bgGradient: 'linear-gradient(135deg,#1a0e05 0%,#3a210d 55%,#4e2d12 100%)',
+      panelBg: 'rgba(36, 20, 9, 0.94)', rowBg: 'rgba(54, 31, 14, 0.88)',
+      speedColor: '#fde047', accentColor: '#fbbf24', border: '#d97706',
+      btnBg: 'linear-gradient(180deg,#7c3d12,#472109)', btnBorder: '#fbbf24', btnText: '#fef3c7',
+      boardScene: 'assets/boards/treasure-board-scene.jpg',
+      framePattern: 'repeating-linear-gradient(90deg,rgba(120,53,15,0.65) 0 18px,rgba(217,119,6,0.38) 18px 22px)',
+      archRadius: '14px'
+    },
+    stadium: {
+      name: 'استاد الأبطال', trackTitle: 'مضمار الأبطال والكشافات', emblem: '🏆',
+      bgGradient: 'linear-gradient(135deg,#07142e 0%,#0e2b60 55%,#123a7a 100%)',
+      panelBg: 'rgba(9, 25, 56, 0.94)', rowBg: 'rgba(13, 38, 82, 0.88)',
+      speedColor: '#38bdf8', accentColor: '#38bdf8', border: '#38bdf8',
+      btnBg: 'linear-gradient(180deg,#124991,#092854)', btnBorder: '#fbbf24', btnText: '#ffffff',
+      boardScene: 'assets/boards/stadium-board-scene.jpg',
+      framePattern: 'linear-gradient(135deg,rgba(56,189,248,0.45),rgba(251,191,36,0.28),rgba(56,189,248,0.45))',
+      archRadius: '14px'
     },
     magic: {
-      name: 'المملكة السحرية العائمة',
-      trackTitle: 'طيران السحر والبسط الطائرة في الشفق',
-      targetIcon: 'sparkles',
-      targetLabel: 'قلعة السحر المعلقة',
-      bgGradient: 'linear-gradient(110deg, rgba(22, 16, 44, 0.90) 0%, rgba(68, 28, 116, 0.84) 65%, rgba(131, 24, 67, 0.78) 100%)',
-      laneBorder: 'rgba(192, 132, 252, 0.38)',
-      speedColor: '#f472b6',
-      accentColor: '#c084fc'
+      name: 'مملكة السحر', trackTitle: 'قلعة البلورات العائمة', emblem: '💎',
+      bgGradient: 'linear-gradient(135deg,#15082e 0%,#2d125c 55%,#40177a 100%)',
+      panelBg: 'rgba(28, 12, 56, 0.94)', rowBg: 'rgba(44, 19, 86, 0.88)',
+      speedColor: '#c084fc', accentColor: '#c084fc', border: '#c084fc',
+      btnBg: 'linear-gradient(180deg,#6b21a8,#3b0764)', btnBorder: '#e9d5ff', btnText: '#faf5ff',
+      boardScene: 'assets/boards/magic-board-scene.jpg',
+      framePattern: 'linear-gradient(135deg,rgba(192,132,252,0.45),rgba(56,189,248,0.28),rgba(232,121,249,0.45))',
+      archRadius: '18px'
     }
   };
 
@@ -77,273 +80,238 @@
   }
   function sfx(t) { if (global.ScoreARAudio) global.ScoreARAudio.playSfx(t); }
   function uiIcon(name, size = 15) {
-    return (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function')
-      ? global.ScoreARUI.icon(name, { size })
-      : '';
+    return (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function') ? global.ScoreARUI.icon(name, { size }) : '';
+  }
+  function normAvatar(p) {
+    const raw = p?.avatarId || p?.characterId || p?.avatar || 'char_01';
+    const n = Math.max(1, Math.min(20, parseInt(String(raw).replace(/\D/g, '') || '1', 10)));
+    return 'char_' + String(n).padStart(2, '0');
+  }
+  function formatRankDeltaText(delta) {
+    if (!Number.isFinite(delta) || delta === 0) return '';
+    if (delta === 1) return '▲ صعد مركزًا';
+    if (delta === 2) return '▲ صعد مركزين';
+    if (delta > 2) return `▲ صعد ${delta} مراكز`;
+    const drop = Math.abs(delta);
+    if (drop === 1) return '▼ تراجع مركزًا';
+    if (drop === 2) return '▼ تراجع مركزين';
+    return `▼ تراجع ${drop} مراكز`;
+  }
+
+  function rankEmblemHtml(rank) {
+    if (rank === 1) {
+      return `<div class="sc-lb-rank-wreath" aria-label="المركز 1">
+        <svg viewBox="0 0 56 44" width="46" height="36" aria-hidden="true">
+          <path d="M14,34 C6,28 5,15 13,8 M12,26 C8,22 8,16 12,12 M15,32 C10,30 10,25 14,22" fill="none" stroke="#fbbf24" stroke-width="2.6" stroke-linecap="round"/>
+          <path d="M42,34 C50,28 51,15 43,8 M44,26 C48,22 48,16 44,12 M41,32 C46,30 46,25 42,22" fill="none" stroke="#fbbf24" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="28" cy="22" r="13" fill="rgba(251,191,36,0.22)" stroke="#fde047" stroke-width="2"/>
+          <text x="28" y="28" text-anchor="middle" fill="#fef08a" font-size="18" font-weight="900" font-family="Montserrat,Cairo,sans-serif">1</text>
+        </svg>
+      </div>`;
+    }
+    const bg = rank === 2 ? 'linear-gradient(135deg,#94a3b8,#475569)'
+      : rank === 3 ? 'linear-gradient(135deg,#d97706,#78350f)' : 'rgba(255,255,255,0.11)';
+    return `<span class="sc-lb-rank-circle" style="background:${bg};" aria-label="المركز ${rank}">${rank}</span>`;
   }
 
   function renderHostLeaderboard(stage, currentRoom, activeQuestions, currentQIndex, onNext, onPodium, onClose) {
+    if (!stage || !currentRoom) return;
+    if (!currentRoom._lbSessionToken) {
+      currentRoom._lbSessionToken = `${currentRoom.pin || 'room'}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    }
+    if (lastSessionToken !== currentRoom._lbSessionToken || currentQIndex === 0) {
+      if (lastSessionToken !== currentRoom._lbSessionToken) previousRanks = new Map();
+      lastSessionToken = currentRoom._lbSessionToken;
+    }
+
     const sorted = [...(currentRoom.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
-    const hasNext = (currentQIndex + 1 < activeQuestions.length);
+    const hasNext = Array.isArray(activeQuestions) && (currentQIndex + 1 < activeQuestions.length);
+    const totalQ = Array.isArray(activeQuestions) && activeQuestions.length ? activeQuestions.length : 1;
     const worldId = (currentRoom.world && currentRoom.world.id) ? currentRoom.world.id : (currentRoom.worldId || 'royal');
     const theme = WORLD_RACE_THEMES[worldId] || WORLD_RACE_THEMES.royal;
     const top5 = sorted.slice(0, 5);
-    const maxLeaderScore = Math.max(100, Number(top5[0]?.score) || 100);
+    const fastestId = currentRoom.lastFastestStudent?.id ? String(currentRoom.lastFastestStudent.id) : null;
 
-    let maxJump = 0, biggestJumperId = null;
+    // Competition ranking with ties (1, 1, 3...) + textual rank delta hidden when no prior rank
+    let curRank = 1;
     sorted.forEach((p, idx) => {
-      const curRank = idx + 1;
-      const prev = previousRanks.has(p.id) ? previousRanks.get(p.id) : curRank;
-      const jump = prev - curRank;
-      p._rankDelta = jump;
-      p._prevRank = prev;
+      if (idx > 0 && (p.score || 0) < (sorted[idx - 1].score || 0)) curRank = idx + 1;
       p._currentRank = curRank;
-      if (jump >= 2 && jump > maxJump) {
-        maxJump = jump;
-        biggestJumperId = p.id;
-      }
+      const hadPrev = previousRanks.has(p.id);
+      p._rankDelta = hadPrev ? (previousRanks.get(p.id) - curRank) : null;
     });
     sorted.forEach(p => previousRanks.set(p.id, p._currentRank));
 
     sfx('whoosh');
-    setTimeout(() => { sfx('reveal'); }, 450);
-
-    const isMuted = (global.ScoreARAudio && typeof global.ScoreARAudio.isMuted === 'function')
-      ? global.ScoreARAudio.isMuted() : false;
+    setTimeout(() => { sfx('reveal'); }, 320);
+    const isMuted = Boolean(global.ScoreARAudio?.isMuted?.());
+    const nextAction = hasNext ? `ScoreARQuizHost.launchQuestion(${currentQIndex + 1})` : 'ScoreARQuizHost.renderHostPodium()';
+    const nextLabel = hasNext ? 'السؤال التالي' : 'التتويج النهائي';
 
     stage.innerHTML = `
       <style>
-        @keyframes raceLaneSlideIn {
-          0% { opacity: 0; transform: translateY(18px) scale(0.98); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
+        @keyframes scLbRowSlide { 0%{opacity:0;transform:translateX(16px)} 100%{opacity:1;transform:translateX(0)} }
+        .sc-lb-shell { position:relative;width:100%;height:100%;min-height:100%;display:flex;flex-direction:column;overflow:hidden;direction:rtl;font-family:Cairo,Tajawal,sans-serif;background:${theme.bgGradient}; }
+        .sc-lb-wrap { position:relative;z-index:8;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:8px 18px 14px; }
+        .sc-lb-board { position:relative;width:min(1140px,96%);max-height:100%;border-radius:22px;padding:10px;background:${theme.framePattern};box-shadow:0 26px 70px rgba(0,0,0,0.78),0 0 0 2px ${theme.border};display:flex; }
+        .sc-lb-inner { position:relative;width:100%;border-radius:16px;background:${theme.panelBg};border:1.5px solid ${theme.border}88;display:grid;grid-template-columns:1.45fr 0.78fr;gap:18px;padding:16px 20px;overflow:hidden;box-shadow:inset 0 0 42px rgba(0,0,0,0.55); }
+        .sc-lb-head { display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px;border-bottom:1px solid ${theme.border}33;padding-bottom:8px; }
+        .sc-lb-rows { display:flex;flex-direction:column;gap:8px;min-width:0; }
+        .sc-lb-row { display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 14px;border-radius:14px;background:${theme.rowBg};border:1px solid rgba(255,255,255,0.10);animation:scLbRowSlide 0.36s ease both; }
+        .sc-lb-row.is-first { border:1.5px solid ${theme.accentColor};box-shadow:0 0 22px ${theme.accentColor}38,inset 0 0 18px ${theme.accentColor}1c;background:linear-gradient(90deg,${theme.rowBg},${theme.accentColor}24); }
+        .sc-lb-rank-wreath { width:48px;height:38px;flex-shrink:0;display:grid;place-items:center; }
+        .sc-lb-rank-wreath svg { width:48px !important;height:38px !important;max-width:none !important;display:block !important; }
+        .sc-lb-rank-circle { width:34px;height:34px;margin-inline:6px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-size:15px;font-weight:900;color:#fff;font-family:Montserrat,Cairo,sans-serif;border:1px solid rgba(255,255,255,0.25); }
+        .sc-lb-avatar { width:46px;height:46px;border-radius:50%;flex-shrink:0;overflow:hidden;border:2px solid ${theme.border};background:radial-gradient(circle at 50% 35%,rgba(255,255,255,0.2),rgba(8,14,32,0.85));box-shadow:0 4px 12px rgba(0,0,0,0.5); }
+        .sc-lb-avatar img { width:100%;height:100%;object-fit:cover;object-position:center 16%;transform:scale(1.18);display:block; }
+        .sc-lb-name { font-size:15.5px;font-weight:900;color:#ffffff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0; }
+        .sc-lb-meta { display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:1px; }
+        .sc-lb-chip { font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:999px;white-space:nowrap; }
+        .sc-lb-score { font-size:20px;font-weight:900;color:#ffffff;font-family:Montserrat,Cairo,monospace;font-variant-numeric:tabular-nums;min-width:56px;text-align:left; }
+        .sc-lb-delta-pts { font-size:13px;font-weight:900;font-family:Montserrat,Cairo,monospace;font-variant-numeric:tabular-nums;min-width:64px;text-align:center; }
+        .sc-lb-side { display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-width:0; }
+        .sc-lb-window { position:relative;flex:1;min-height:240px;border-radius:${theme.archRadius};overflow:hidden;border:2.5px solid ${theme.border};box-shadow:0 14px 36px rgba(0,0,0,0.65),inset 0 0 28px rgba(0,0,0,0.5);background:#070e20; }
+        .sc-lb-next-btn { width:100%;padding:12px 20px;border-radius:999px;border:2px solid ${theme.btnBorder};background:${theme.btnBg};color:${theme.btnText};font-size:16px;font-weight:900;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 10px 26px rgba(0,0,0,0.55),0 0 18px ${theme.border}44;transition:transform 0.18s ease; }
+        .sc-lb-next-btn:hover { transform:translateY(-2px); }
+        @media (max-width:860px) {
+          .sc-lb-shell { overflow-y:auto; }
+          .sc-lb-inner { grid-template-columns:1fr;padding:12px;gap:12px; }
+          .sc-lb-window { min-height:135px;max-height:165px;border-radius:14px; }
+          .sc-lb-side { order:2; }
         }
-        @keyframes raceHeroRushIn {
-          0% { opacity: 0; transform: translate3d(38px, 6px, 0) scale(0.9) skewX(-8deg); }
-          60% { opacity: 1; transform: translate3d(-6px, -8px, 0) scale(1.08); }
-          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1) skewX(0deg); }
+        @media (max-width:520px) {
+          .sc-lb-board { padding:6px;width:98%; }
+          .sc-lb-row { padding:6px 8px;gap:6px; }
+          .sc-lb-avatar { width:36px;height:36px; }
+          .sc-lb-name { font-size:13px; }
+          .sc-lb-score { font-size:15.5px;min-width:44px; }
+          .sc-lb-delta-pts { font-size:11px;min-width:48px; }
         }
-        @keyframes raceHeroOvertakeLeap {
-          0% { opacity: 0; transform: translate3d(44px, 10px, 0) scale(0.88); }
-          45% { opacity: 1; transform: translate3d(6px, -22px, 0) scale(1.16) rotate(-5deg); }
-          78% { transform: translate3d(-2px, 4px, 0) scale(1.06, 0.94); }
-          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
-        }
-        @keyframes speedLinesMotion {
-          0%, 100% { transform: translateX(0); opacity: 0.22; }
-          50% { transform: translateX(-14px); opacity: 0.52; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .race-lane-card, .char-procedural-rig, .speed-lines-svg, .race-track-fill { animation: none !important; transform: none !important; transition: none !important; }
-        }
+        @media (prefers-reduced-motion: reduce) { .sc-lb-row { animation:none !important; } }
       </style>
 
-      <div style="position:absolute;inset:0;overflow:hidden;z-index:0;background:url('assets/worlds/${worldId}/results.jpg') center/cover no-repeat;">
-        <img src="assets/worlds/${worldId}/results.jpg" alt="" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='assets/worlds/${worldId}/lobby.jpg';}else{this.style.display='none';}" style="width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.76) saturate(1.1);">
-        <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 18%, rgba(43,33,73,0.38) 0%, rgba(10,11,24,0.82) 100%);"></div>
-        <div class="hero-grid" aria-hidden="true"></div>
-      </div>
+      <div class="sc-lb-shell" data-world-id="${escapeHtml(worldId)}">
+        <div style="position:absolute;inset:0;background:url('${escapeHtml(theme.boardScene)}') center/cover no-repeat;opacity:0.22;filter:blur(5px);pointer-events:none;"></div>
+        <svg class="speed-lines-svg" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;opacity:0.06;pointer-events:none;"></svg>
 
-      <header class="scorear-control-bar" style="position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 26px;gap:12px;flex-wrap:wrap;direction:rtl;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button type="button" class="scorear-gear-btn" onclick="ScoreARQuizHost.closeHostSession()" style="border-color:rgba(255,107,107,0.32);color:#fca5a5;">
-            ${uiIcon('close', 14)} <span>إنهاء القاعة</span>
-          </button>
-          <button type="button" id="hostAudioMuteBtn" class="scorear-gear-btn scorear-audio-btn" onclick="ScoreARHostLeaderboard.toggleMuteAudio()">
-            ${uiIcon(isMuted ? 'volumeOff' : 'volume', 14)} <span>${isMuted ? 'الصوت: صامت' : 'الصوت: يعمل'}</span>
-          </button>
-        </div>
-
-        <div style="text-align:center;">
-          <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:2px;">
-            <span class="launch-pill" style="padding:3px 11px;font-size:10.5px;"><span class="live-dot"></span> جولة ${currentQIndex + 1} من ${activeQuestions.length}</span>
-            <h2 style="font-size:19px;font-weight:900;color:#ffffff;margin:0;display:inline-flex;align-items:center;gap:7px;">
-              <span style="color:${theme.speedColor};display:inline-flex;">${uiIcon(theme.targetIcon || 'trophy', 18)}</span>
-              <span>${theme.trackTitle}</span>
-            </h2>
+        <header class="scorear-control-bar" style="position:relative;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:8px 20px;gap:8px;flex-wrap:wrap;flex-shrink:0;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button type="button" class="scorear-gear-btn" onclick="ScoreARQuizHost.closeHostSession()" style="border-color:rgba(255,107,107,0.38);color:#fca5a5;">${uiIcon('close', 14)} <span>إنهاء القاعة</span></button>
+            <button type="button" id="hostAudioMuteBtn" class="scorear-gear-btn scorear-audio-btn" onclick="ScoreARHostLeaderboard.toggleMuteAudio()">${uiIcon(isMuted ? 'volumeOff' : 'volume', 14)} <span>${isMuted ? 'صامت' : 'الصوت'}</span></button>
           </div>
-          <small style="display:block;color:#a1a4be;font-size:11px;font-weight:700;">أفضل ٥ متسابقين في صدارة التحدي المباشر</small>
-        </div>
+          <span class="scorear-control-pill" style="border-color:${theme.border};color:#fff;">${theme.emblem} <span>${escapeHtml(theme.name)}</span></span>
+          <span style="font-size:12px;color:#cbd5e1;font-weight:800;">المتسابقون: <b style="color:${theme.accentColor};">${sorted.length}</b></span>
+        </header>
 
-        <button type="button" class="btn launch-primary" onclick="${hasNext ? `ScoreARQuizHost.launchQuestion(${currentQIndex + 1})` : 'ScoreARQuizHost.renderHostPodium()'}" style="padding:10px 22px;border-radius:12px;font-weight:900;font-size:13.5px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
-          <span>${hasNext ? 'السؤال التالي' : 'تتويج الأبطال'}</span>
-          ${uiIcon(hasNext ? 'arrow' : 'crown', 16)}
-        </button>
-      </header>
-
-      <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 24px;max-width:1020px;margin:0 auto;width:100%;direction:rtl;">
-        <div style="width:100%;display:flex;flex-direction:column;gap:9px;">
-          ${top5.map((p, idx) => {
-            const isTop1 = (idx === 0), isTop2 = (idx === 1), isTop3 = (idx === 2);
-            const rankStr = String(idx + 1).padStart(2, '0');
-            const rankBg = isTop1 ? 'linear-gradient(135deg,#fbbf24,#d97706)' : isTop2 ? 'linear-gradient(135deg,#94a3b8,#475569)' : isTop3 ? 'linear-gradient(135deg,#fb923c,#c2410c)' : 'rgba(255,255,255,0.06)';
-            const rankColor = isTop1 ? '#0c0d1d' : '#ffffff';
-
-            let arrowHtml = '<span style="color:#878aa6;font-size:11px;font-weight:800;">—</span>';
-            if (p._rankDelta > 0) {
-              arrowHtml = `<span style="color:#34d399;font-size:11px;font-weight:900;">▲ +${p._rankDelta}</span>`;
-            } else if (p._rankDelta < 0) {
-              arrowHtml = `<span style="color:#f87171;font-size:11px;font-weight:900;">▼ ${p._rankDelta}</span>`;
-            }
-
-            const badges = [];
-            if (p.isFastest || (currentRoom.lastFastestStudent && currentRoom.lastFastestStudent.id === p.id)) {
-              badges.push('<span style="background:rgba(245,158,11,0.16);border:1px solid rgba(251,191,36,0.4);color:#fde68a;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;">⚡ الأسرع</span>');
-            }
-            if (p.streak >= 3) {
-              badges.push(`<span style="background:rgba(239,68,68,0.16);border:1px solid rgba(248,113,113,0.4);color:#fecaca;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;">🔥 ${p.streak} متتالية</span>`);
-            }
-            if (p.id === biggestJumperId) {
-              badges.push('<span style="background:rgba(168,85,247,0.18);border:1px solid rgba(192,132,252,0.4);color:#e9d5ff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;">▲ أكبر صعود</span>');
-            }
-
-            const ptsGained = p.lastPointsGained || 0;
-            const startScore = Math.max(0, (p.score || 0) - ptsGained);
-            const delaySec = (idx * 0.07).toFixed(2);
-
-            let gapHtml = '';
-            if (idx > 0) {
-              const abovePlayer = top5[idx - 1];
-              const gap = (abovePlayer.score || 0) - (p.score || 0);
-              gapHtml = `<div style="text-align:center;margin:-4px 0;font-size:10px;font-weight:800;color:#b1a2e9;"><span style="background:rgba(12,13,29,0.72);border:1px solid rgba(172,139,242,0.2);padding:2px 11px;border-radius:999px;backdrop-filter:blur(8px);">تفصلك ${gap} نقطة عن المركز #${idx}</span></div>`;
-            }
-
-            const rawAv = p.avatarId || p.characterId || p.avatar || (p.player && (p.player.avatarId || p.player.characterId)) || 'char_01';
-            const avNum = parseInt(String(rawAv).replace(/\D/g, ''), 10);
-            const cleanCode = /^char_\d{2}$/.test(String(rawAv).trim())
-              ? String(rawAv).trim()
-              : ('char_' + String((!isNaN(avNum) && avNum >= 1 && avNum <= 20) ? avNum : 1).padStart(2, '0'));
-            const actionType = (worldId === 'treasure') ? 'climb' : (worldId === 'magic') ? 'fly' : 'run';
-            const raceProgressPct = Math.min(92, Math.max(8, Math.round(((p.score || 0) / maxLeaderScore) * 88)));
-            const startRacePct = Math.min(92, Math.max(6, Math.round((startScore / maxLeaderScore) * 88)));
-            const rigAnim = p._rankDelta > 0
-              ? `raceHeroOvertakeLeap 0.72s cubic-bezier(0.22,1,0.36,1) ${delaySec}s both`
-              : (ptsGained > 0 ? `raceHeroRushIn 0.58s cubic-bezier(0.22,1,0.36,1) ${delaySec}s both` : 'none');
-
-            return `
-              ${gapHtml}
-              <div class="race-lane-card" data-player-id="${escapeHtml(p.id || ('lb_' + idx))}" data-player-name="${escapeHtml(p.name || '')}" style="animation:raceLaneSlideIn 0.48s cubic-bezier(0.16, 1, 0.3, 1) ${delaySec}s both;position:relative;background:${theme.bgGradient};backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid ${isTop1 ? 'rgba(251,191,36,0.65)' : theme.laneBorder};border-radius:18px;padding:9px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:${isTop1 ? '0 14px 36px rgba(0,0,0,0.55), 0 0 28px rgba(251,191,36,0.18)' : '0 10px 28px rgba(0,0,0,0.45)'};min-height:70px;overflow:hidden;">
-
-                <svg class="speed-lines-svg" width="140" height="44" viewBox="0 0 140 44" fill="none" style="position:absolute;left:135px;opacity:0.28;animation:speedLinesMotion 2.2s infinite ease-in-out;pointer-events:none;">
-                  <line x1="0" y1="12" x2="110" y2="12" stroke="${theme.speedColor}" stroke-width="1.5" stroke-dasharray="18 10"/>
-                  <line x1="20" y1="24" x2="135" y2="24" stroke="${theme.speedColor}" stroke-width="1.5" stroke-dasharray="26 8"/>
-                  <line x1="8" y1="35" x2="95" y2="35" stroke="${theme.speedColor}" stroke-width="1.2" stroke-dasharray="12 12"/>
-                </svg>
-
-                <div style="display:flex;align-items:center;gap:14px;position:relative;z-index:2;min-width:0;flex:1;">
-                  <div style="display:flex;flex-direction:column;align-items:center;min-width:44px;flex-shrink:0;">
-                    <span style="width:36px;height:36px;border-radius:11px;background:${rankBg};border:1px solid rgba(255,255,255,0.22);display:grid;place-items:center;font-size:14px;font-weight:900;color:${rankColor};font-family:Montserrat,monospace;box-shadow:0 4px 12px rgba(0,0,0,0.35);">${rankStr}</span>
-                    <span style="margin-top:3px;">${arrowHtml}</span>
-                  </div>
-
-                  <div class="char-procedural-rig" style="animation:${rigAnim};position:relative;width:62px;height:68px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;">
-                    <div id="hostLbHero_${idx}" data-char-code="${cleanCode}" data-action="${actionType}" data-speed="${p._rankDelta > 0 ? 1.45 : (ptsGained > 0 ? 1.2 : 0.85)}" style="width:60px;height:66px;display:flex;align-items:flex-end;justify-content:center;position:relative;">
-                      <img src="assets/characters/animated/${cleanCode}-idle.webp" onerror="this.onerror=null;this.src='assets/characters/${cleanCode}_full.webp';this.onerror=function(){this.src='assets/characters/animated/char_01-idle.webp';};" alt="${escapeHtml(p.name)}" style="width:58px;height:64px;object-fit:contain;display:block;filter:drop-shadow(0 6px 10px rgba(0,0,0,0.65));">
-                    </div>
-                  </div>
-
-                  <div style="min-width:0;flex:1;max-width:440px;">
-                    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-                      <b style="font-size:16px;font-weight:900;color:#ffffff;max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;">${escapeHtml(p.name)}</b>
-                      ${isTop1 ? `<span style="color:#fbbf24;display:inline-flex;">${uiIcon('crown', 16)}</span>` : ''}
-                      ${badges.join('')}
-                    </div>
-                    <div style="margin-top:9px;width:100%;height:12px;background:rgba(8,10,24,0.78);border-radius:999px;overflow:visible;border:1px solid rgba(255,255,255,0.16);display:flex;align-items:center;position:relative;padding-inline-end:18px;box-sizing:border-box;">
-                      <span style="position:absolute;left:4px;top:50%;transform:translateY(-50%);font-size:11px;opacity:0.85;pointer-events:none;">🏁</span>
-                      <div class="race-track-fill" data-target-pct="${raceProgressPct}" style="width:${startRacePct}%;height:100%;background:linear-gradient(90deg, ${theme.accentColor}, ${theme.speedColor});border-radius:999px;transition:width 0.82s cubic-bezier(0.22,1,0.36,1);box-shadow:0 0 14px ${theme.speedColor};position:relative;">
-                        <span style="position:absolute;left:-14px;top:50%;transform:translateY(-56%);width:28px;height:28px;border-radius:50%;background:rgba(15,18,40,0.95);border:2px solid #ffffff;box-shadow:0 0 14px #ffffff, 0 0 22px ${theme.speedColor};display:${raceProgressPct > 6 ? 'flex' : 'none'};align-items:center;justify-content:center;overflow:hidden;z-index:4;">
-                          <img src="assets/characters/animated/${cleanCode}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="" style="width:24px;height:26px;object-fit:contain;transform:scaleX(-1);">
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+        <div class="sc-lb-wrap">
+          <div class="sc-lb-board">
+            <div class="sc-lb-inner">
+              <div style="display:flex;flex-direction:column;min-width:0;">
+                <div class="sc-lb-head">
+                  <h2 style="margin:0;font-size:clamp(20px,2.4vw,28px);font-weight:900;color:#ffffff;">الترتيب بعد السؤال</h2>
+                  <span style="font-size:15px;font-weight:900;color:${theme.accentColor};font-family:Montserrat,Cairo,monospace;font-variant-numeric:tabular-nums;background:rgba(255,255,255,0.06);border:1px solid ${theme.border}66;padding:3px 14px;border-radius:999px;"><bdi dir="ltr">${currentQIndex + 1} / ${totalQ}</bdi></span>
                 </div>
 
-                <div style="text-align:left;display:flex;flex-direction:column;align-items:flex-end;position:relative;z-index:2;flex-shrink:0;margin-inline-start:12px;">
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    ${ptsGained > 0 ? `<span style="background:rgba(16,185,129,0.22);border:1px solid rgba(52,211,153,0.45);color:#6ee7b7;font-size:11px;font-weight:900;padding:2px 8px;border-radius:999px;">+${ptsGained}</span>` : ''}
-                    <span class="scorear-count-up" data-start="${startScore}" data-target="${p.score || 0}" style="font-size:24px;font-weight:900;color:${isTop1 ? '#fef08a' : '#58dce3'};font-family:Montserrat,monospace;letter-spacing:-0.5px;">${p.score || 0}</span>
-                  </div>
-                  <span style="font-size:10px;color:#a1a4be;font-weight:800;">نقطة</span>
+                <div class="sc-lb-rows">
+                  ${top5.length ? top5.map((p, idx) => {
+                    const rank = p._currentRank;
+                    const code = normAvatar(p);
+                    const deltaText = formatRankDeltaText(p._rankDelta);
+                    const ptsGained = Number(p.lastPointsGained || 0);
+                    const startScore = Math.max(0, (p.score || 0) - ptsGained);
+                    const isFast = Boolean(p.isFastest || (fastestId && String(p.id) === fastestId));
+                    const gapToAbove = idx > 0 ? Math.max(0, (sorted[idx - 1].score || 0) - (p.score || 0)) : 0;
+                    const aboveRank = idx > 0 ? sorted[idx - 1]._currentRank : 1;
+                    return `
+                      <div class="race-lane-card sc-lb-row ${rank === 1 ? 'is-first' : ''}" data-player-id="${escapeHtml(p.id || '')}" data-player-name="${escapeHtml(p.name || '')}" style="animation-delay:${(idx * 0.05).toFixed(2)}s;">
+                        <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+                          ${rankEmblemHtml(rank)}
+                          <div class="sc-lb-avatar char-procedural-rig" data-char-code="${code}">
+                            <img src="assets/motion-v3/originals/${code}.png" onerror="this.onerror=null;this.src='assets/characters/animated/${code}-idle.webp';" alt="${escapeHtml(p.name || 'بطل')}">
+                          </div>
+                          <div style="min-width:0;flex:1;">
+                            <div class="sc-lb-name" title="${escapeHtml(p.name || '')}">${escapeHtml(p.name || 'متسابق')}</div>
+                            <div class="sc-lb-meta">
+                              ${deltaText ? `<span class="sc-lb-chip" style="color:${p._rankDelta > 0 ? '#6ee7b7' : '#fca5a5'};background:rgba(255,255,255,0.06);">${deltaText}</span>` : ''}
+                              ${isFast ? `<span class="sc-lb-chip" style="color:#fde047;background:rgba(251,191,36,0.16);border:1px solid rgba(251,191,36,0.35);">⚡ الأسرع</span>` : ''}
+                              ${(p.streak || 0) >= 2 ? `<span class="sc-lb-chip" style="color:#fdba74;background:rgba(249,115,22,0.16);">🔥 ${p.streak} متتالية</span>` : ''}
+                              ${idx === 1 && gapToAbove > 0 ? `<span class="sc-lb-chip" style="color:#cbd5e1;background:rgba(255,255,255,0.06);">تفصلك ${gapToAbove} نقطة عن المركز #${aboveRank}</span>` : ''}
+                            </div>
+                          </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+                          <span class="sc-lb-delta-pts" style="color:${ptsGained > 0 ? '#4ade80' : '#94a3b8'};"><bdi dir="ltr">${ptsGained > 0 ? `▲ +${ptsGained}` : '— 0'}</bdi></span>
+                          <span class="sc-lb-score scorear-count-up" data-start="${startScore}" data-target="${p.score || 0}">${p.score || 0}</span>
+                        </div>
+                      </div>`;
+                  }).join('') : `<div style="padding:36px;text-align:center;color:#cbd5e1;font-weight:800;border:1px dashed ${theme.border};border-radius:16px;">لا يوجد متسابقون مسجلون في هذه الجولة حتى الآن</div>`}
                 </div>
               </div>
-            `;
-          }).join('')}
+
+              <div class="sc-lb-side">
+                <div class="sc-lb-window">
+                  <img src="${escapeHtml(theme.boardScene)}" onerror="if(!this.dataset.fb1){this.dataset.fb1='1';this.src='assets/halls/${escapeHtml(worldId)}-hall.jpg';}else if(!this.dataset.fb2){this.dataset.fb2='1';this.src='assets/worlds/${escapeHtml(worldId)}/results.jpg';}else{this.style.display='none';}" alt="${escapeHtml(theme.name)}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                  <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(6,12,28,0.82) 100%);pointer-events:none;"></div>
+                  <div style="position:absolute;bottom:10px;right:12px;left:12px;display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                    <span style="font-size:13.5px;font-weight:900;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,0.9);">${theme.emblem} ${escapeHtml(theme.name)}</span>
+                    <span style="font-size:11px;font-weight:800;color:${theme.accentColor};background:rgba(5,10,24,0.78);border:1px solid ${theme.border}66;padding:2px 10px;border-radius:999px;">أفضل ${Math.min(5, sorted.length)}</span>
+                  </div>
+                </div>
+                <button type="button" id="hostNextQuestionBtn" class="sc-lb-next-btn" onclick="${nextAction}">
+                  <span>${nextLabel}</span> ${uiIcon(hasNext ? 'arrow' : 'crown', 17)}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
+      </div>
     `;
 
-    const isReducedMotion = (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)
-      || (typeof document !== 'undefined' && document.documentElement?.classList?.contains?.('characters-paused'));
-    if (!isReducedMotion && global.ScoreARMotionEngine && typeof global.ScoreARMotionEngine.mount === 'function') {
-      top5.forEach((p, idx) => {
-        const slot = document.getElementById('hostLbHero_' + idx);
-        if (!slot) return;
-        const code = slot.getAttribute('data-char-code') || 'char_01';
-        const act = slot.getAttribute('data-action') || 'run';
-        const spd = parseFloat(slot.getAttribute('data-speed')) || 1.1;
-        try {
-          global.ScoreARMotionEngine.mount(slot, code, act, { width: 60, height: 66, speed: spd, enableParticles: false, enableShadow: true });
-        } catch (e) {}
-      });
-    }
-
+    // Odometer score count-up
     setTimeout(() => {
-      if (typeof stage.querySelectorAll === 'function') {
-        stage.querySelectorAll('.race-track-fill').forEach(fill => {
-          const t = fill.getAttribute('data-target-pct');
-          if (t) fill.style.width = t + '%';
-        });
-      }
-      const countEls = stage.querySelectorAll('.scorear-count-up');
-      countEls.forEach(el => {
-        const start = Number(el.getAttribute('data-start')) || 0;
-        const target = Number(el.getAttribute('data-target')) || 0;
-        if (start === target) return;
-        const duration = 750, startTime = performance.now();
-        function tick(now) {
-          const progress = Math.min(1, (now - startTime) / duration);
-          el.textContent = Math.round(start + (target - start) * progress);
-          if (progress < 1) requestAnimationFrame(tick);
-        }
-        requestAnimationFrame(tick);
+      if (typeof stage.querySelectorAll !== 'function') return;
+      stage.querySelectorAll('.scorear-count-up').forEach(el => {
+        const startVal = Number(el.getAttribute?.('data-start') ?? el.dataset?.start) || 0;
+        const targetVal = Number(el.getAttribute?.('data-target') ?? el.dataset?.target) || 0;
+        if (targetVal <= startVal) { el.textContent = targetVal; return; }
+        const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const step = now => {
+          const pr = Math.min(1, (now - t0) / 600);
+          el.textContent = Math.round(startVal + (targetVal - startVal) * (1 - Math.pow(1 - pr, 3)));
+          if (pr < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
       });
-    }, 400);
+    }, 80);
 
-    if (global.ScoreARRealtime) {
-      const normAvatar = p => {
-        const raw = p?.avatarId || p?.characterId || p?.avatar || 'char_01';
-        if (/^char_\d{2}$/.test(String(raw).trim())) return String(raw).trim();
-        const n = parseInt(String(raw).replace(/\D/g, ''), 10);
-        return 'char_' + String((!isNaN(n) && n >= 1 && n <= 20) ? n : 1).padStart(2, '0');
-      };
+    // CRITICAL: Restore live private ranking broadcast to all students!
+    if (global.ScoreARRealtime && typeof global.ScoreARRealtime.publish === 'function') {
       global.ScoreARRealtime.publish('LEADERBOARD_UPDATE', {
-        top5: top5.map(p => ({ id: p.id, name: p.name, score: p.score, avatarId: normAvatar(p) })),
+        worldId,
+        questionNumber: currentQIndex + 1,
+        totalQuestions: totalQ,
+        top5: top5.map(p => ({ id: p.id, name: p.name, score: p.score || 0, rank: p._currentRank, avatarId: normAvatar(p) })),
         totalPlayers: sorted.length,
         allRanks: sorted.map((p, i) => ({
-          id: p.id,
-          name: p.name,
-          avatarId: normAvatar(p),
-          rank: i + 1,
-          score: p.score,
-          delta: p._rankDelta || 0,
-          streak: p.streak || 0,
-          gapToAbove: i > 0 ? ((sorted[i - 1].score || 0) - (p.score || 0)) : 0
+          id: p.id, name: p.name, avatarId: normAvatar(p),
+          rank: p._currentRank, score: p.score || 0,
+          delta: p._rankDelta || 0, streak: p.streak || 0,
+          gapToAbove: i > 0 ? Math.max(0, (sorted[i - 1].score || 0) - (p.score || 0)) : 0
         }))
       });
     }
   }
 
+  function toggleMuteAudio() {
+    if (!global.ScoreARAudio?.toggleMute) return;
+    const muted = global.ScoreARAudio.toggleMute();
+    const btn = document.getElementById('hostAudioMuteBtn');
+    if (btn) btn.innerHTML = `${uiIcon(muted ? 'volumeOff' : 'volume', 14)} <span>${muted ? 'صامت' : 'الصوت'}</span>`;
+  }
+
   function renderHostPodium(stage, currentRoom, onClose) {
     if (global.ScoreARPodiumEffects?.renderHostPodium) {
       global.ScoreARPodiumEffects.renderHostPodium(stage, currentRoom, onClose);
-    }
-  }
-
-  function toggleMuteAudio() {
-    if (global.ScoreARAudio?.toggleMute) {
-      const muted = global.ScoreARAudio.toggleMute();
-      const btn = document.getElementById('hostAudioMuteBtn');
-      if (btn) btn.innerHTML = `${uiIcon(muted ? 'volumeOff' : 'volume', 14)} <span>${muted ? 'الصوت: صامت' : 'الصوت: يعمل'}</span>`;
     }
   }
 
@@ -355,6 +323,6 @@
   };
 
   global.ScoreARHostLeaderboard = ScoreARHostLeaderboard;
-  try { if (typeof globalThis !== 'undefined') globalThis.ScoreARHostLeaderboard = ScoreARHostLeaderboard; } catch(e){}
+  try { if (typeof globalThis !== 'undefined') globalThis.ScoreARHostLeaderboard = ScoreARHostLeaderboard; } catch {}
   if (typeof module !== 'undefined' && module.exports) module.exports = ScoreARHostLeaderboard;
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

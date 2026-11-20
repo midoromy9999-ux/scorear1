@@ -283,6 +283,10 @@
   function openWorldPicker(options = {}) {
     activePickerCallback = options.onConfirm || null;
     activeSelectedWorldId = options.defaultWorldId || localStorage.getItem('scorear_last_world') || wizardState.worldId || 'royal';
+    if (options.quizTitle && String(options.quizTitle).trim()) {
+      global.activeQuizTitle = String(options.quizTitle).trim();
+      try { sessionStorage.setItem('scorear_active_quiz_title', global.activeQuizTitle); } catch(e){}
+    }
     const modal = getOrCreateModal();
 
     function renderPicker() {

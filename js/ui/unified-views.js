@@ -154,11 +154,15 @@
             <p id="studentCustomPreviewDesc" style="color:#c5c7de;font-size:13px;line-height:1.6;margin:6px 0 10px;"></p>
             <div class="character-controls" style="margin-bottom:14px;">
               <button type="button" data-character-pose="idle" aria-pressed="true" onclick="ScoreARUnifiedViews.previewHeroPose('idle')">${uiIcon('sparkles', 14)} <span>وقوف</span></button>
-              <button type="button" data-character-pose="walk" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('walk')">${uiIcon('route', 14)} <span>مشي</span></button>
-              <button type="button" data-character-pose="run" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('run')">${uiIcon('zap', 14)} <span>جري</span></button>
-              <button type="button" data-character-pose="climb" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('climb')">${uiIcon('arrowUp', 14)} <span>تسلق</span></button>
+              <button type="button" data-character-pose="walkRight" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('walkRight')">${uiIcon('route', 14)} <span>مشي</span></button>
+              <button type="button" data-character-pose="runRight" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('runRight')">${uiIcon('zap', 14)} <span>جري</span></button>
+              <button type="button" data-character-pose="jump" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('jump')">${uiIcon('arrowUp', 14)} <span>قفز</span></button>
+              <button type="button" data-character-pose="clap" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('clap')"><span>تصفيق</span></button>
+              <button type="button" data-character-pose="win" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('win')">${uiIcon('trophy', 14)} <span>احتفال</span></button>
+              <button type="button" data-character-pose="wave" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('wave')"><span>تلويح</span></button>
+              <button type="button" data-character-pose="sad" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('sad')"><span>حزن</span></button>
+              <button type="button" data-character-pose="climb" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('climb')"><span>تسلق</span></button>
               <button type="button" data-character-pose="fly" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('fly')">${uiIcon('planet', 14)} <span>طيران</span></button>
-              <button type="button" data-character-pose="celebrate" aria-pressed="false" onclick="ScoreARUnifiedViews.previewHeroPose('celebrate')">${uiIcon('trophy', 14)} <span>احتفال</span></button>
             </div>
             <button type="button" id="btnSelectHero" onclick="ScoreARUnifiedViews.saveHeroChoice()" style="width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(110deg,#7550ef,#9665ff);color:#fff;border:1px solid rgba(196,168,255,0.4);border-radius:14px;padding:12px;font-weight:900;font-size:14px;cursor:pointer;box-shadow:0 6px 20px rgba(117,80,239,0.35);font-family:inherit;">${uiIcon('star', 16)} <span>اعتماد هذا البطل لشخصيتي</span></button>
           </aside>
@@ -209,6 +213,13 @@
 
   function previewHeroPose(pose) {
     global._unifiedHeroPose = pose || 'idle';
+    const box = document.getElementById('studentCustomPreviewBox');
+    const hero = global.ScoreARCharacters?.get ? global.ScoreARCharacters.get(global._unifiedHeroSelected || 1) : { code: 'char_01' };
+    if (box && global.ScoreARMotionV3?.mount) {
+      global.ScoreARMotionV3.mount(box, hero.code, global._unifiedHeroPose, { width: 220, height: 260, loop: global._unifiedHeroPose !== 'jump' });
+      document.querySelectorAll('[data-character-pose]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.characterPose === global._unifiedHeroPose)));
+      return;
+    }
     if (global.ScoreARCharacters && typeof global.ScoreARCharacters.preview === 'function') {
       global.ScoreARCharacters.preview(global._unifiedHeroSelected || 1, global._unifiedHeroPose);
     }
@@ -242,7 +253,13 @@
       ${getUnifiedHeaderHtml('podium', 'منصة التتويج الاحتفالية الكبرى', 'المحاكاة الاحتفالية للتتويج وتكريم الأبطال')}
       <div class="unified-podium-sim-bar scorear-control-bar">
         <div class="unified-podium-sim-scroll">
-          <span class="scorear-control-pill" style="color:#fde68a;border-color:rgba(251,191,36,0.28);">${uiIcon('sparkles', 14)} <span>محاكاة:</span></span>
+          <select id="unifiedPodiumWorld" onchange="ScoreARUnifiedViews.simulatePodium('chooser')" style="width:auto !important;min-width:110px;background:rgba(20,22,46,0.9);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:800;font-family:inherit;">
+            <option value="royal">القصر الملكي</option><option value="oasis">الواحة العربية</option><option value="cosmic">محطة الفضاء</option>
+            <option value="treasure">جزيرة الكنز</option><option value="stadium">استاد الأبطال</option><option value="magic">مملكة السحر</option>
+          </select>
+          <select id="unifiedPodiumStyle" onchange="ScoreARUnifiedViews.simulatePodium('chooser')" style="width:auto !important;min-width:105px;background:rgba(20,22,46,0.9);border:1px solid rgba(251,191,36,0.45);color:#fde68a;padding:4px 8px;border-radius:8px;font-size:11px;font-weight:800;font-family:inherit;">
+            <option value="classic">كلاسيكي</option><option value="hall">احتفال القاعة</option>
+          </select>
           <button type="button" class="scorear-gear-btn is-active" onclick="ScoreARUnifiedViews.simulatePodium('cinematic')">${uiIcon('play', 14)} <span>سينمائي</span></button>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARUnifiedViews.simulatePodium(3)">${uiIcon('medal', 14)} <span>الثالث</span></button>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARUnifiedViews.simulatePodium(2)">${uiIcon('medal', 14)} <span>الثاني</span></button>
@@ -289,7 +306,9 @@
     if (!container || !global.ScoreARPodiumEffects) return;
 
     if (typeof global.ScoreARPodiumEffects.renderHostPodium === 'function') {
-      const room = { worldId: 'royal', world: { id: 'royal' }, players: demoPodium };
+      const wid = document.getElementById('unifiedPodiumWorld')?.value || 'royal';
+      const celStyle = document.getElementById('unifiedPodiumStyle')?.value || 'classic';
+      const room = { worldId: wid, world: { id: wid }, celebrationStyle: celStyle, players: demoPodium };
       global.ScoreARPodiumEffects.renderHostPodium(container, room, () => { closeView(); });
       if ((target === 3 || target === 2 || target === 1) && typeof global.ScoreARPodiumEffects.advanceReveal === 'function') {
         const steps = target === 3 ? 1 : (target === 2 ? 2 : 3);
@@ -341,6 +360,8 @@
   }
 
   function closeView() {
+    if (global.ScoreARWorldHalls?.cleanup) global.ScoreARWorldHalls.cleanup();
+    if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
     if (!stageElement || stageElement.style.display === 'none') return;
     stageElement.style.display = 'none';
     stageElement.style.flexDirection = '';

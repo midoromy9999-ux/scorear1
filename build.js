@@ -103,6 +103,7 @@ const BUNDLE_DEFINITIONS = [
     outPath: 'js/bundles/quiz-host-ui.bundle.js',
     files: [
       'js/quiz/quiz-audio.js',
+      'js/quiz/quiz-motion-v3.js',
       'js/quiz/quiz-lobby-director.js',
       'js/quiz/quiz-stage-fx.js',
       'js/quiz/quiz-host-leaderboard.js',
@@ -117,6 +118,13 @@ const BUNDLE_DEFINITIONS = [
       'js/quiz/quiz-bots.js',
       'js/quiz/quiz-podium-capture.js',
       'js/quiz/quiz-podium-scenes.js',
+      'js/quiz/quiz-world-cinematics.js',
+      'js/quiz/quiz-hall-3d-engine.js',
+      'js/quiz/quiz-hall-3d-stage.js',
+      'js/quiz/quiz-hall-3d-royal.js',
+      'js/quiz/quiz-hall-3d-worlds-a.js',
+      'js/quiz/quiz-hall-3d-worlds-b.js',
+      'js/quiz/quiz-world-halls.js',
       'js/quiz/quiz-podium-effects.js',
       'js/quiz/quiz-student-view.js'
     ]

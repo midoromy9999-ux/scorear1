@@ -14,14 +14,25 @@
 <link rel="stylesheet" href="css/characters-v4.css?v=20261112_v12_organized">
 <link rel="stylesheet" href="css/cartoon-motion.css?v=20261112_v12_organized">
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
+<script src="assets/motion-v3/scorear-motion-data.js?v=20261119_v3" defer></script>
+<script src="assets/motion-v3/scorear-motion-player.js?v=20261119_v3" defer></script>
 <script src="js/engines/ScoreARMotionEngine.js?v=20261112_v12_organized" defer></script>
 <script src="js/engines/characters-v4.js?v=20261112_v12_organized" defer></script>
 <script src="js/quiz/quiz-audio.js?v=20261112_v12_organized" defer></script>
+<script src="js/quiz/quiz-motion-v3.js?v=20261119_v3" defer></script>
 <script src="js/quiz/quiz-stage-fx.js?v=20261118_p3_fx" defer></script>
 <script src="js/journey/hero-cosmetics.js?v=20261118_p4_cosmetics" defer></script>
-<script src="js/quiz/quiz-podium-scenes.js?v=20261112_v12_organized" defer></script>
-<script src="js/quiz/quiz-podium-effects.js?v=20261112_v12_organized" defer></script>
-<script src="js/quiz/quiz-podium-capture.js?v=20261112_v12_organized" defer></script>
+<script src="vendor/three.min.js" defer></script>
+<script src="js/quiz/quiz-podium-scenes.js?v=20261120_v5" defer></script>
+<script src="js/quiz/quiz-world-cinematics.js?v=20261120_v5" defer></script>
+<script src="js/quiz/quiz-hall-3d-engine.js?v=20261120_v7" defer></script>
+<script src="js/quiz/quiz-hall-3d-stage.js?v=20261120_v7" defer></script>
+<script src="js/quiz/quiz-hall-3d-royal.js?v=20261120_v7" defer></script>
+<script src="js/quiz/quiz-hall-3d-worlds-a.js?v=20261120_v7" defer></script>
+<script src="js/quiz/quiz-hall-3d-worlds-b.js?v=20261120_v7" defer></script>
+<script src="js/quiz/quiz-world-halls.js?v=20261120_v7" defer></script>
+<script src="js/quiz/quiz-podium-effects.js?v=20261120_v5" defer></script>
+<script src="js/quiz/quiz-podium-capture.js?v=20261120_v5" defer></script>
 <script src="vendor/lucide.js" defer></script>
 <script src="js/ui/ui-icons.js?v=20261112_v12_organized" defer></script>
 <script src="js/ui/nav.js?v=20261112_v12_organized" defer></script>
@@ -202,7 +213,7 @@
   </div>
 
   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;max-width:100%;">
-    <select id="worldSelect" onchange="changeWorld(this.value)" style="background:rgba(20,22,46,0.88);border:1px solid rgba(255,255,255,0.16);color:#eceeff;padding:5px 9px;border-radius:10px;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit;">
+    <select id="worldSelect" onchange="changeWorld(this.value)" style="width:auto !important;min-width:130px;background:rgba(20,22,46,0.88);border:1px solid rgba(255,255,255,0.16);color:#eceeff;padding:5px 9px;border-radius:10px;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit;">
       <option value="royal">Royal · القصر الملكي</option>
       <option value="cosmic">Cosmic · الفضاء الكوني</option>
       <option value="treasure">Treasure · الكنز</option>
@@ -210,6 +221,11 @@
       <option value="oasis">Oasis · الواحة</option>
       <option value="magic">Magic · السحر</option>
     </select>
+    <select id="celStyleSelect" onchange="changeCelebrationStyle(this.value)" aria-label="طريقة الاحتفال" style="width:auto !important;min-width:115px;background:rgba(20,22,46,0.88);border:1px solid rgba(251,191,36,0.38);color:#fde68a;padding:5px 9px;border-radius:10px;font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit;">
+      <option value="classic">كلاسيكي</option>
+      <option value="hall">احتفال القاعة</option>
+    </select>
+    <button type="button" class="test-btn" onclick="previewEntranceFilm()" style="padding:5px 10px;font-size:11.5px;border-color:rgba(251,191,36,0.45);color:#fef08a;white-space:nowrap;flex-shrink:0;"><i data-icon="sparkles" data-size="13"></i><span>فيلم الدخول</span></button>
     <button type="button" class="test-btn primary" onclick="ScoreARPodiumEffects.startCinematicShow()" style="padding:5px 12px;font-size:11.5px;white-space:nowrap;flex-shrink:0;"><i data-icon="play" data-size="13"></i><span>عرض سينمائي</span></button>
     <button type="button" class="test-btn" onclick="ScoreARPodiumEffects.advanceReveal()" style="padding:5px 10px;font-size:11.5px;white-space:nowrap;flex-shrink:0;"><i data-icon="skipForward" data-size="13"></i><span>التالي</span></button>
     <button type="button" class="test-btn" onclick="ScoreARPodiumEffects.revealAll()" style="padding:5px 10px;font-size:11.5px;white-space:nowrap;flex-shrink:0;"><i data-icon="zap" data-size="13"></i><span>كشف الكل</span></button>
@@ -239,12 +255,26 @@ const samplePlayers = [
 ];
 
 let activeWorld = 'royal';
+let activeCelStyle = 'classic';
+let demoQuizTitle = 'تحدي المهارات اللغوية — نموذج المعاينة';
+
+function previewEntranceFilm() {
+  if (window.ScoreARWorldHalls?.cleanup) window.ScoreARWorldHalls.cleanup();
+  const stage = document.getElementById('scorearQuizHostStage');
+  const room = { worldId: activeWorld, world: { id: activeWorld }, quizTitle: demoQuizTitle, players: samplePlayers };
+  if (window.ScoreARWorldCinematics?.playEntranceFilm) {
+    window.ScoreARWorldCinematics.playEntranceFilm(stage, room, demoQuizTitle, 10, () => initDemoPodium());
+  }
+}
 
 function initDemoPodium() {
+  if (window.ScoreARWorldCinematics?.stopEntranceFilm) window.ScoreARWorldCinematics.stopEntranceFilm();
   const stage = document.getElementById('scorearQuizHostStage');
   const room = {
     worldId: activeWorld,
     world: { id: activeWorld },
+    celebrationStyle: activeCelStyle,
+    quizTitle: demoQuizTitle,
     players: samplePlayers
   };
   ScoreARPodiumEffects.renderHostPodium(stage, room);
@@ -255,7 +285,23 @@ function changeWorld(wid) {
   initDemoPodium();
 }
 
+function changeCelebrationStyle(st) {
+  activeCelStyle = st === 'hall' ? 'hall' : 'classic';
+  initDemoPodium();
+}
+
 window.addEventListener('DOMContentLoaded', () => {
+  const qs = new URLSearchParams(window.location.search);
+  const wParam = qs.get('world');
+  const sParam = qs.get('style');
+  const tParam = qs.get('title');
+  if (wParam) activeWorld = wParam;
+  if (sParam === 'hall' || sParam === 'classic') activeCelStyle = sParam;
+  if (tParam) demoQuizTitle = tParam;
+  const wSel = document.getElementById('worldSelect');
+  if (wSel && activeWorld) wSel.value = activeWorld;
+  const sel = document.getElementById('celStyleSelect');
+  if (sel) sel.value = activeCelStyle;
   initDemoPodium();
 });
 </script>

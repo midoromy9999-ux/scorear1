@@ -13,8 +13,11 @@
 <link rel="stylesheet" href="css/styles.css?v=20261112_v12_organized">
 <link rel="stylesheet" href="css/characters-v4.css?v=20261112_v12_organized">
 <link rel="stylesheet" href="css/cartoon-motion.css?v=20261112_v12_organized">
-<script src="js/engines/ScoreARMotionEngine.js?v=20261112_v12_organized"></script>
-<script src="js/engines/characters-v4.js?v=20261112_v12_organized"></script>
+<script src="assets/motion-v3/scorear-motion-data.js?v=20261120_v4" defer></script>
+<script src="assets/motion-v3/scorear-motion-player.js?v=20261120_v4" defer></script>
+<script src="js/engines/ScoreARMotionEngine.js?v=20261112_v12_organized" defer></script>
+<script src="js/quiz/quiz-motion-v3.js?v=20261120_v4" defer></script>
+<script src="js/engines/characters-v4.js?v=20261112_v12_organized" defer></script>
 <script src="vendor/lucide.js" defer></script>
 <script src="js/ui/ui-icons.js?v=20261112_v12_organized" defer></script>
 <script src="js/ui/nav.js?v=20261112_v12_organized" defer></script>
@@ -281,11 +284,21 @@
       <div id="studentCustomPreviewBox" style="width:240px;height:300px;margin:8px auto;display:flex;align-items:center;justify-content:center;"></div>
       <div id="studentCustomPreviewTitle" aria-live="polite" style="margin-top:12px;"></div>
       
-      <div class="character-controls" aria-label="وضعية البطل" style="margin-top:18px;display:flex;justify-content:center;flex-wrap:wrap;gap:8px;">
-        <button type="button" data-character-pose="idle" onclick="ScoreARCharacters.preview(window.gallerySelected,'idle')" aria-pressed="true"><i data-icon="sparkles" data-size="14"></i><span>وقوف</span></button>
-        <button type="button" data-character-pose="walk" onclick="ScoreARCharacters.preview(window.gallerySelected,'walk')" aria-pressed="false"><i data-icon="route" data-size="14"></i><span>مشي</span></button>
-        <button type="button" data-character-pose="celebrate" onclick="ScoreARCharacters.preview(window.gallerySelected,'celebrate')" aria-pressed="false"><i data-icon="trophy" data-size="14"></i><span>قفز</span></button>
-        <button type="button" data-character-pose="run" onclick="ScoreARCharacters.preview(window.gallerySelected,'run')" aria-pressed="false"><i data-icon="zap" data-size="14"></i><span>جري</span></button>
+      <div class="character-controls" aria-label="وضعية البطل" style="margin-top:16px;display:flex;justify-content:center;flex-wrap:wrap;gap:6px;">
+        <button type="button" data-character-pose="idle" onclick="window.previewGalleryPose('idle')" aria-pressed="true"><span>وقوف</span></button>
+        <button type="button" data-character-pose="walkForward" onclick="window.previewGalleryPose('walkForward')" aria-pressed="false"><span>مشي أمام</span></button>
+        <button type="button" data-character-pose="walkBackward" onclick="window.previewGalleryPose('walkBackward')" aria-pressed="false"><span>مشي خلف</span></button>
+        <button type="button" data-character-pose="walkRight" onclick="window.previewGalleryPose('walkRight')" aria-pressed="false"><span>مشي يمين</span></button>
+        <button type="button" data-character-pose="walkLeft" onclick="window.previewGalleryPose('walkLeft')" aria-pressed="false"><span>مشي يسار</span></button>
+        <button type="button" data-character-pose="runRight" onclick="window.previewGalleryPose('runRight')" aria-pressed="false"><span>جري يمين</span></button>
+        <button type="button" data-character-pose="runLeft" onclick="window.previewGalleryPose('runLeft')" aria-pressed="false"><span>جري يسار</span></button>
+        <button type="button" data-character-pose="jump" onclick="window.previewGalleryPose('jump')" aria-pressed="false"><span>قفز</span></button>
+        <button type="button" data-character-pose="clap" onclick="window.previewGalleryPose('clap')" aria-pressed="false"><span>تصفيق</span></button>
+        <button type="button" data-character-pose="win" onclick="window.previewGalleryPose('win')" aria-pressed="false"><span>احتفال وفوز</span></button>
+        <button type="button" data-character-pose="sad" onclick="window.previewGalleryPose('sad')" aria-pressed="false"><span>حزن</span></button>
+        <button type="button" data-character-pose="wave" onclick="window.previewGalleryPose('wave')" aria-pressed="false"><span>تلويح</span></button>
+        <button type="button" data-character-pose="fly" onclick="window.previewGalleryPose('fly')" aria-pressed="false"><span>طيران</span></button>
+        <button type="button" data-character-pose="climb" onclick="window.previewGalleryPose('climb')" aria-pressed="false"><span>تسلق</span></button>
       </div>
       <button type="button" class="character-motion" data-character-motion onclick="ScoreARCharacters.toggleMotion()" style="margin-top:14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);padding:8px 16px;border-radius:10px;color:#ddd8ff;cursor:pointer;">إيقاف الحركة</button>
     </aside>
@@ -325,12 +338,26 @@
 <script>
 window.gallerySelected = 1;
 window.galleryCategory = 'all';
-try {
-  const saved = JSON.parse(localStorage.getItem('scorear_student_profile_v1') || '{}');
-  if (saved.avatarId) window.gallerySelected = ScoreARCharacters.get(saved.avatarId).id;
-} catch(e){}
+window.galleryPose = 'idle';
+
+function previewGalleryPose(pose) {
+  window.galleryPose = pose || 'idle';
+  const box = document.getElementById('studentCustomPreviewBox');
+  const title = document.getElementById('studentCustomPreviewTitle');
+  const hero = window.ScoreARCharacters?.get ? ScoreARCharacters.get(window.gallerySelected) : { code: 'char_01', name: 'زياد', title: 'المستكشف', accent: '#39d8ce' };
+  if (box && window.ScoreARMotionV3?.mount) {
+    ScoreARMotionV3.mount(box, hero.code, window.galleryPose, { width: 240, height: 300, loop: window.galleryPose !== 'jump' });
+  } else if (window.ScoreARCharacters?.preview) {
+    ScoreARCharacters.preview(window.gallerySelected, window.galleryPose);
+  }
+  if (title) title.innerHTML = '<h3>' + hero.name + '</h3><p>' + hero.title + '</p>';
+  const stage = document.querySelector('.character-stage');
+  if (stage) stage.style.setProperty('--character-accent', hero.accent);
+  document.querySelectorAll('[data-character-pose]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.characterPose === window.galleryPose)));
+}
 
 function galleryRender(){
+  if (!window.ScoreARCharacters) return;
   ScoreARCharacters.grid(document.getElementById('avatarsGrid'), window.galleryCategory, window.gallerySelected, id => {
     window.gallerySelected = id;
     try {
@@ -340,7 +367,7 @@ function galleryRender(){
     } catch(e){}
     galleryRender();
   });
-  ScoreARCharacters.preview(window.gallerySelected);
+  previewGalleryPose(window.galleryPose);
 }
 
 function galleryFilter(c){
@@ -354,17 +381,22 @@ function galleryFilter(c){
 
 window.galleryFilter = galleryFilter;
 window.galleryRender = galleryRender;
+window.previewGalleryPose = previewGalleryPose;
 
-// Ensure sidebar is closed and inert on page arrival
-if (window.ScoreARNav && typeof window.ScoreARNav.closeSidebar === 'function') {
-  window.ScoreARNav.closeSidebar();
-} else {
-  const sb = document.getElementById('sidebar');
-  if (sb) { sb.classList.remove('open'); sb.inert = true; }
-  if (document.body) document.body.style.overflow = '';
-}
-
-galleryRender();
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem('scorear_student_profile_v1') || '{}');
+    if (saved.avatarId && window.ScoreARCharacters?.get) window.gallerySelected = ScoreARCharacters.get(saved.avatarId).id;
+  } catch(e){}
+  if (window.ScoreARNav && typeof window.ScoreARNav.closeSidebar === 'function') {
+    window.ScoreARNav.closeSidebar();
+  } else {
+    const sb = document.getElementById('sidebar');
+    if (sb) { sb.classList.remove('open'); sb.inert = true; }
+    if (document.body) document.body.style.overflow = '';
+  }
+  galleryRender();
+});
 </script>
 </body>
 </html>

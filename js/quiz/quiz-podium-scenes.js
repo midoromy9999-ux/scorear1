@@ -1,11 +1,12 @@
 /**
  * ScoreAR Studio-Grade Podium Ceremony Scenes & 60FPS Stage Physics (quiz-podium-scenes.js)
- * Crafted Vector SVG Props + Canvas Lighting for the 5 Interactive Ceremony Modes:
+ * Crafted Vector SVG Props + Canvas Lighting for the 5 Interactive Classic Ceremony Modes:
  *   1. chests     (خزائن الكنز الذهبية - 3D SVG Royal Chest + Lid Swing + Specular Gold Coins)
- *   2. cards      (بطاقات الأساطير - Ornate TCG Holographic Frame + 3D Flip + Starburst)
- *   3. rockets    (صواريخ الفضاء - Foot-Mounted Hover-Jetpack Vehicle + Dual Plasma Plumes)
- *   4. finishline (خط النهاية - Perspective Grand Prix Track + Chest-Height Ribbon Snap + Slow-Mo)
+ *   2. cards      (بطاقات الأساطير - Ornate Arabic TCG Holographic Frame + 3D Flip + Starburst)
+ *   3. rockets    (صواريخ الفضاء - Foot-Mounted Hover-Jetpack Under Feet + Dual Plasma Plumes)
+ *   4. finishline (خط النهاية - Arabic Championship Tape Snapping Outward Toward Posts + Slow-Mo)
  *   5. portal     (بوابة النور - Multi-Ring Arcane SVG Dimensional Vortex + Radial Bloom)
+ * Zero orphan timers (strict cancelPending), zero tilted spinning, distinct #1 win vs #2/#3 clap.
  * Strictly Rule 7 Compliant (< 420 lines).
  */
 (function (global) {
@@ -15,118 +16,132 @@
   const sfx = n => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n); };
 
   const THEME_META = {
-    chests:     { title: 'طور خزائن الكنز الذهبية', sub: 'قفزة الأبطال وانفجار العملات الملكية · اضغط على أي بطل لحركة خاصة', entryPose: 'run', climaxPose: 'celebrate', color: '#fbbf24' },
-    cards:      { title: 'طور بطاقات الأساطير 3D', sub: 'بطاقة هولوغرامية فاخرة وانقلاب ثلاثي الأبعاد · اضغط على أي بطل', entryPose: 'walk', climaxPose: 'celebrate', color: '#c084fc' },
-    rockets:    { title: 'طور صواريخ الفضاء النفاثة', sub: 'مركبة نفاثة تحت أقدام البطل ودفع بلازما 60FPS · اضغط لدفعة تربو', entryPose: 'fly', climaxPose: 'celebrate', color: '#38bdf8' },
-    finishline: { title: 'طور سباق خط النهاية Slow-Mo', sub: 'انطلاق عبر المضمار وتمزيق شريط البطولة بالحركة البطيئة', entryPose: 'run', climaxPose: 'celebrate', color: '#34d399' },
-    portal:     { title: 'طور بوابة النور الكونية', sub: 'انبثاق من البوابة النجمية وموجات الطاقة · اضغط على أي بطل', entryPose: 'fly', climaxPose: 'celebrate', color: '#fde047' }
+    chests:     { title: 'طور خزائن الكنز الذهبية', sub: 'انفتاح الكنز وتطاير العملات الملكية · اضغط على أي بطل لحركة خاصة', entryPose: 'walk', climaxPose: 'win', color: '#fbbf24' },
+    cards:      { title: 'طور بطاقات الأساطير 3D', sub: 'بطاقة هولوغرامية فاخرة وانقلاب ثلاثي الأبعاد · اضغط على أي بطل', entryPose: 'wave', climaxPose: 'win', color: '#c084fc' },
+    rockets:    { title: 'طور صواريخ الفضاء النفاثة', sub: 'منصة نفاثة أسفل أقدام البطل ودفع بلازما 60FPS · اضغط لدفعة تربو', entryPose: 'fly', climaxPose: 'win', color: '#38bdf8' },
+    finishline: { title: 'طور سباق خط النهاية', sub: 'اندفاع عبر المضمار وتمزيق شريط البطولة العربي', entryPose: 'run', climaxPose: 'win', color: '#34d399' },
+    portal:     { title: 'طور بوابة النور الكونية', sub: 'انبثاق من البوابة النجمية وموجات الطاقة · اضغط على أي بطل', entryPose: 'fly', climaxPose: 'win', color: '#fde047' }
   };
 
   let sceneCanvas = null, sceneCtx = null, sceneRaf = null, activeMode = 'chests';
   let fxParticles = [], shockwaves = [], warpStars = [], activeRanks = new Set();
+  let sceneTimers = [];
+
+  function scheduleScene(fn, ms) {
+    const id = setTimeout(() => {
+      sceneTimers = sceneTimers.filter(t => t !== id);
+      fn();
+    }, ms);
+    sceneTimers.push(id);
+    return id;
+  }
+
+  function cancelPending() {
+    sceneTimers.forEach(id => clearTimeout(id));
+    sceneTimers = [];
+  }
 
   function getSceneStylesHtml() {
     return `
-  @keyframes scHeroJumpArc {
-    0%   { opacity: 0; transform: translate3d(-150px, 55px, 0) scale(0.76, 0.92) rotate(-8deg); }
-    38%  { opacity: 1; transform: translate3d(-40px, -85px, 0) scale(0.92, 1.12) rotate(3deg); }
-    74%  { opacity: 1; transform: translate3d(0px, 10px, 0) scale(1.12, 0.86) rotate(0deg); }
-    100% { opacity: 1; transform: translate3d(0px, 0px, 0) scale(1, 1) rotate(0deg); }
+  @keyframes scHeroChestArrive {
+    0%   { opacity: 0; transform: translate3d(0, 32px, 0) scale(0.88); }
+    65%  { opacity: 1; transform: translate3d(0, -10px, 0) scale(1.02); }
+    100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
   }
   @keyframes scHeroCardFlipIn {
-    0%   { opacity: 0; transform: perspective(1100px) rotateY(-180deg) translateY(28px) scale(0.72); filter: brightness(2.1); }
-    64%  { opacity: 1; transform: perspective(1100px) rotateY(12deg) translateY(-12px) scale(1.05); filter: brightness(1.25); }
-    100% { opacity: 1; transform: perspective(1100px) rotateY(0deg) translateY(0) scale(1); filter: brightness(1); }
+    0%   { opacity: 0; transform: perspective(1000px) rotateY(-165deg) translateY(18px) scale(0.78); filter: brightness(1.8); }
+    68%  { opacity: 1; transform: perspective(1000px) rotateY(8deg) translateY(-6px) scale(1.03); filter: brightness(1.18); }
+    100% { opacity: 1; transform: perspective(1000px) rotateY(0deg) translateY(0) scale(1); filter: brightness(1); }
   }
   @keyframes scHeroRocketLaunch {
-    0%   { opacity: 0; transform: translate3d(0, 175px, 0) scale(0.86, 1.18); }
-    62%  { opacity: 1; transform: translate3d(0, -28px, 0) scale(0.96, 1.05); }
-    84%  { opacity: 1; transform: translate3d(0, 6px, 0) scale(1.04, 0.96); }
+    0%   { opacity: 0; transform: translate3d(0, 120px, 0) scale(0.92, 1.08); }
+    68%  { opacity: 1; transform: translate3d(0, -16px, 0) scale(0.98, 1.03); }
     100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1, 1); }
   }
   @keyframes scHeroSprintIn {
-    0%   { opacity: 0; transform: translate3d(340px, 14px, 0) skewX(-16deg) scale(0.88); }
-    48%  { opacity: 1; transform: translate3d(-16px, -6px, 0) skewX(-9deg) scale(1.05); filter: brightness(1.3); }
-    78%  { opacity: 1; transform: translate3d(4px, -24px, 0) skewX(3deg) scale(0.97, 1.06); }
-    100% { opacity: 1; transform: translate3d(0, 0, 0) skewX(0deg) scale(1); filter: brightness(1); }
+    0%   { opacity: 0; transform: translate3d(180px, 8px, 0) scale(0.92); }
+    65%  { opacity: 1; transform: translate3d(-8px, -4px, 0) scale(1.02); }
+    100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
   }
   @keyframes scHeroPortalEmerge {
-    0%   { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.12) rotate(-35deg); filter: brightness(2.6) drop-shadow(0 0 30px #fde047); }
-    60%  { opacity: 1; transform: translate3d(0, -20px, 0) scale(1.10, 0.94) rotate(3deg); filter: brightness(1.35); }
-    85%  { opacity: 1; transform: translate3d(0, 8px, 0) scale(1.08, 0.90) rotate(0deg); }
-    100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1) rotate(0deg); filter: brightness(1); }
+    0%   { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.42); filter: brightness(2.0) drop-shadow(0 0 24px #fde047); }
+    68%  { opacity: 1; transform: translate3d(0, -10px, 0) scale(1.04); filter: brightness(1.22); }
+    100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: brightness(1); }
   }
   @keyframes scPedestalBounce {
     0%, 100% { transform: translateY(0) scale(1, 1); }
-    36%  { transform: translateY(9px) scale(1.04, 0.93); filter: brightness(1.22) drop-shadow(0 0 26px rgba(251,191,36,0.65)); }
-    72%  { transform: translateY(-4px) scale(0.99, 1.02); }
+    38%  { transform: translateY(6px) scale(1.03, 0.96); filter: brightness(1.18) drop-shadow(0 0 22px rgba(251,191,36,0.55)); }
   }
-  @keyframes scHeroStuntHop {
+  @keyframes scHeroStuntUpright {
     0%, 100% { transform: translate3d(0, 0, 0) scale(1, 1); }
-    28%  { transform: translate3d(0, -58px, 0) scale(0.93, 1.10) rotate(-7deg); }
-    56%  { transform: translate3d(0, -72px, 0) scale(1.06, 0.95) rotate(7deg); }
-    84%  { transform: translate3d(0, 8px, 0) scale(1.12, 0.88) rotate(0deg); }
+    36%  { transform: translate3d(0, -28px, 0) scale(1.03, 1.03); }
+    72%  { transform: translate3d(0, 4px, 0) scale(1.02, 0.98); }
   }
-  @keyframes scZeroGFloat { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+  @keyframes scZeroGFloat { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-7px); } }
   @keyframes scPortalSpin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
   @keyframes scPortalSpinRev { 0% { transform: translate(-50%, -50%) rotate(360deg) scale(0.86); } 100% { transform: translate(-50%, -50%) rotate(0deg) scale(0.86); } }
-  @keyframes scCardSheen { 0% { transform: translateX(-160%) rotate(25deg); } 100% { transform: translateX(260%) rotate(25deg); } }
-  @keyframes scFlamePulse { 0%, 100% { transform: scaleY(0.88) scaleX(0.94); opacity: 0.9; } 50% { transform: scaleY(1.32) scaleX(1.10); opacity: 1; } }
+  @keyframes scFlamePulse { 0%, 100% { transform: scaleY(0.86) scaleX(0.94); opacity: 0.9; } 50% { transform: scaleY(1.26) scaleX(1.08); opacity: 1; } }
 
-  .sc-pedestal-hit { animation: scPedestalBounce 0.52s cubic-bezier(0.22, 1, 0.36, 1) !important; }
-  .sc-stunt-active { animation: scHeroStuntHop 0.68s cubic-bezier(0.22, 1, 0.36, 1) !important; }
+  .sc-pedestal-hit { animation: scPedestalBounce 0.48s cubic-bezier(0.22, 1, 0.36, 1) !important; }
+  .sc-stunt-active { animation: scHeroStuntUpright 0.62s cubic-bezier(0.22, 1, 0.36, 1) !important; }
   #podiumStageRoot [id^="podiumHeroArea_"] { z-index: 24 !important; }
   .sc-chest-prop svg, .sc-portal-prop svg { width: 100% !important; height: 100% !important; overflow: visible; }
-  .sc-rocket-prop svg { width: 164px !important; height: 42px !important; overflow: visible; }
-  #podiumStageRoot[data-ceremony-theme="rockets"] .podium-hero-revealed { animation: scZeroGFloat 2.1s ease-in-out infinite !important; }
-  #podiumStageRoot[data-ceremony-theme="rockets"] [id^="hm_"] { margin-bottom: 4px !important; }
+  .sc-rocket-prop svg { width: 146px !important; height: 34px !important; overflow: visible; }
+  #podiumStageRoot[data-ceremony-theme="rockets"] .podium-hero-revealed { animation: scZeroGFloat 2.2s ease-in-out infinite !important; }
+  #podiumStageRoot[data-ceremony-theme="rockets"] [id^="hm_"] { margin-bottom: 34px !important; }
+  #podiumStageRoot[data-ceremony-theme="cards"] [id^="podiumHeroArea_"] { padding-top: 14px !important; }
+  #podiumStageRoot[data-ceremony-theme="cards"] [id^="hm_"] { margin-bottom: 18px !important; }
   #podiumStageRoot .podium-col { cursor: pointer; }
 
   /* ── 1. Royal 3D SVG Treasure Chest (خزائن الكنز) ── */
-  .sc-chest-prop { display: none; position: absolute; bottom: -14px; left: calc(50% + 62px); transform: translateX(-50%); width: 104px; height: 76px; z-index: 34; pointer-events: none; filter: drop-shadow(0 12px 22px rgba(0,0,0,0.9)); }
+  .sc-chest-prop { display: none; position: absolute; bottom: -10px; left: calc(50% + 56px); transform: translateX(-50%); width: 88px; height: 64px; z-index: 34; pointer-events: none; filter: drop-shadow(0 10px 18px rgba(0,0,0,0.85)); }
   #podiumStageRoot[data-ceremony-theme="chests"] .sc-chest-prop { display: block; }
   .sc-chest-lid-g { transform-origin: 60px 38px; transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
   .sc-chest-beam { opacity: 0; transition: opacity 0.4s ease; }
   .sc-chest-prop.is-open .sc-chest-lid-g { transform: translateY(-13px) rotate(-18deg) scaleY(0.76); }
   .sc-chest-prop.is-open .sc-chest-beam { opacity: 1; }
 
-  /* ── 2. Collector TCG Mythic Card Frame (بطاقات الأساطير) ── */
-  .sc-card-prop { display: none; position: absolute; inset: -12px -20px 14px; border-radius: 22px; border: 3px solid #fbbf24; background: linear-gradient(155deg, rgba(59,7,100,0.72) 0%, rgba(15,23,42,0.86) 55%, rgba(88,28,135,0.76) 100%); box-shadow: 0 18px 40px rgba(0,0,0,0.85), 0 0 32px rgba(192,132,252,0.55), inset 0 0 24px rgba(251,191,36,0.32); z-index: 2; pointer-events: none; overflow: visible; }
+  /* ── 2. Arabic Collector TCG Mythic Card Frame (بطاقات الأساطير) ── */
+  .sc-card-prop { display: none; position: absolute; inset: -6px -14px -4px; border-radius: 20px; border: 2.5px solid #fbbf24; background: linear-gradient(155deg, rgba(59,7,100,0.68) 0%, rgba(15,23,42,0.84) 55%, rgba(88,28,135,0.72) 100%); box-shadow: 0 16px 34px rgba(0,0,0,0.82), 0 0 26px rgba(192,132,252,0.5), inset 0 0 20px rgba(251,191,36,0.28); z-index: 2; pointer-events: none; overflow: visible; }
   #podiumStageRoot[data-ceremony-theme="cards"] .sc-card-prop { display: block; }
-  .sc-card-prop::before { content: ''; position: absolute; inset: 5px; border: 1.5px solid rgba(254,240,138,0.48); border-radius: 17px; pointer-events: none; }
-  .sc-card-header-gem { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #fde047, #d97706); color: #090d16; font-size: 10px; font-weight: 900; padding: 2px 12px; border-radius: 999px; border: 1.5px solid #fff; letter-spacing: 1px; box-shadow: 0 4px 14px rgba(251,191,36,0.8); white-space: nowrap; z-index: 30; }
-  .sc-card-stars { position: absolute; bottom: -11px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #0f172a, #1e1b4b); border: 2px solid #fbbf24; border-radius: 999px; padding: 2px 14px; font-size: 11px; color: #fde047; letter-spacing: 1.5px; box-shadow: 0 6px 16px rgba(0,0,0,0.9); font-weight: 900; white-space: nowrap; z-index: 30; }
+  .sc-card-prop::before { content: ''; position: absolute; inset: 4px; border: 1.5px solid rgba(254,240,138,0.45); border-radius: 15px; pointer-events: none; }
+  .sc-card-header-gem { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #fde047, #d97706); color: #090d16; font-size: 10.5px; font-weight: 900; padding: 2px 12px; border-radius: 999px; border: 1.5px solid #fff; box-shadow: 0 4px 12px rgba(251,191,36,0.75); white-space: nowrap; z-index: 30; }
+  .sc-card-stars { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #0f172a, #1e1b4b); border: 1.5px solid #fbbf24; border-radius: 999px; padding: 1px 12px; font-size: 10.5px; color: #fde047; box-shadow: 0 5px 14px rgba(0,0,0,0.88); font-weight: 900; white-space: nowrap; z-index: 30; }
 
-  /* ── 3. Foot-Mounted Hover-Jetpack Platform (صواريخ الفضاء) ── */
-  .sc-rocket-prop { display: none; position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); width: 164px; height: 74px; z-index: 32; pointer-events: none; flex-direction: column; align-items: center; filter: drop-shadow(0 12px 24px rgba(14,165,233,0.9)); }
+  /* ── 3. Foot-Mounted Hover-Jetpack Platform UNDER Hero Feet (صواريخ الفضاء) ── */
+  .sc-rocket-prop { display: none; position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%); width: 148px; height: 62px; z-index: 4; pointer-events: none; flex-direction: column; align-items: center; filter: drop-shadow(0 10px 20px rgba(14,165,233,0.88)); }
   #podiumStageRoot[data-ceremony-theme="rockets"] .sc-rocket-prop { display: flex; }
-  .sc-jet-flames { display: flex; justify-content: space-between; width: 102px; margin-top: -5px; }
-  .sc-thruster-flame { width: 26px; height: 42px; background: linear-gradient(180deg, #ffffff 0%, #38bdf8 38%, #f97316 78%, transparent 100%); border-radius: 0 0 50% 50%; filter: blur(0.4px); transform-origin: top center; animation: scFlamePulse 0.16s ease-in-out infinite; box-shadow: 0 10px 24px rgba(56,189,248,0.95); }
+  .sc-jet-flames { display: flex; justify-content: space-between; width: 88px; margin-top: -4px; }
+  .sc-thruster-flame { width: 22px; height: 32px; background: linear-gradient(180deg, #ffffff 0%, #38bdf8 40%, #f97316 80%, transparent 100%); border-radius: 0 0 50% 50%; filter: blur(0.3px); transform-origin: top center; animation: scFlamePulse 0.16s ease-in-out infinite; box-shadow: 0 8px 18px rgba(56,189,248,0.9); }
 
-  /* ── 4. Grand Prix Finish Line & Track (خط النهاية) ── */
-  #scFinishTapeWrap { display: none; position: absolute; bottom: 265px; left: 50%; transform: translateX(-50%); width: min(940px, 92%); height: 84px; z-index: 36; pointer-events: none; align-items: center; justify-content: space-between; }
+  /* ── 4. Arabic Finish Line Tape Swinging Outward Cleanly (خط النهاية) ── */
+  #scFinishTapeWrap { display: none; position: absolute; bottom: 170px; left: 50%; transform: translateX(-50%); width: min(940px, 92%); height: 76px; z-index: 32; pointer-events: none; align-items: center; justify-content: space-between; direction: ltr; }
   #podiumStageRoot[data-ceremony-theme="finishline"] #scFinishTapeWrap { display: flex; }
-  .sc-finish-post { width: 18px; height: 110px; background: repeating-linear-gradient(180deg, #f8fafc 0 11px, #0f172a 11px 22px); border: 2.5px solid #fbbf24; border-radius: 8px; box-shadow: 0 0 26px rgba(251,191,36,0.85); position: relative; }
-  .sc-finish-post::before { content: '🏁'; position: absolute; top: -24px; left: 50%; transform: translateX(-50%); font-size: 18px; }
-  .sc-tape-left, .sc-tape-right { flex: 1; height: 26px; background: linear-gradient(90deg, #dc2626, #f59e0b, #fef08a); border-block: 2.5px solid #ffffff; box-shadow: 0 8px 24px rgba(245,158,11,0.85); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #090d16; letter-spacing: 1px; transition: transform 0.62s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.62s ease; }
+  #scFinishTapeWrap.is-snapped { z-index: 14; }
+  .sc-finish-post { width: 16px; height: 96px; background: repeating-linear-gradient(180deg, #f8fafc 0 10px, #0f172a 10px 20px); border: 2px solid #fbbf24; border-radius: 8px; box-shadow: 0 0 22px rgba(251,191,36,0.8); position: relative; flex-shrink: 0; }
+  .sc-finish-post::before { content: '🏁'; position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 16px; }
+  .sc-tape-left, .sc-tape-right { flex: 1; height: 24px; background: linear-gradient(90deg, #dc2626, #f59e0b, #fef08a); border-block: 2px solid #ffffff; box-shadow: 0 6px 18px rgba(245,158,11,0.75); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #090d16; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease; overflow: hidden; white-space: nowrap; }
   .sc-tape-left { transform-origin: left center; }
   .sc-tape-right { transform-origin: right center; }
-  #scFinishTapeWrap.is-snapped .sc-tape-left { transform: rotate(-14deg) translate(-28px, -16px) scaleX(0.66); opacity: 0.78; }
-  #scFinishTapeWrap.is-snapped .sc-tape-right { transform: rotate(14deg) translate(28px, -16px) scaleX(0.66); opacity: 0.78; }
-  #scSlowMoFlash { position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,255,255,0.82) 0%, rgba(56,189,248,0.28) 55%, transparent 80%); opacity: 0; pointer-events: none; z-index: 48; transition: opacity 0.28s ease; }
+  #scFinishTapeWrap.is-snapped .sc-tape-left { transform: rotate(-10deg) translate(-8px, -4px) scaleX(0.26); opacity: 0.72; }
+  #scFinishTapeWrap.is-snapped .sc-tape-right { transform: rotate(10deg) translate(8px, -4px) scaleX(0.26); opacity: 0.72; }
+  #scSlowMoFlash { position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,255,255,0.72) 0%, rgba(56,189,248,0.22) 55%, transparent 80%); opacity: 0; pointer-events: none; z-index: 48; transition: opacity 0.25s ease; }
 
   /* ── 5. Arcane SVG Dimensional Portal (بوابة النور) ── */
-  .sc-portal-prop { display: none; position: absolute; top: 48%; left: 50%; width: 256px; height: 256px; transform: translate(-50%, -50%); z-index: 1; pointer-events: none; filter: drop-shadow(0 0 34px rgba(250,204,21,0.75)) drop-shadow(0 0 24px rgba(168,85,247,0.9)); }
+  .sc-portal-prop { display: none; position: absolute; top: 50%; left: 50%; width: 224px; height: 224px; transform: translate(-50%, -50%); z-index: 1; pointer-events: none; filter: drop-shadow(0 0 28px rgba(250,204,21,0.7)) drop-shadow(0 0 20px rgba(168,85,247,0.85)); }
   #podiumStageRoot[data-ceremony-theme="portal"] .sc-portal-prop { display: block; }
   .sc-portal-svg-outer { position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; animation: scPortalSpin 7s linear infinite; }
   .sc-portal-svg-inner { position: absolute; top: 50%; left: 50%; width: 82%; height: 82%; animation: scPortalSpinRev 4.5s linear infinite; }
-  @media (max-width: 720px) { #scThemeHudBadge { top: 82px !important; font-size: 10px !important; padding: 3px 10px !important; } #scFinishTapeWrap { bottom: 135px !important; } }
+  @media (max-width: 720px) { #scThemeHudBadge { top: 76px !important; font-size: 10px !important; padding: 3px 10px !important; } #scFinishTapeWrap { bottom: 118px !important; } }
+  @media (prefers-reduced-motion: reduce) {
+    .sc-portal-svg-outer, .sc-portal-svg-inner, .sc-thruster-flame, .podium-hero-revealed { animation: none !important; }
+  }
 `;
   }
 
   function getColumnPropsHtml(rank) {
-    const stars = rank === 1 ? '★★★★★ LEGEND #1' : (rank === 2 ? '★★★★ EPIC #2' : '★★★ RARE #3');
-    const tier = rank === 1 ? 'MYTHIC CHAMPION' : (rank === 2 ? 'EPIC RUNNER-UP' : 'RARE FINALIST');
+    const stars = rank === 1 ? '★★★★★ المركز #1' : (rank === 2 ? '★★★★ المركز #2' : '★★★ المركز #3');
+    const tier = rank === 1 ? 'بطل أسطوري' : (rank === 2 ? 'وصيف متألق' : 'فارس المنصة');
     return `
       <div id="scPortalProp_${rank}" class="sc-portal-prop">
         <svg class="sc-portal-svg-outer" viewBox="0 0 200 200"><defs><radialGradient id="pg_${rank}" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fef08a" stop-opacity="0.55"/><stop offset="55%" stop-color="#a855f7" stop-opacity="0.32"/><stop offset="100%" stop-color="#3b0764" stop-opacity="0"/></radialGradient></defs><circle cx="100" cy="100" r="88" fill="url(#pg_${rank})" stroke="#fde047" stroke-width="2.5" stroke-dasharray="14 8"/><polygon points="100,14 124,72 186,72 136,110 154,172 100,134 46,172 64,110 14,72 76,72" fill="none" stroke="rgba(192,132,252,0.65)" stroke-width="2"/><circle cx="100" cy="100" r="72" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6 10"/></svg>
@@ -153,7 +168,7 @@
         </svg>
       </div>
       <div id="scRocketProp_${rank}" class="sc-rocket-prop">
-        <svg viewBox="0 0 160 44" width="146" height="36">
+        <svg viewBox="0 0 160 44" width="146" height="34">
           <defs><linearGradient id="rkBody_${rank}" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0284c7"/><stop offset="50%" stop-color="#e0f2fe"/><stop offset="100%" stop-color="#0284c7"/></linearGradient></defs>
           <path d="M8,26 L34,10 L126,10 L152,26 L134,34 L26,34 Z" fill="url(#rkBody_${rank})" stroke="#38bdf8" stroke-width="2.5"/>
           <rect x="44" y="14" width="72" height="10" rx="5" fill="#0f172a" stroke="#7dd3fc" stroke-width="1.5"/>
@@ -167,7 +182,7 @@
   function getPedestalPropsHtml() { return ''; }
 
   function getStageOverlaysHtml() {
-    return `<canvas id="scSceneCanvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:23;pointer-events:none;"></canvas><div id="scSlowMoFlash"></div><div id="scThemeHudBadge" style="position:absolute;top:56px;right:20px;z-index:28;background:rgba(10,12,28,0.88);backdrop-filter:blur(14px);border:1px solid rgba(251,191,36,0.42);border-radius:999px;padding:4px 16px;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,0.55);pointer-events:none;white-space:nowrap;"><span id="scThemeHudDot" style="width:8px;height:8px;border-radius:50%;background:#fbbf24;box-shadow:0 0 10px #fbbf24;"></span><b id="scThemeHudTitle" style="font-size:12px;font-weight:900;color:#fef08a;">طور خزائن الكنز الذهبية</b><span id="scThemeHudSub" class="podium-motion-extra" style="font-size:11px;color:#cbd5e1;font-weight:700;">· اضغط على أي بطل لحركة خاصة</span></div><div id="scFinishTapeWrap"><div class="sc-finish-post"></div><div class="sc-tape-left">🏁 خط النهاية · CHAMPIONSHIP</div><div class="sc-tape-right">SCOREAR GRAND PRIX 🏁</div><div class="sc-finish-post"></div></div>`;
+    return `<canvas id="scSceneCanvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:23;pointer-events:none;"></canvas><div id="scSlowMoFlash"></div><div id="scThemeHudBadge" style="position:absolute;top:54px;right:16px;z-index:28;background:rgba(10,12,28,0.88);backdrop-filter:blur(14px);border:1px solid rgba(251,191,36,0.42);border-radius:999px;padding:3px 14px;display:inline-flex;align-items:center;gap:7px;box-shadow:0 8px 20px rgba(0,0,0,0.55);pointer-events:none;white-space:nowrap;"><span id="scThemeHudDot" style="width:7px;height:7px;border-radius:50%;background:#fbbf24;box-shadow:0 0 10px #fbbf24;"></span><b id="scThemeHudTitle" style="font-size:11.5px;font-weight:900;color:#fef08a;">طور خزائن الكنز الذهبية</b><span id="scThemeHudSub" class="podium-motion-extra" style="font-size:10.5px;color:#cbd5e1;font-weight:700;">· اضغط على أي بطل لحركة خاصة</span></div><div id="scFinishTapeWrap"><div class="sc-finish-post"></div><div class="sc-tape-left">🏁 خط النهاية · بطولة سكور آر</div><div class="sc-tape-right">بطولة الأبطال · خط النهاية 🏁</div><div class="sc-finish-post"></div></div>`;
   }
 
   function getRankCenter(rank, W, H) {
@@ -175,11 +190,11 @@
     if (col && root && typeof col.getBoundingClientRect === 'function' && typeof root.getBoundingClientRect === 'function') {
       const cr = col.getBoundingClientRect(), rr = root.getBoundingClientRect();
       if (cr.width > 0 && rr.width > 0) {
-        return { x: (cr.left - rr.left) + cr.width * 0.5, y: (cr.top - rr.top) + cr.height * 0.34, bottomY: (cr.top - rr.top) + cr.height * 0.54 };
+        return { x: (cr.left - rr.left) + cr.width * 0.5, y: (cr.top - rr.top) + cr.height * 0.36, bottomY: (cr.top - rr.top) + cr.height * 0.58 };
       }
     }
-    const xMap = { 1: W * 0.5, 2: W * 0.5 - 260, 3: W * 0.5 + 260 };
-    return { x: xMap[rank] || W * 0.5, y: H * 0.38, bottomY: H * 0.58 };
+    const xMap = { 1: W * 0.5, 2: W * 0.5 - 240, 3: W * 0.5 + 240 };
+    return { x: xMap[rank] || W * 0.5, y: H * 0.40, bottomY: H * 0.60 };
   }
 
   function spawnThemeBurst(rank, mode) {
@@ -192,62 +207,56 @@
     const tape = $('scFinishTapeWrap'), flash = $('scSlowMoFlash');
     if (mode === 'finishline') {
       if (tape) { tape.classList.remove('is-snapped'); void tape.offsetWidth; tape.classList.add('is-snapped'); }
-      if (flash && rank === 1) { flash.style.opacity = '0.85'; setTimeout(() => { flash.style.opacity = '0'; }, 260); }
+      if (flash && rank === 1) { flash.style.opacity = '0.78'; scheduleScene(() => { flash.style.opacity = '0'; }, 240); }
     }
     if (!sceneCanvas) return;
     const W = sceneCanvas.width || 960, H = sceneCanvas.height || 640;
     const pos = getRankCenter(rank, W, H);
-    const count = rank === 1 ? 28 : 18;
+    const count = rank === 1 ? 26 : 16;
 
     if (mode === 'chests' || mode === 'goldrain') {
-      const coinTotal = mode === 'goldrain' ? count + 12 : count;
+      const coinTotal = mode === 'goldrain' ? count + 10 : count;
       for (let i = 0; i < coinTotal; i++) {
         const isGem = (mode === 'chests' && i % 5 === 0), ang = -Math.PI * 0.82 + (i / coinTotal) * Math.PI * 0.64 + (Math.random() - 0.5) * 0.25;
-        const spd = 4.2 + Math.random() * 5.8;
-        fxParticles.push({ kind: isGem ? 'gem' : 'coin', x: pos.x + (Math.random() - 0.5) * 52, y: pos.bottomY - 12, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 3.6, g: 0.22, size: isGem ? 7 + Math.random() * 3 : 8 + Math.random() * 3.5, spin: Math.random() * 6.28, vSpin: 0.16 + Math.random() * 0.18, color: isGem ? ['#34d399', '#fb7185', '#38bdf8'][i % 3] : '#fbbf24', floorY: pos.bottomY + 12, life: 1.0, decay: 0.015 });
+        const spd = 4.0 + Math.random() * 5.2;
+        fxParticles.push({ kind: isGem ? 'gem' : 'coin', x: pos.x + (Math.random() - 0.5) * 46, y: pos.bottomY - 12, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 3.4, g: 0.22, size: isGem ? 6.5 + Math.random() * 3 : 7.5 + Math.random() * 3, spin: Math.random() * 6.28, vSpin: 0.16 + Math.random() * 0.16, color: isGem ? ['#34d399', '#fb7185', '#38bdf8'][i % 3] : '#fbbf24', floorY: pos.bottomY + 10, life: 1.0, decay: 0.016 });
       }
-      shockwaves.push({ x: pos.x, y: pos.bottomY - 8, r: 14, maxR: 135, color: '#fbbf24', life: 1.0 });
+      shockwaves.push({ x: pos.x, y: pos.bottomY - 8, r: 14, maxR: 125, color: '#fbbf24', life: 1.0 });
     } else if (mode === 'cards') {
       const cols = ['#c084fc', '#38bdf8', '#fde047', '#f472b6'];
       for (let i = 0; i < count; i++) {
-        const ang = (i / count) * Math.PI * 2, spd = 3.2 + Math.random() * 4.8;
-        fxParticles.push({ kind: 'star', x: pos.x + Math.cos(ang) * 45, y: pos.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 1.0, g: 0.05, size: 7 + Math.random() * 4, spin: ang, vSpin: 0.12, color: cols[i % cols.length], life: 1.0, decay: 0.02 });
+        const ang = (i / count) * Math.PI * 2, spd = 3.0 + Math.random() * 4.4;
+        fxParticles.push({ kind: 'star', x: pos.x + Math.cos(ang) * 42, y: pos.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd - 0.9, g: 0.05, size: 6.5 + Math.random() * 3.5, spin: ang, vSpin: 0.12, color: cols[i % cols.length], life: 1.0, decay: 0.02 });
       }
-      shockwaves.push({ x: pos.x, y: pos.y, r: 22, maxR: 155, color: '#c084fc', life: 1.0 });
+      shockwaves.push({ x: pos.x, y: pos.y, r: 20, maxR: 145, color: '#c084fc', life: 1.0 });
     } else if (mode === 'rockets') {
       for (let i = 0; i < count; i++) {
-        fxParticles.push({ kind: 'star', x: pos.x + (Math.random() - 0.5) * 64, y: pos.bottomY, vx: (Math.random() - 0.5) * 3.4, vy: -(1.8 + Math.random() * 3.6), g: -0.02, size: 6 + Math.random() * 5, spin: 0, vSpin: 0.15, color: i % 2 === 0 ? '#38bdf8' : '#fde047', life: 0.95, decay: 0.024 });
+        fxParticles.push({ kind: 'star', x: pos.x + (Math.random() - 0.5) * 58, y: pos.bottomY, vx: (Math.random() - 0.5) * 3.2, vy: -(1.6 + Math.random() * 3.4), g: -0.02, size: 5.5 + Math.random() * 4.5, spin: 0, vSpin: 0.15, color: i % 2 === 0 ? '#38bdf8' : '#fde047', life: 0.95, decay: 0.024 });
       }
-      shockwaves.push({ x: pos.x, y: pos.bottomY, r: 16, maxR: 130, color: '#38bdf8', life: 1.0 });
+      shockwaves.push({ x: pos.x, y: pos.bottomY, r: 16, maxR: 122, color: '#38bdf8', life: 1.0 });
     } else if (mode === 'finishline') {
       for (let i = 0; i < count; i++) {
-        fxParticles.push({ kind: 'star', x: pos.x + (Math.random() - 0.5) * 90, y: pos.y, vx: (Math.random() - 0.5) * 6.5, vy: -(2.5 + Math.random() * 4.5), g: 0.12, size: 7 + Math.random() * 5, spin: Math.random() * 6.28, vSpin: 0.18, color: i % 2 === 0 ? '#34d399' : '#fef08a', life: 1.0, decay: 0.02 });
+        fxParticles.push({ kind: 'star', x: pos.x + (Math.random() - 0.5) * 84, y: pos.y, vx: (Math.random() - 0.5) * 5.8, vy: -(2.2 + Math.random() * 4.0), g: 0.12, size: 6.5 + Math.random() * 4.5, spin: Math.random() * 6.28, vSpin: 0.18, color: i % 2 === 0 ? '#34d399' : '#fef08a', life: 1.0, decay: 0.02 });
       }
     } else if (mode === 'portal') {
-      shockwaves.push({ x: pos.x, y: pos.y, r: 14, maxR: 175, color: '#fde047', life: 1.0 });
-      shockwaves.push({ x: pos.x, y: pos.y, r: 8, maxR: 130, color: '#a855f7', life: 0.9 });
+      shockwaves.push({ x: pos.x, y: pos.y, r: 14, maxR: 160, color: '#fde047', life: 1.0 });
+      shockwaves.push({ x: pos.x, y: pos.y, r: 8, maxR: 120, color: '#a855f7', life: 0.9 });
       for (let i = 0; i < count; i++) {
-        const ang = (i / count) * Math.PI * 2, spd = 2.6 + Math.random() * 4.0;
-        fxParticles.push({ kind: 'star', x: pos.x, y: pos.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, g: -0.02, size: 6 + Math.random() * 5, spin: ang, vSpin: 0.12, color: i % 2 === 0 ? '#fef08a' : '#c084fc', life: 1.0, decay: 0.02 });
+        const ang = (i / count) * Math.PI * 2, spd = 2.4 + Math.random() * 3.8;
+        fxParticles.push({ kind: 'star', x: pos.x, y: pos.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, g: -0.02, size: 6 + Math.random() * 4.5, spin: ang, vSpin: 0.12, color: i % 2 === 0 ? '#fef08a' : '#c084fc', life: 1.0, decay: 0.02 });
       }
     }
   }
 
   function animateHeroEntry(rank, mode, mountHeroFn, player) {
     const heroArea = $(`podiumHeroArea_${rank}`), hm = $(`hm_${rank}`), ped = $(`podiumPedestal_${rank}`);
-    if (!heroArea) return;
+    if (!heroArea || !player) return;
     activeRanks.add(rank);
     const custom = player?.cosmetics?.entry;
     const entryMode = (custom === 'rocket') ? 'rockets' : (custom === 'portal' || custom === 'goldrain' ? custom : mode);
     const meta = THEME_META[entryMode] || THEME_META[mode] || THEME_META.chests;
-    const animMap = {
-      chests: 'scHeroJumpArc 0.68s cubic-bezier(0.22, 1, 0.36, 1) both',
-      goldrain: 'scHeroJumpArc 0.68s cubic-bezier(0.22, 1, 0.36, 1) both',
-      cards: 'scHeroCardFlipIn 0.72s cubic-bezier(0.22, 1, 0.36, 1) both',
-      rockets: 'scHeroRocketLaunch 0.72s cubic-bezier(0.22, 1, 0.36, 1) both',
-      finishline: 'scHeroSprintIn 0.66s cubic-bezier(0.22, 1, 0.36, 1) both',
-      portal: 'scHeroPortalEmerge 0.70s cubic-bezier(0.22, 1, 0.36, 1) both'
-    };
+    const reduced = Boolean(global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+    const climaxPose = rank === 1 ? 'win' : 'clap';
 
     heroArea.classList.remove('podium-hero-revealed');
     heroArea.setAttribute('data-cosmetic-entry', custom || 'default');
@@ -255,36 +264,55 @@
       global.ScoreARHeroCosmetics.applyAura(heroArea, player.cosmetics.aura);
     }
     heroArea.style.display = 'flex';
+
+    if (reduced) {
+      heroArea.style.animation = 'none';
+      if (entryMode === 'chests' || entryMode === 'goldrain') $(`scChestProp_${rank}`)?.classList.add('is-open');
+      if (entryMode === 'finishline') $('scFinishTapeWrap')?.classList.add('is-snapped');
+      if (hm && typeof mountHeroFn === 'function') mountHeroFn(hm, player.avatarId, climaxPose);
+      heroArea.classList.add('podium-hero-revealed');
+      return;
+    }
+
+    const animMap = {
+      chests: 'scHeroChestArrive 0.58s cubic-bezier(0.22, 1, 0.36, 1) both',
+      goldrain: 'scHeroChestArrive 0.58s cubic-bezier(0.22, 1, 0.36, 1) both',
+      cards: 'scHeroCardFlipIn 0.66s cubic-bezier(0.22, 1, 0.36, 1) both',
+      rockets: 'scHeroRocketLaunch 0.66s cubic-bezier(0.22, 1, 0.36, 1) both',
+      finishline: 'scHeroSprintIn 0.60s cubic-bezier(0.22, 1, 0.36, 1) both',
+      portal: 'scHeroPortalEmerge 0.64s cubic-bezier(0.22, 1, 0.36, 1) both'
+    };
+    const dirEntry = (meta.entryPose === 'run')
+      ? (rank === 2 ? 'runRight' : (rank === 3 ? 'runLeft' : 'runRight'))
+      : (meta.entryPose === 'walk' ? (rank === 1 ? 'walkForward' : (rank === 2 ? 'walkRight' : 'walkLeft')) : meta.entryPose);
+
     heroArea.style.animation = 'none';
     void heroArea.offsetWidth;
     heroArea.style.animation = animMap[entryMode] || animMap.chests;
-    if (entryMode === 'chests' || entryMode === 'goldrain') {
-      const chest = $(`scChestProp_${rank}`);
-      if (chest) chest.classList.add('is-open');
-    }
-    if (hm && player && typeof mountHeroFn === 'function') mountHeroFn(hm, player.avatarId, meta.entryPose);
+    if (entryMode === 'chests' || entryMode === 'goldrain') $(`scChestProp_${rank}`)?.classList.add('is-open');
+    if (hm && typeof mountHeroFn === 'function') mountHeroFn(hm, player.avatarId, dirEntry);
 
-    setTimeout(() => {
+    scheduleScene(() => {
       if (ped) { ped.classList.remove('sc-pedestal-hit'); void ped.offsetWidth; ped.classList.add('sc-pedestal-hit'); }
       spawnThemeBurst(rank, entryMode);
-      if (hm && player && typeof mountHeroFn === 'function') mountHeroFn(hm, player.avatarId, meta.climaxPose);
-      setTimeout(() => { heroArea.classList.add('podium-hero-revealed'); }, 300);
-    }, 390);
+      if (hm && typeof mountHeroFn === 'function') mountHeroFn(hm, player.avatarId, climaxPose);
+      scheduleScene(() => { heroArea.classList.add('podium-hero-revealed'); }, 260);
+    }, 380);
   }
 
   function triggerHeroStunt(rank, mountHeroFn, player) {
     const heroArea = $(`podiumHeroArea_${rank}`);
-    if (!heroArea || heroArea.style.display === 'none') return;
+    if (!heroArea || !player || heroArea.style.display === 'none') return;
     sfx('pop');
     heroArea.classList.remove('sc-stunt-active');
     void heroArea.offsetWidth;
     heroArea.classList.add('sc-stunt-active');
     spawnThemeBurst(rank, activeMode);
-    if (player && typeof mountHeroFn === 'function') {
+    if (typeof mountHeroFn === 'function') {
       const hm = $(`hm_${rank}`);
-      if (hm) mountHeroFn(hm, player.avatarId, 'celebrate');
+      if (hm) mountHeroFn(hm, player.avatarId, rank === 1 ? 'win' : 'wave');
     }
-    setTimeout(() => { heroArea.classList.remove('sc-stunt-active'); }, 720);
+    scheduleScene(() => { heroArea.classList.remove('sc-stunt-active'); }, 650);
   }
 
   function drawStarShape(ctx, r) {
@@ -307,8 +335,8 @@
     ctx.clearRect(0, 0, W, H);
 
     if (activeMode === 'rockets' && activeRanks.size > 0) {
-      if (warpStars.length < 24) warpStars.push({ x: Math.random() * W, y: -10, vy: 7 + Math.random() * 8, len: 18 + Math.random() * 22 });
-      ctx.strokeStyle = 'rgba(186, 230, 253, 0.32)';
+      if (warpStars.length < 22) warpStars.push({ x: Math.random() * W, y: -10, vy: 7 + Math.random() * 8, len: 16 + Math.random() * 20 });
+      ctx.strokeStyle = 'rgba(186, 230, 253, 0.30)';
       ctx.lineWidth = 1.5;
       for (let i = warpStars.length - 1; i >= 0; i--) {
         const s = warpStars[i]; s.y += s.vy;
@@ -363,7 +391,9 @@
     if (!sceneCanvas || typeof sceneCanvas.getContext !== 'function') return;
     sceneCtx = sceneCanvas.getContext('2d');
     updateHud(activeMode);
-    sceneRaf = requestAnimationFrame(renderSceneLoop);
+    if (!global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+      sceneRaf = requestAnimationFrame(renderSceneLoop);
+    }
   }
 
   function updateHud(mode) {
@@ -375,6 +405,7 @@
   }
 
   function setMode(mode, revealStep, mountHeroFn, players, isUserClick = false) {
+    cancelPending();
     activeMode = THEME_META[mode] ? mode : 'chests';
     updateHud(activeMode);
     if (isUserClick) {
@@ -382,25 +413,26 @@
       const tape = $('scFinishTapeWrap');
       if (tape) tape.classList.remove('is-snapped');
     }
-
     if (isUserClick && revealStep >= 1) {
       sfx(activeMode === 'rockets' || activeMode === 'finishline' ? 'whoosh' : 'reveal');
-      const visibleRanks = revealStep >= 3 ? [3, 2, 1] : (revealStep === 2 ? [3, 2] : [3]);
+      const slotPl = r => players && players[r === 1 ? 0 : r === 2 ? 1 : 2];
+      const visibleRanks = (revealStep >= 3 ? [3, 2, 1] : (revealStep === 2 ? [3, 2] : [3])).filter(r => Boolean(slotPl(r)));
       visibleRanks.forEach((r, idx) => {
-        const pl = players && players[r === 1 ? 0 : r === 2 ? 1 : 2];
-        setTimeout(() => animateHeroEntry(r, activeMode, mountHeroFn, pl), idx * 140);
+        const pl = slotPl(r);
+        scheduleScene(() => animateHeroEntry(r, activeMode, mountHeroFn, pl), idx * 120);
       });
     }
   }
 
   function stopStage() {
+    cancelPending();
     if (sceneRaf) { cancelAnimationFrame(sceneRaf); sceneRaf = null; }
     fxParticles = []; shockwaves = []; warpStars = []; activeRanks.clear();
   }
 
   const ScoreARPodiumScenes = {
     THEME_META, getSceneStylesHtml, getColumnPropsHtml, getPedestalPropsHtml, getStageOverlaysHtml,
-    initStage, setMode, animateHeroEntry, triggerRankClimax: spawnThemeBurst, triggerHeroStunt, stopStage
+    initStage, setMode, animateHeroEntry, triggerRankClimax: spawnThemeBurst, triggerHeroStunt, stopStage, cancelPending
   };
   global.ScoreARPodiumScenes = ScoreARPodiumScenes;
   try { if (typeof globalThis !== 'undefined') globalThis.ScoreARPodiumScenes = ScoreARPodiumScenes; } catch (e) {}

@@ -7,12 +7,12 @@
   'use strict';
 
   const MOVE_MAP = {
-    '🦘': { kind: 'jump',  label: '🦘 قفزة نصر!', anim: 'scFxJump 0.68s cubic-bezier(0.22,1,0.36,1)', color: '#38bdf8', pose: 'celebrate' },
-    '👋': { kind: 'wave',  label: '👋 تحية!',     anim: 'scFxWave 0.72s ease-in-out',                color: '#c084fc', pose: 'celebrate' },
-    '🔥': { kind: 'fire',  label: '🔥 حماااس!',   anim: 'scFxFire 0.78s ease-out',                   color: '#f97316', pose: 'run' },
-    '👏': { kind: 'clap',  label: '👏 تصفيق!',    anim: 'scFxClap 0.65s ease-in-out',                color: '#34d399', pose: 'celebrate' },
-    '❤️': { kind: 'heart', label: '❤️ محبة!',     anim: 'scFxJump 0.64s ease-out',                   color: '#f472b6', pose: 'celebrate' },
-    '🎉': { kind: 'party', label: '🎉 احتفال!',   anim: 'scFxJump 0.72s cubic-bezier(0.22,1,0.36,1)', color: '#fbbf24', pose: 'celebrate' }
+    '🦘': { kind: 'jump',  label: '🦘 قفزة نصر!', anim: 'scFxJump 0.68s cubic-bezier(0.22,1,0.36,1)', color: '#38bdf8', pose: 'jump' },
+    '👋': { kind: 'wave',  label: '👋 تحية!',     anim: 'scFxWave 0.72s ease-in-out',                color: '#c084fc', pose: 'wave' },
+    '🔥': { kind: 'fire',  label: '🔥 حماااس!',   anim: 'scFxFire 0.78s ease-out',                   color: '#f97316', pose: 'runRight' },
+    '👏': { kind: 'clap',  label: '👏 تصفيق!',    anim: 'scFxClap 0.65s ease-in-out',                color: '#34d399', pose: 'clap' },
+    '❤️': { kind: 'heart', label: '❤️ محبة!',     anim: 'scFxJump 0.64s ease-out',                   color: '#f472b6', pose: 'win' },
+    '🎉': { kind: 'party', label: '🎉 احتفال!',   anim: 'scFxJump 0.72s cubic-bezier(0.22,1,0.36,1)', color: '#fbbf24', pose: 'win' }
   };
 
   const CARD_THEMES = {
