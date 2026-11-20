@@ -107,6 +107,8 @@
     if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
     if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     if (global.ScoreARDuelCoronation?.cleanup) global.ScoreARDuelCoronation.cleanup();
+    global.ScoreARCardArena?.stopBotDirector?.();
+    global.ScoreARCardCinema?.cleanup?.();
     currentLobbyPose = 'entrance';
     const worldId = (currentRoom && currentRoom.world && currentRoom.world.id) ? currentRoom.world.id : 'royal';
     const w = currentRoom.world || { name: 'المنافسة', tag: 'جاهز' };
@@ -116,6 +118,7 @@
     const activeGameMode = (global.ScoreARGameModes && typeof global.ScoreARGameModes.getMode === 'function') ? global.ScoreARGameModes.getMode() : 'SOLO';
     const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeGameMode));
     const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeGameMode));
+    const isCardArena = Boolean(global.ScoreARArenaModes?.isCardArenaMode?.(activeGameMode));
     if (isDuel && global.ScoreARArenaModes?.ensureAllTeamsAssigned) {
       global.ScoreARArenaModes.ensureAllTeamsAssigned(currentRoom);
     }
@@ -177,7 +180,7 @@
       <div style="position:relative;z-index:14;text-align:center;margin-top:16px;pointer-events:none;">
         <div style="font-size:44px;font-weight:900;color:#ffffff;font-family:Montserrat,Cairo,sans-serif;text-shadow:0 6px 24px rgba(0,0,0,0.7);line-height:1;">ScoreAR!</div>
         <div class="launch-pill" style="margin-top:8px;background:rgba(24,23,46,0.85);border-color:rgba(172,139,242,0.38);color:#eceeff;font-size:13px;font-weight:900;padding:5px 16px;"><span class="live-dot"></span> ${modeLabel}</div>
-        <div id="hostDuelLobbyBar" style="margin-top:8px;display:${(isDuel || isSurvival) ? 'flex' : 'none'};justify-content:center;pointer-events:auto;">${isDuel ? renderDuelLobbySplitHtml(currentRoom) : (isSurvival ? renderSurvivalLobbySplitHtml(currentRoom) : '')}</div>
+        <div id="hostDuelLobbyBar" style="margin-top:8px;display:${(isDuel || isSurvival || isCardArena) ? 'flex' : 'none'};justify-content:center;pointer-events:auto;">${isDuel ? renderDuelLobbySplitHtml(currentRoom) : (isSurvival ? renderSurvivalLobbySplitHtml(currentRoom) : (isCardArena ? renderCardArenaLobbySplitHtml(currentRoom) : ''))}</div>
       </div>
 
       <div id="hostCharactersArena" class="host-lobby-characters-arena" style="position:absolute;bottom:52px;left:0;right:0;height:50vh;display:flex;align-items:flex-end;justify-content:center;gap:26px;padding:0 35px 14px;z-index:15;pointer-events:none;overflow-x:auto;">${renderFullbodyCharactersHtml(currentRoom)}</div>
@@ -277,6 +280,15 @@
       </div>`;
   }
 
+  function renderCardArenaLobbySplitHtml() {
+    return `
+      <div id="hostCardArenaLobbyPill" style="display:inline-flex;align-items:center;gap:10px;padding:6px 16px;border-radius:999px;background:rgba(18,12,38,0.88);backdrop-filter:blur(12px);border:1px solid rgba(236,72,153,0.48);box-shadow:0 8px 24px rgba(0,0,0,0.4);direction:rtl;">
+        <span style="font-size:14px;">🃏</span>
+        <span style="font-size:12px;font-weight:900;color:#fbcfe8;">وضع حرب الكروت 3D</span>
+        <span style="font-size:11px;color:#cbd5e1;border-right:1px solid rgba(255,255,255,0.18);padding-right:10px;">كارت مجاني بالجولة 1 • أسرع إجابتين + سلسلتان • رهان ±100</span>
+      </div>`;
+  }
+
   function renderDuelTeamPillHtml(p, pid) {
     const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.());
     if (!isDuel || !global.ScoreARArenaModes?.getTeamMeta) return '';
@@ -290,15 +302,16 @@
     if (!currentRoom) return;
     const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.());
     const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.());
+    const isCardArena = Boolean(global.ScoreARArenaModes?.isCardArenaMode?.());
     if (isDuel && global.ScoreARArenaModes?.ensureAllTeamsAssigned) {
       global.ScoreARArenaModes.ensureAllTeamsAssigned(currentRoom);
     }
     const duelBar = document.getElementById('hostDuelLobbyBar');
     if (duelBar) {
-      duelBar.style.display = (isDuel || isSurvival) ? 'flex' : 'none';
+      duelBar.style.display = (isDuel || isSurvival || isCardArena) ? 'flex' : 'none';
       duelBar.innerHTML = isDuel
         ? renderDuelLobbySplitHtml(currentRoom)
-        : (isSurvival ? renderSurvivalLobbySplitHtml(currentRoom) : '');
+        : (isSurvival ? renderSurvivalLobbySplitHtml(currentRoom) : (isCardArena ? renderCardArenaLobbySplitHtml(currentRoom) : ''));
     }
 
     const arena = document.getElementById('hostCharactersArena');
@@ -419,6 +432,8 @@
     if (global.ScoreARWorldHalls?.cleanup) global.ScoreARWorldHalls.cleanup();
     if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     if (global.ScoreARDuelCoronation?.cleanup) global.ScoreARDuelCoronation.cleanup();
+    global.ScoreARCardArena?.stopBotDirector?.();
+    global.ScoreARCardCinema?.cleanup?.();
     if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
 
     const worldId = currentRoom?.world?.id || currentRoom?.worldId || 'royal';
@@ -527,6 +542,7 @@
     const isArenaMode = Boolean(global.ScoreARArenaModes?.is3DArenaMode?.(activeMode));
     const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeMode));
     const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeMode));
+    const isCardArena = Boolean(global.ScoreARArenaModes?.isCardArenaMode?.(activeMode));
     if (room) {
       room._lastQIndex = currentQIndex;
       room._lastTotalQuestions = total;
@@ -546,7 +562,10 @@
     const survivalHudHtml = (isSurvival && survStatus && global.ScoreARSurvivalEngine?.renderSurvivalHudHtml)
       ? global.ScoreARSurvivalEngine.renderSurvivalHudHtml(survStatus)
       : '';
-    const hasTopHud = isDuel || (isSurvival && Boolean(survivalHudHtml));
+    const cardHudHtml = (isCardArena && global.ScoreARCardCinema?.renderCardArenaHudHtml)
+      ? global.ScoreARCardCinema.renderCardArenaHudHtml(room, global.ScoreARCardArena?.getManager?.())
+      : '';
+    const hasTopHud = isDuel || (isSurvival && Boolean(survivalHudHtml)) || isCardArena;
     const displayPlayers = isSurvival
       ? (room?.players || []).filter(p => p && !p.eliminated)
       : (room?.players || []);
@@ -612,6 +631,7 @@
 
       ${isDuel ? `<div id="hostDuelScoreHudWrap" style="position:relative;z-index:26;padding:3px 18px 0;pointer-events:none;">${duelHudHtml}</div>` : ''}
       ${isSurvival ? `<div id="hostSurvivalHudWrap" style="position:relative;z-index:26;padding:3px 18px 0;pointer-events:none;">${survivalHudHtml}</div>` : ''}
+      ${isCardArena ? `<div id="hostCardArenaHudWrap" style="position:relative;z-index:26;padding:3px 18px 0;pointer-events:none;">${cardHudHtml}</div>` : ''}
 
       <div id="hostTopLeftActionWrap" style="${actionWrapPos}">
         <button type="button" class="scorear-gear-btn" onclick="ScoreARQuizHost.finishCurrentQuestion()" style="background:rgba(14,15,32,0.88);border-color:rgba(255,255,255,0.22);color:#ffffff;padding:8px 16px;font-size:12.5px;box-shadow:0 6px 18px rgba(0,0,0,0.45);">${uiIcon('skipForward', 14)} <span>إنهاء السؤال</span></button>
@@ -647,12 +667,15 @@
       global.ScoreARArena3D.mount(mountEl, {
         worldId: wid,
         mode: activeMode,
-        layout: isSurvival ? 'ring' : 'duel',
+        layout: (isSurvival || isCardArena) ? 'ring' : 'duel',
         phase: isReading ? 'reading' : 'answering',
         qIndex: currentQIndex,
         players: displayPlayers,
         room
       });
+      if (isCardArena) {
+        global.ScoreARArena3D.syncCardActorsState?.(displayPlayers, global.ScoreARCardArena?.getManager?.());
+      }
     }
   }
 
@@ -701,6 +724,7 @@
     const isArena = Boolean(global.ScoreARArena3D?.isActive?.() || global.ScoreARArenaModes?.is3DArenaMode?.(activeMode));
     const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeMode));
     const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeMode));
+    const isCardArena = Boolean(global.ScoreARArenaModes?.isCardArenaMode?.(activeMode));
     if (timerArea && centerMount !== timerArea) timerArea.style.display = 'none';
     if (liveStats) liveStats.style.display = 'none';
 
@@ -744,6 +768,11 @@
         const goPodium = Boolean(isLastQuestion || sRes?.championEarly || (qIdxNow + 1 >= totalQs));
         nextAction = goPodium ? 'ScoreARQuizHost.renderHostPodium()' : `ScoreARQuizHost.launchQuestion(${qIdxNow + 1})`;
         nextLabel = goPodium ? '🏆 تتويج الناجي الأقوى ❯' : 'السؤال التالي ❯';
+      }
+      if (isCardArena) {
+        global.ScoreARCardCinema?.updateCardArenaHud?.(room, global.ScoreARCardArena?.getManager?.());
+        nextAction = isLastQuestion ? 'ScoreARQuizHost.renderHostPodium()' : 'ScoreARQuizHost.renderHostLeaderboard()';
+        nextLabel = isLastQuestion ? '🏆 منصة التتويج ❯' : 'الترتيب والكروت ❯';
       }
       const midRow = document.getElementById('hostAnsweringMidRow');
       if (midRow) {

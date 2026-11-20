@@ -42,6 +42,10 @@
   }
 
   function publishRoomClosed(pin, reason = 'انتهت المسابقة بواسطة المعلم') {
+    global.ScoreARCardArena?.stopBotDirector?.();
+    global.ScoreARCardCinema?.cleanup?.();
+    global.ScoreARArena3D?.dispose?.();
+    global.ScoreARDuelCoronation?.cleanup?.();
     const pStr = String(pin).padStart(6, '0');
     if (rt()) rt().publish('ROOM_CLOSED', { pin: pStr, reason, timestamp: Date.now() });
     try {
@@ -52,17 +56,29 @@
 
   function publishQuestionReading(qIndex, total, qData, worldId = 'royal') {
     const room = global.ScoreARQuizHost?.getCurrentRoom?.() || null;
+    let cardStarterRes = null;
     if (room) {
       room._lastQIndex = qIndex;
       room._lastTotalQuestions = total;
       const curMode = global.ScoreARGameModes?.getMode?.() || room.gameMode || room.mode || 'SOLO';
       if (curMode === 'SURVIVAL' && global.ScoreARSurvivalEngine?.prepareNextRound) {
         global.ScoreARSurvivalEngine.prepareNextRound(room, qIndex, total);
+      } else if (curMode === 'CARD_ARENA') {
+        room._cardPostGrantQ = null;
+        if (qIndex === 0 && !room._cardStarterDealt) {
+          room._cardStarterDealt = true;
+          cardStarterRes = global.ScoreARCardArena?.dealRound1StarterCards?.(room) || null;
+        }
+        global.ScoreARCardArena?.startBotDirector?.();
       }
     }
     if (rt()) {
       const { mode, gameMode, aiEnabled, roster, duelTeamNames, survivalState } = getModeInfo();
-      rt().publish('QUESTION_READING', { qIndex, totalQuestions: total, q: qData.text || qData.q, skill: qData.skill || 'سؤال', readingDuration: 10, worldId, mode, gameMode, aiEnabled, roster, duelTeamNames, survivalState });
+      rt().publish('QUESTION_READING', {
+        qIndex, totalQuestions: total, q: qData.text || qData.q, skill: qData.skill || 'سؤال',
+        readingDuration: 10, worldId, mode, gameMode, aiEnabled, roster, duelTeamNames, survivalState,
+        cardGrants: cardStarterRes?.cardGrantsByPlayer || null
+      });
     }
   }
 
@@ -95,8 +111,19 @@
   }
 
   function publishQuestionResult(payload) {
+    const room = global.ScoreARQuizHost?.getCurrentRoom?.() || null;
+    const preMode = global.ScoreARGameModes?.getMode?.() || room?.gameMode || room?.mode || 'SOLO';
+    const grantRes = (preMode === 'CARD_ARENA' && global.ScoreARCardArena?.processPostQuestionCardGrants)
+      ? global.ScoreARCardArena.processPostQuestionCardGrants(room, payload)
+      : null;
     const { mode, gameMode, aiEnabled, roster, duelScores, duelTeamNames, survivalState } = getModeInfo();
-    if (rt()) rt().publish('QUESTION_RESULT', { ...payload, mode, gameMode, aiEnabled, roster, duelScores, duelTeamNames, survivalState });
+    if (rt()) {
+      rt().publish('QUESTION_RESULT', {
+        ...payload, mode, gameMode, aiEnabled, roster, duelScores, duelTeamNames, survivalState,
+        cardGrants: grantRes?.cardGrants || null,
+        cardDropSummary: grantRes?.cardDropSummary || []
+      });
+    }
   }
 
   function publishContestCompleted(podium, totalPlayers, fullLeaderboard = []) {
@@ -215,6 +242,15 @@
       let earned = 0;
       let scoreFormula = wasPinned ? 'مجمد بكارت تثبيت ❄️' : 'إجابة خاطئة (0 نقطة)';
       const speedRank = speedRankMap.get(pIdStr) || 0;
+      const hadWager100 = Boolean(cardP?.status?.wager100 || p.wager100);
+      if (cardP?.status) {
+        cardP.status.wager100 = false;
+        cardP.status.hasFog = false;
+        cardP.status.timeSliced = false;
+      }
+      p.wager100 = false;
+      p.hasFog = false;
+      p.timeSliced = false;
 
       if (isAnsCorrect) {
         const base = Number(qData.points) || 1000;
@@ -235,8 +271,10 @@
         const streakBonus = nextStreak >= 2 ? Math.min(streakCap, (nextStreak - 1) * streakStep) : 0;
 
         earned = Math.round((base * tf + speedBonus) * mult) + streakBonus;
+        if (hadWager100) earned += 100;
         p.streak = nextStreak;
-        scoreFormula = `${base} × ${tf.toFixed(2)}${speedBonus ? ' + ⚡' + speedBonus : ''} × ${mult}${streakBonus ? ' + 🔥' + streakBonus : ''} = ${earned}`;
+        p.score = (p.score || 0) + earned;
+        scoreFormula = `${base} × ${tf.toFixed(2)}${speedBonus ? ' + ⚡' + speedBonus : ''} × ${mult}${streakBonus ? ' + 🔥' + streakBonus : ''}${hadWager100 ? ' + 🎲100 (رهان المائة)' : ''} = ${earned}`;
       } else {
         const saverIdx = cardP?.trapSlots ? cardP.trapSlots.findIndex(t => t.id === 'STREAK_SAVER') : -1;
         if (saverIdx !== -1) {
@@ -244,10 +282,20 @@
         } else {
           p.streak = 0;
         }
+        if (hadWager100) {
+          p.score = Math.max(0, (p.score || 0) - 100);
+          earned = -100;
+          scoreFormula = (wasPinned ? 'مجمد بكارت تثبيت ❄️' : 'إجابة خاطئة') + ' · 🎲 خسارة رهان المائة (-100)';
+        } else {
+          p.score = (p.score || 0);
+        }
       }
 
-      p.score = (p.score || 0) + earned;
       p.lastPointsGained = earned;
+      if (cardP) {
+        cardP.score = p.score;
+        cardP.streak = p.streak;
+      }
 
       playerResults[pIdStr] = {
         id: p.id,
@@ -263,6 +311,7 @@
         elapsedMs: isAnsCorrect ? elapsedMs : null,
         answerElapsedMs,
         unanswered: Boolean(unanswered),
+        wager100Outcome: hadWager100 ? (isAnsCorrect ? 'won' : 'lost') : null,
         scoreFormula
       };
     });
@@ -348,13 +397,15 @@
 
   function renderHostLeaderboard(stage, currentRoom, activeQuestions, currentQIndex, onNext, onPodium, onClose) {
     const activeMode = global.ScoreARGameModes?.getMode?.() || currentRoom?.gameMode || currentRoom?.mode || 'SOLO';
-    if (!global.ScoreARArenaModes?.isDuelMode?.(activeMode) && global.ScoreARArena3D?.dispose) {
+    if (!global.ScoreARArenaModes?.isDuelMode?.(activeMode) && !global.ScoreARArenaModes?.isCardArenaMode?.(activeMode) && global.ScoreARArena3D?.dispose) {
       global.ScoreARArena3D.dispose();
     }
     if (lb()) lb().renderHostLeaderboard(stage, currentRoom, activeQuestions, currentQIndex, onNext, onPodium, onClose);
   }
 
   function renderHostPodium(stage, currentRoom, onClose) {
+    global.ScoreARCardArena?.stopBotDirector?.();
+    global.ScoreARCardCinema?.cleanup?.();
     if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     if (lb()) lb().renderHostPodium(stage, currentRoom, onClose);
   }

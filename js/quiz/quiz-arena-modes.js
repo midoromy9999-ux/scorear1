@@ -44,7 +44,7 @@
   const MODE_LABELS = {
     SOLO: 'التحدي الفردي',
     SQUADS: 'وضع الفريق',
-    CARD_ARENA: 'طور حرب الكروت',
+    CARD_ARENA: 'حرب الكروت 3D',
     DUEL_TEAMS: 'التحدي — فريقان 3D',
     SURVIVAL: 'البقاء للأقوى 3D'
   };
@@ -117,15 +117,18 @@
     {
       id: 'CARD_ARENA',
       title: 'حرب الكروت الاستراتيجية',
-      badge: 'تكتيكي',
-      badgeTone: 'tactic',
+      badge: 'تكتيكي 3D 🃏',
+      badgeTone: 'live',
       comingSoon: false,
       category: 'tactic',
       thumb: 'assets/modes/mode_cards.jpg',
       icon: '🃏',
       accent: '#ec4899',
-      description: 'قوى بطاقات ومضاعفة نقاط ودروع حماية تقلب موازين المنافسة.',
-      features: ['بطاقات هجوم ودفاع ومضاعفة', 'مفاجآت تكتيكية بعد كل سؤال']
+      description: 'مواجهة كروت تكتيكية داخل قاعة 3D بكروت مقلوبة بجانب كل بطل، رهان المائة ±100، وردود فعل سينمائية فورية على الشاشة.',
+      features: [
+        'كارت مجاني للجميع بالجولة الأولى + أسرع إجابتين وكل إجابتين متتاليتين',
+        'قاعة 3D بكروت مقلوبة بجانب كل بطل وردود فعل سينمائية فورية على الشاشة'
+      ]
     }
   ];
 
@@ -188,7 +191,12 @@
 
   function is3DArenaMode(mode) {
     const m = String(mode || getCurrentMode() || '').trim();
-    return m === 'DUEL_TEAMS' || m === 'SURVIVAL';
+    return m === 'DUEL_TEAMS' || m === 'SURVIVAL' || m === 'CARD_ARENA';
+  }
+
+  function isCardArenaMode(mode) {
+    const m = String(mode || getCurrentMode() || '').trim();
+    return m === 'CARD_ARENA';
   }
 
   function isDuelMode(mode) {
@@ -540,6 +548,9 @@
 
   function filterPickerCards(filter) {
     if (!filter || filter === 'all') return allPickerCards();
+    if (filter === '3d_arena') {
+      return allPickerCards().filter(c => c.category === '3d_arena' || c.id === 'CARD_ARENA');
+    }
     return allPickerCards().filter(c => c.category === filter);
   }
 
@@ -596,7 +607,11 @@
           <div id="survivalModeInfoStrip" style="margin-bottom:14px;padding:10px 16px;border-radius:14px;background:rgba(245,158,11,0.14);backdrop-filter:blur(10px);border:1px solid rgba(251,191,36,0.42);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
             <span style="font-size:12.5px;font-weight:900;color:#fde68a;">👑 قواعد البقاء للأقوى: عداد إقصاء ذكي تلقائي • يخرج الأبطأ ومن لم يُجب (حتى 3 + غير المجيبين) • تصفير النقاط بعد كل خروج!</span>
           </div>
-        ` : '')}
+        ` : (modalSelectedMode === 'CARD_ARENA' ? `
+          <div id="cardArenaModeInfoStrip" style="margin-bottom:14px;padding:10px 16px;border-radius:14px;background:rgba(236,72,153,0.14);backdrop-filter:blur(10px);border:1px solid rgba(244,114,182,0.45);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:12.5px;font-weight:900;color:#fbcfe8;">🃏 قواعد حرب الكروت 3D: كارت مجاني للجميع بالجولة 1 • كارت لأسرع إجابتين ولكل إجابتين متتاليتين • رهان المائة ±100 على السؤال القادم • ردود فعل 3D سينمائية!</span>
+          </div>
+        ` : ''))}
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:18px;">
           ${cards.map(c => {
@@ -803,6 +818,7 @@
     EXTRA_MODES,
     MODE_LABELS,
     is3DArenaMode,
+    isCardArenaMode,
     isDuelMode,
     isSurvivalMode,
     getModeLabel,

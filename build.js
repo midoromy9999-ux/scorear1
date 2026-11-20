@@ -106,6 +106,7 @@ const BUNDLE_DEFINITIONS = [
       'js/quiz/quiz-motion-v3.js',
       'js/quiz/quiz-lobby-director.js',
       'js/quiz/quiz-stage-fx.js',
+      'js/quiz/quiz-card-cinema.js',
       'js/quiz/quiz-host-leaderboard.js',
       'js/quiz/quiz-host-events.js',
       'js/quiz/quiz-host-view.js'

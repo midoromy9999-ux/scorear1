@@ -122,7 +122,7 @@
     document.getElementById('scCardBattleClashHud')?.remove();
     const sAv = ev.sourcePlayer?.avatarId || 'char_01', tAv = ev.targetPlayer?.avatarId || 'char_02';
     const cardImg = ev.card?.img || spec.img || 'assets/cards/card_pin_student.jpg';
-    const statusLbl = isBlocked ? '🛡️ صُدَّ بالدرع!' : (isReflected ? '🪞 ارتد بمرآة القاضي!' : spec.label);
+    const statusLbl = isBlocked ? '🛡️ صُدَّ بالدرع!' : (isReflected ? '⚖️ ارتد بمرآة القاضي!' : spec.label);
     const hud = document.createElement('div');
     hud.id = 'scCardBattleClashHud';
     hud.style.cssText = `position:absolute;top:196px;left:50%;transform:translateX(-50%);z-index:158;background:linear-gradient(135deg,rgba(15,18,42,0.96),rgba(34,18,68,0.96));backdrop-filter:blur(18px);border:2px solid ${spec.color};border-radius:22px;padding:10px 20px;display:flex;align-items:center;gap:16px;box-shadow:0 18px 45px rgba(0,0,0,0.78),0 0 32px ${spec.color}66;direction:rtl;pointer-events:none;animation:scDuelSlideIn 2.2s cubic-bezier(0.22,1,0.36,1) forwards;`;
@@ -295,7 +295,7 @@
       return { mode: 'self', cardId: ev.card.id };
     }
     if (isMotionOff()) {
-      if (dstMatch?.el) showBubbleOnTarget(dstMatch.el, isBlocked ? '🛡️ صد الدرع!' : (isReflected ? '🪞 ارتد الهجوم!' : spec.label), isBlocked ? '#38bdf8' : spec.color);
+      if (dstMatch?.el) showBubbleOnTarget(dstMatch.el, isBlocked ? '🛡️ صد الدرع!' : (isReflected ? '⚖️ ارتد الهجوم!' : spec.label), isBlocked ? '#38bdf8' : spec.color);
       return { mode: 'reduced', cardId: ev.card.id };
     }
     const nowMs = performance.now ? performance.now() : Date.now(), midX = (ptA.x + ptB.x) * 0.5, midY = Math.min(ptA.y, ptB.y) - 110;
@@ -308,7 +308,7 @@
           if (dstMatch?.el) { applyTargetVisualEffect(dstMatch.el, 'shield'); showBubbleOnTarget(dstMatch.el, '🛡️ صد الدرع!', '#38bdf8'); }
         } else if (isReflected) {
           spawnBurst(hx, hy, '#38bdf8', 20, 1.2);
-          if (dstMatch?.el) { applyTargetVisualEffect(dstMatch.el, 'shield'); showBubbleOnTarget(dstMatch.el, '🪞 مرآة القاضي!', '#38bdf8'); }
+          if (dstMatch?.el) { applyTargetVisualEffect(dstMatch.el, 'shield'); showBubbleOnTarget(dstMatch.el, '⚖️ مرآة القاضي!', '#38bdf8'); }
           const bounceStart = performance.now ? performance.now() : Date.now();
           pushBolt({
             x0: ptB.x, y0: ptB.y, cx: midX, cy: midY - 28, x1: ptA.x, y1: ptA.y,

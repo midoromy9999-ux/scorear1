@@ -11,6 +11,8 @@
 
   let previousRanks = new Map();
   let lastSessionToken = null;
+  let _liveCardRoomRef = null;
+  let _liveCardPrevScores = new Map();
 
   const WORLD_RACE_THEMES = {
     royal: {
@@ -219,12 +221,146 @@
     }
   }
 
+  function buildCardStandingsRowsHtml(players, cardMgr, changedIds) {
+    const sorted = [...(players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
+    const top5 = sorted.slice(0, 5);
+    const map = cardMgr?.players || {};
+    if (!top5.length) {
+      return '<div style="padding:18px;text-align:center;color:#cbd5e1;font-weight:800;">لا يوجد متسابقون بالقاعة بعد</div>';
+    }
+    let rank = 1;
+    return top5.map((p, idx) => {
+      if (idx > 0 && (p.score || 0) < (top5[idx - 1].score || 0)) rank = idx + 1;
+      const pid = String(p.id || '');
+      const mp = map[pid] || null;
+      const code = normAvatar(p);
+      const handLen = mp?.hand?.length || 0;
+      const trapLen = mp?.trapSlots?.length || 0;
+      const wager = Boolean(mp?.status?.wager100 || p.wager100);
+      const mult2x = (mp?.status?.multiplier === 2 || p.cardMultiplier === 2);
+      const pinned = Boolean(mp?.status?.isPinned || p.isPinned);
+      const ptsGained = Number(p.lastPointsGained || 0);
+      const deltaStr = ptsGained > 0 ? `▲ +${ptsGained}` : (ptsGained < 0 ? `▼ ${ptsGained}` : '— 0');
+      const deltaColor = ptsGained > 0 ? '#4ade80' : (ptsGained < 0 ? '#f87171' : '#94a3b8');
+      const changed = Boolean(changedIds && changedIds.has(pid));
+      return `
+        <div class="race-lane-card" data-player-id="${escapeHtml(pid)}" data-player-name="${escapeHtml(p.name || '')}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 12px;border-radius:12px;background:${rank === 1 ? 'linear-gradient(90deg,rgba(251,191,36,0.20),rgba(13,22,48,0.62))' : 'rgba(13,22,48,0.52)'};border:1px solid ${changed ? '#fbbf24' : (rank === 1 ? 'rgba(251,191,36,0.62)' : 'rgba(255,255,255,0.14)')};box-shadow:${changed ? '0 0 18px rgba(251,191,36,0.55)' : 'none'};transition:all 0.35s ease;">
+          <div style="display:flex;align-items:center;gap:9px;min-width:0;flex:1;">
+            <span style="width:28px;height:28px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-size:13px;font-weight:900;color:#fff;background:${rank === 1 ? 'linear-gradient(135deg,#fbbf24,#d97706)' : (rank === 2 ? '#64748b' : (rank === 3 ? '#b45309' : 'rgba(255,255,255,0.12)'))};font-family:Montserrat,Cairo,sans-serif;">${rank}</span>
+            <div class="char-procedural-rig" data-char-code="${code}" style="width:34px;height:34px;border-radius:50%;overflow:hidden;border:1.5px solid #e879f9;flex-shrink:0;background:#090d1e;">
+              <img src="assets/motion-v3/originals/${code}.png" onerror="this.onerror=null;this.src='assets/characters/animated/${code}-idle.webp';" alt="${escapeHtml(p.name || 'بطل')}" style="width:100%;height:100%;object-fit:cover;object-position:center 16%;transform:scale(1.15);display:block;">
+            </div>
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:13.5px;font-weight:900;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(p.name || 'متسابق')}</div>
+              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:1px;">
+                ${handLen > 0 ? `<span style="font-size:10px;font-weight:800;color:#fde68a;background:rgba(251,191,36,0.16);padding:0 6px;border-radius:999px;display:inline-flex;align-items:center;gap:3px;"><i style="display:inline-block;width:8px;height:11px;border-radius:2px;background:#312e81;border:1.5px solid #fbbf24;"></i> ${handLen}</span>` : ''}
+                ${trapLen > 0 ? `<span style="font-size:10px;font-weight:800;color:#7dd3fc;background:rgba(56,189,248,0.18);padding:0 6px;border-radius:999px;">🛡️ ${trapLen}</span>` : ''}
+                ${wager ? `<span style="font-size:10px;font-weight:900;color:#6ee7b7;background:rgba(16,185,129,0.20);padding:0 6px;border-radius:999px;">🎲 رهان ±100</span>` : ''}
+                ${mult2x ? `<span style="font-size:10px;font-weight:900;color:#fef08a;background:rgba(245,158,11,0.22);padding:0 6px;border-radius:999px;">⚡ 2X</span>` : ''}
+                ${pinned ? `<span style="font-size:10px;font-weight:900;color:#bae6fd;background:rgba(14,165,233,0.24);padding:0 6px;border-radius:999px;">❄️ مجمد</span>` : ''}
+                ${(p.streak || 0) >= 2 ? `<span style="font-size:10px;font-weight:800;color:#fdba74;">🔥 ${p.streak}</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+            <span style="font-size:12px;font-weight:900;color:${deltaColor};min-width:56px;text-align:center;font-family:Montserrat,Cairo,monospace;"><bdi dir="ltr">${deltaStr}</bdi></span>
+            <span class="scorear-count-up" style="font-size:17px;font-weight:900;color:#fff;font-family:Montserrat,Cairo,monospace;min-width:48px;text-align:left;">${p.score || 0}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderCardArenaLiveStandings(stage, currentRoom, activeQuestions, currentQIndex, theme, worldId, sorted, nextAction, nextLabel, isMuted) {
+    _liveCardRoomRef = currentRoom;
+    _liveCardPrevScores = new Map((currentRoom.players || []).map(p => [String(p.id), p.score || 0]));
+    const existingArenaWrap = typeof stage.querySelector === 'function' ? stage.querySelector('#hostArena3DWrap') : null;
+    const keepLive3D = Boolean(existingArenaWrap && global.ScoreARArena3D?.isActive?.());
+    const totalQ = Array.isArray(activeQuestions) && activeQuestions.length ? activeQuestions.length : 1;
+    const cardMgr = global.ScoreARCardArena?.getManager?.();
+    const hudHtml = global.ScoreARCardCinema?.renderCardArenaHudHtml
+      ? global.ScoreARCardCinema.renderCardArenaHudHtml(currentRoom, cardMgr)
+      : '';
+    const rowsHtml = buildCardStandingsRowsHtml(currentRoom.players || [], cardMgr, null);
+
+    const overlayHtml = `
+      <header class="scorear-control-bar" style="position:relative;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:6px 20px;gap:8px;flex-wrap:wrap;pointer-events:auto;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" class="scorear-gear-btn" onclick="ScoreARQuizHost.closeHostSession()" style="border-color:rgba(255,107,107,0.38);color:#fca5a5;">${uiIcon('close', 14)} <span>إنهاء القاعة</span></button>
+          <button type="button" id="hostAudioMuteBtn" class="scorear-gear-btn scorear-audio-btn" onclick="ScoreARHostLeaderboard.toggleMuteAudio()">${uiIcon(isMuted ? 'volumeOff' : 'volume', 14)} <span>${isMuted ? 'صامت' : 'الصوت'}</span></button>
+        </div>
+        <span class="scorear-control-pill" style="border-color:${theme.border};color:#fff;">${theme.emblem} <span>${escapeHtml(theme.name)}</span> · <bdi dir="ltr">${currentQIndex + 1} / ${totalQ}</bdi></span>
+        <span style="font-size:12px;color:#cbd5e1;font-weight:800;">المتسابقون: <b style="color:${theme.accentColor};">${sorted.length}</b></span>
+      </header>
+
+      <div id="hostCardArenaHudWrap" style="position:relative;z-index:26;padding:4px 18px 0;pointer-events:none;">${hudHtml}</div>
+
+      <div id="hostTopLeftActionWrap" style="position:fixed;top:52px;left:18px;z-index:65;pointer-events:auto;">
+        <button type="button" id="hostNextQuestionBtn" onclick="${nextAction}" style="background:linear-gradient(135deg,#ffffff,#e2e8f0);color:#0f172a;border:2px solid #fbbf24;border-bottom:4px solid #cbd5e1;border-radius:999px;padding:9px 24px;font-size:15px;font-weight:900;cursor:pointer;font-family:Cairo,sans-serif;box-shadow:0 10px 26px rgba(0,0,0,0.5);display:inline-flex;align-items:center;gap:8px;">
+          <span>${nextLabel}</span> ${uiIcon(nextAction.includes('launchQuestion') ? 'arrow' : 'crown', 16)}
+        </button>
+      </div>
+
+      <div style="margin:auto auto 14px;width:min(820px,92%);padding:10px 14px;border-radius:20px;background:rgba(8,14,32,0.44);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.22);box-shadow:0 14px 38px rgba(0,0,0,0.40),inset 0 1px 0 rgba(255,255,255,0.16);pointer-events:auto;direction:rtl;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-weight:900;color:#fbcfe8;display:inline-flex;align-items:center;gap:6px;"><i style="display:inline-block;width:10px;height:13px;border-radius:2px;background:#312e81;border:1.5px solid #fbbf24;"></i> الترتيب المباشر فوق القاعة — نافذة الكروت التكتيكية</span>
+          <span style="padding:2px 10px;border-radius:999px;background:rgba(255,255,255,0.08);border:1px solid rgba(251,191,36,0.42);color:#fef08a;font-size:11px;font-weight:800;">يتحدث الترتيب فورياً مع أي كارت هجوم أو تبديل ⚡</span>
+        </div>
+        <div id="hostCardArenaStandingsList" style="display:flex;flex-direction:column;gap:5px;">${rowsHtml}</div>
+      </div>
+    `;
+
+    if (keepLive3D) {
+      Array.from(stage.children || []).forEach(ch => { if (ch !== existingArenaWrap) ch.remove(); });
+      const overlay = document.createElement('div');
+      overlay.id = 'hostCardArenaStandingsOverlay';
+      overlay.style.cssText = 'position:relative;z-index:20;display:flex;flex-direction:column;width:100%;height:100%;direction:rtl;font-family:Cairo,Tajawal,sans-serif;pointer-events:none;';
+      overlay.innerHTML = overlayHtml;
+      stage.appendChild(overlay);
+      global.ScoreARArena3D?.setStandingsOverview?.('CARD_ARENA', { sorted });
+      global.ScoreARArena3D?.syncCardActorsState?.(currentRoom.players || [], cardMgr);
+    } else {
+      stage.innerHTML = `<div id="hostArena3DWrap" style="position:fixed;inset:0;overflow:hidden;z-index:1;pointer-events:none;background:#070a18;"></div><div id="hostCardArenaStandingsOverlay" style="position:relative;z-index:20;display:flex;flex-direction:column;width:100%;height:100%;direction:rtl;font-family:Cairo,Tajawal,sans-serif;pointer-events:none;">${overlayHtml}</div>`;
+      if (global.ScoreARArena3D?.mount) {
+        const mountEl = typeof stage.querySelector === 'function' ? stage.querySelector('#hostArena3DWrap') : null;
+        if (mountEl) {
+          global.ScoreARArena3D.mount(mountEl, { worldId, mode: 'CARD_ARENA', layout: 'ring', phase: 'overview', qIndex: currentQIndex, players: currentRoom.players || [], room: currentRoom });
+          global.ScoreARArena3D.setStandingsOverview?.('CARD_ARENA', { sorted });
+          global.ScoreARArena3D.syncCardActorsState?.(currentRoom.players || [], cardMgr);
+        }
+      }
+    }
+  }
+
+  function refreshCardArenaLiveStandings(room) {
+    if (typeof document === 'undefined') return false;
+    const listEl = document.getElementById('hostCardArenaStandingsList');
+    if (!listEl) return false;
+    const targetRoom = room || _liveCardRoomRef || global.ScoreARQuizHost?.getCurrentRoom?.();
+    if (!targetRoom || !Array.isArray(targetRoom.players)) return false;
+    const changed = new Set();
+    targetRoom.players.forEach(p => {
+      const pid = String(p.id);
+      if (_liveCardPrevScores.has(pid) && _liveCardPrevScores.get(pid) !== (p.score || 0)) {
+        changed.add(pid);
+      }
+      _liveCardPrevScores.set(pid, p.score || 0);
+    });
+    const cardMgr = global.ScoreARCardArena?.getManager?.();
+    listEl.innerHTML = buildCardStandingsRowsHtml(targetRoom.players, cardMgr, changed);
+    global.ScoreARCardCinema?.updateCardArenaHud?.(targetRoom, cardMgr);
+    if (global.ScoreARArena3D?.isActive?.()) {
+      global.ScoreARArena3D.syncCardActorsState?.(targetRoom.players, cardMgr);
+    }
+    return true;
+  }
+
   function renderHostLeaderboard(stage, currentRoom, activeQuestions, currentQIndex, onNext, onPodium, onClose) {
     if (!stage || !currentRoom) return;
     const activeMode = global.ScoreARGameModes?.getMode?.() || currentRoom.gameMode || currentRoom.mode || 'SOLO';
     const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeMode));
     const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeMode));
-    if (!isDuel && global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
+    const isCardArena = Boolean(global.ScoreARArenaModes?.isCardArenaMode?.(activeMode));
+    if (!isDuel && !isCardArena && global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     if (!currentRoom._lbSessionToken) {
       currentRoom._lbSessionToken = `${currentRoom.pin || 'room'}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     }
@@ -277,6 +413,29 @@
           worldId,
           mode: activeMode,
           duelScores: duelSb,
+          survivalState: null,
+          questionNumber: currentQIndex + 1,
+          totalQuestions: totalQ,
+          top5: top5.map(p => ({ id: p.id, name: p.name, score: p.score || 0, rank: p._currentRank, avatarId: normAvatar(p), teamId: p.teamId || null, eliminated: false })),
+          totalPlayers: sorted.length,
+          allRanks: sorted.map((p, i) => ({
+            id: p.id, name: p.name, avatarId: normAvatar(p), teamId: p.teamId || null, eliminated: false,
+            rank: p._currentRank, score: p.score || 0,
+            delta: p._rankDelta || 0, streak: p.streak || 0,
+            gapToAbove: i > 0 ? Math.max(0, (sorted[i - 1].score || 0) - (p.score || 0)) : 0
+          }))
+        });
+      }
+      return;
+    }
+
+    if (isCardArena) {
+      renderCardArenaLiveStandings(stage, currentRoom, activeQuestions, currentQIndex, theme, worldId, sorted, nextAction, nextLabel, isMuted);
+      if (global.ScoreARRealtime && typeof global.ScoreARRealtime.publish === 'function') {
+        global.ScoreARRealtime.publish('LEADERBOARD_UPDATE', {
+          worldId,
+          mode: activeMode,
+          duelScores: null,
           survivalState: null,
           questionNumber: currentQIndex + 1,
           totalQuestions: totalQ,
@@ -482,6 +641,7 @@
 
   const ScoreARHostLeaderboard = {
     renderHostLeaderboard,
+    refreshCardArenaLiveStandings,
     renderHostPodium,
     toggleMuteAudio,
     WORLD_RACE_THEMES

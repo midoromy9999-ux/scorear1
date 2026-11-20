@@ -201,6 +201,8 @@
     if (!stage || !currentRoom) return;
     if (global.ScoreARWorldHalls?.cleanup) global.ScoreARWorldHalls.cleanup();
     if (global.ScoreARDuelCoronation?.cleanup) global.ScoreARDuelCoronation.cleanup();
+    global.ScoreARCardArena?.stopBotDirector?.();
+    global.ScoreARCardCinema?.cleanup?.();
     if (scenes()?.stopStage) scenes().stopStage();
     clearPodiumTimers();
     celebrationClassicStarted = false;
