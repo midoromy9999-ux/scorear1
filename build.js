@@ -120,6 +120,7 @@ const BUNDLE_DEFINITIONS = [
       'js/quiz/quiz-podium-scenes.js',
       'js/quiz/quiz-world-cinematics.js',
       'js/quiz/quiz-hall-3d-engine.js',
+      'js/quiz/quiz-arena-3d.js',
       'js/quiz/quiz-hall-3d-stage.js',
       'js/quiz/quiz-hall-3d-royal.js',
       'js/quiz/quiz-hall-3d-worlds-a.js',

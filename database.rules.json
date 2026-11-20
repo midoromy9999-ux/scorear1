@@ -53,6 +53,9 @@
         "aiEnabled": {
           ".read": "auth != null"
         },
+        "duelTeamNames": {
+          ".read": "auth != null"
+        },
         "blocked": {
           "$uid": {
             ".read": "auth != null && auth.uid === $uid"

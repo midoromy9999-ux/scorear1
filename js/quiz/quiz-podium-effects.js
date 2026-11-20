@@ -42,10 +42,15 @@
     global.ScoreARAudio?.unduckMusic?.(100);
   }
 
-  function computeRanks(sorted) {
+  function computeRanks(sorted, isSurvival = false) {
     let r = 1;
     return sorted.map((p, i) => {
-      if (i > 0 && (p.score || 0) < (sorted[i - 1].score || 0)) r = i + 1;
+      if (i > 0) {
+        const lower = (isSurvival && global.ScoreARSurvivalEngine?.isLowerSurvivalRank)
+          ? global.ScoreARSurvivalEngine.isLowerSurvivalRank(p, sorted[i - 1])
+          : ((p.score || 0) < (sorted[i - 1].score || 0));
+        if (lower) r = i + 1;
+      }
       return { ...p, _rank: r };
     });
   }
@@ -202,8 +207,20 @@
     if (partTimer) { clearInterval(partTimer); partTimer = null; }
     spotCanvas = null; revealStep = 0;
 
+    if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     const wid = currentRoom.world?.id || currentRoom.worldId || 'royal';
-    const sorted = [...(currentRoom.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
+    const activeMode = global.ScoreARGameModes?.getMode?.() || currentRoom.gameMode || currentRoom.mode || 'SOLO';
+    const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeMode));
+    const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeMode));
+    const duelScores = (isDuel && global.ScoreARArenaModes?.computeDuelScoreboard)
+      ? global.ScoreARArenaModes.computeDuelScoreboard(currentRoom.players || [])
+      : null;
+    const survivalState = (isSurvival && global.ScoreARSurvivalEngine?.getStatus)
+      ? global.ScoreARSurvivalEngine.getStatus(currentRoom, currentRoom._lastQIndex ?? 0, currentRoom._lastTotalQuestions ?? 5)
+      : null;
+    const sorted = (isSurvival && global.ScoreARSurvivalEngine?.sortPlayersForSurvival)
+      ? global.ScoreARSurvivalEngine.sortPlayersForSurvival(currentRoom.players || [])
+      : [...(currentRoom.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
     const celStyle = global.ScoreARMotionV3?.getCelebrationStyle
       ? global.ScoreARMotionV3.getCelebrationStyle(currentRoom)
       : (currentRoom.celebrationStyle === 'hall' ? 'hall' : 'classic');
@@ -211,6 +228,7 @@
     if (global.ScoreARRealtime && typeof global.ScoreARRealtime.publish === 'function') {
       global.ScoreARRealtime.publish('CONTEST_COMPLETED', {
         worldId: wid, celebrationStyle: celStyle,
+        mode: activeMode, duelScores, survivalState,
         podium: sorted.slice(0, 3), totalPlayers: sorted.length, leaderboard: sorted
       });
     }
@@ -225,7 +243,7 @@
       }
     }
 
-    const ranked = computeRanks(sorted);
+    const ranked = computeRanks(sorted, isSurvival);
     players = ranked;
     room = currentRoom;
     const p1 = ranked[0] || null, p2 = ranked[1] || null, p3 = ranked[2] || null;
@@ -310,6 +328,8 @@
 
   <main style="position:relative;z-index:22;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;overflow:visible;padding-bottom:8px;">
     <div class="sc-ceremony-aura" style="position:absolute;inset:0;pointer-events:none;z-index:2;transition:all 0.35s ease;"></div>
+    ${isDuel && global.ScoreARArenaModes?.renderDuelWinnerBannerHtml ? global.ScoreARArenaModes.renderDuelWinnerBannerHtml(currentRoom.players, { id: 'hostDuelWinnerBanner' }) : ''}
+    ${isSurvival && global.ScoreARSurvivalEngine?.renderSurvivalWinnerBannerHtml ? global.ScoreARSurvivalEngine.renderSurvivalWinnerBannerHtml(sorted) : ''}
     <div id="podiumCameraRig" data-id="podiumCameraRig" style="position:relative;width:100%;max-width:1160px;height:clamp(360px,60vh,470px);margin:0 auto;z-index:5;">
       <div id="climax${wid.charAt(0).toUpperCase() + wid.slice(1)}" style="display:none;position:absolute;inset:0;pointer-events:none;z-index:7;"></div>
       ${players.length ? `

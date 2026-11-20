@@ -25,6 +25,9 @@
     pin: '',
     name: '',
     avatarId: 'char_01',
+    teamId: 'team_a',
+    teamNames: { team_a: 'فريق الصقور', team_b: 'فريق الأسود' },
+    roomMode: 'SOLO',
     isRegistered: false,
     error: null,
     loading: false,
@@ -35,12 +38,18 @@
 
   function init(container, initialPin = '') {
     containerEl = container;
+    global.__scorearAmEliminated = false;
     const cleanPin = String(initialPin || '').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).trim();
     const isFullQrPin = /^\d{6}$/.test(cleanPin);
-    state = { step: isFullQrPin ? 2 : 1, fromQr: isFullQrPin, pin: /^\d{1,6}$/.test(cleanPin) ? cleanPin : '', name: '', avatarId: 'char_01', isRegistered: false, error: null, loading: false, existingPlayers: [] };
+    state = { step: isFullQrPin ? 2 : 1, fromQr: isFullQrPin, pin: /^\d{1,6}$/.test(cleanPin) ? cleanPin : '', name: '', avatarId: 'char_01', teamId: 'team_a', teamNames: { team_a: 'فريق الصقور', team_b: 'فريق الأسود' }, roomMode: 'SOLO', isRegistered: false, error: null, loading: false, existingPlayers: [] };
     if (isFullQrPin) {
       verifyRoomOpen(cleanPin).then(rc => {
         if (rc && rc.players) state.existingPlayers = rc.players;
+        if (rc && rc.teamNames) state.teamNames = rc.teamNames;
+        if (rc && rc.mode) {
+          state.roomMode = rc.mode;
+          syncStep2TeamPickerUi();
+        }
       }).catch(() => {});
     }
 
@@ -213,6 +222,7 @@
           </div>
         </div>
 
+        <div id="studentJoinTeamPickerWrap">${renderJoinTeamPickerHtml()}</div>
         ${global.ScoreARHeroCosmetics?.renderCompactSelectorHtml ? global.ScoreARHeroCosmetics.renderCompactSelectorHtml() : ''}
         <div style="display:flex;gap:8px;">
           ${!state.fromQr ? `<button type="button" class="scorear-gear-btn" onclick="ScoreARStudentJoin.goToStep(1)" style="flex:1;padding:12px;border-radius:12px;font-size:12.5px;">تغيير الرمز</button>` : ''}
@@ -222,6 +232,44 @@
         </div>
       </div>
     `;
+  }
+
+  function renderJoinTeamPickerHtml() {
+    if (state.roomMode !== 'DUEL_TEAMS') return '';
+    const customNames = state.teamNames || global.__scorearDuelTeamNames || { team_a: 'فريق الصقور', team_b: 'فريق الأسود' };
+    const teams = [
+      { id: 'team_a', emoji: '🦅', name: customNames.team_a || 'فريق الصقور', color: '#38bdf8', bg: 'linear-gradient(135deg,#0284c7,#0369a1)' },
+      { id: 'team_b', emoji: '🦁', name: customNames.team_b || 'فريق الأسود', color: '#fb923c', bg: 'linear-gradient(135deg,#ea580c,#c2410c)' }
+    ];
+    return `
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:12px;font-weight:800;color:#fde68a;margin-bottom:6px;">٣. اختر فريقك في المواجهة (فريقان فقط):</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          ${teams.map(t => {
+            const sel = state.teamId === t.id;
+            return `<button type="button" data-team-choice="${t.id}" onclick="ScoreARStudentJoin.selectTeam('${t.id}')" style="padding:10px 8px;border-radius:14px;border:2px solid ${sel ? '#fde047' : 'rgba(255,255,255,0.14)'};background:${sel ? t.bg : 'rgba(18,20,44,0.88)'};color:#fff;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13.5px;font-weight:900;box-shadow:${sel ? `0 6px 18px ${t.color}55` : 'none'};transition:all 0.18s;">
+              <span style="font-size:20px;">${t.emoji}</span>
+              <span>${escapeHtml(t.name)}</span>
+              ${sel ? '<span style="font-size:12px;color:#fde047;">✓</span>' : ''}
+            </button>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function syncStep2TeamPickerUi() {
+    const wrap = containerEl ? containerEl.querySelector('#studentJoinTeamPickerWrap') : null;
+    if (wrap) wrap.innerHTML = renderJoinTeamPickerHtml();
+  }
+
+  function selectTeam(teamId) {
+    state.teamId = teamId === 'team_b' ? 'team_b' : 'team_a';
+    global.__scorearStudentTeamId = state.teamId;
+    try {
+      if (state.pin) sessionStorage.setItem('scorear_student_team_' + state.pin, state.teamId);
+    } catch (_) {}
+    syncStep2TeamPickerUi();
   }
 
   function renderStep3Html() {
@@ -291,26 +339,51 @@
       if (hPin === pin) {
         const locked = (typeof global.ScoreARQuizHost.isLocked === 'function') ? global.ScoreARQuizHost.isLocked() : false;
         const players = (global.ScoreARQuizHost.getPlayers ? global.ScoreARQuizHost.getPlayers() : []);
-        return { exists: true, isLocked: locked, players };
+        const hostMode = (global.ScoreARGameModes?.getMode?.()) || global.currentLobbyGameMode || 'SOLO';
+        const hostNames = global.ScoreARArenaModes?.getTeamNames ? global.ScoreARArenaModes.getTeamNames() : null;
+        if (hostNames) {
+          state.teamNames = hostNames;
+          global.__scorearDuelTeamNames = hostNames;
+        }
+        state.roomMode = hostMode;
+        global.__scorearJoinedRoomMode = hostMode;
+        return { exists: true, isLocked: locked, players, mode: hostMode, teamNames: state.teamNames };
       }
     }
     try {
       const db = (global.ScoreARAuth && global.ScoreARAuth.getDb) ? global.ScoreARAuth.getDb() : (global.firebase && global.firebase.database ? global.firebase.database() : null);
       if (db) {
         const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('DB_TIMEOUT')), 1500));
-        const [snapStatus, snapLock, snapEvents] = await Promise.all([
+        const [snapStatus, snapLock, snapEvents, snapMode, snapTeamNames] = await Promise.all([
           Promise.race([db.ref('rooms/' + pin + '/status').once('value'), timeout]).catch(() => null),
           Promise.race([db.ref('rooms/' + pin + '/isLocked').once('value'), timeout]).catch(() => null),
-          Promise.race([db.ref('scorear_rooms/' + pin).once('value'), timeout]).catch(() => null)
+          Promise.race([db.ref('scorear_rooms/' + pin).once('value'), timeout]).catch(() => null),
+          Promise.race([db.ref('rooms/' + pin + '/mode').once('value'), timeout]).catch(() => null),
+          Promise.race([db.ref('rooms/' + pin + '/duelTeamNames').once('value'), timeout]).catch(() => null)
         ]);
-        if (snapStatus && snapStatus.exists()) {
-          const sVal = snapStatus.val();
-          if (sVal === 'closed') return { exists: false, isClosed: true };
-          const isLocked = snapLock && snapLock.exists() ? !!snapLock.val() : false;
-          return { exists: true, isLocked, players: [] };
-        }
+        let resolvedMode = (snapMode && snapMode.exists()) ? String(snapMode.val() || 'SOLO') : '';
+        let resolvedNames = (snapTeamNames && snapTeamNames.exists() && snapTeamNames.val()) ? snapTeamNames.val() : null;
         if (snapEvents && snapEvents.exists() && snapEvents.hasChildren()) {
           const evs = Object.values(snapEvents.val() || {}).filter(Boolean).sort((a,b) => (a._timestamp||0) - (b._timestamp||0));
+          const lastModeEv = evs.slice().reverse().find(e => (e.type === 'ROOM_MODE_UPDATE' || e.type === 'ROOM_OPENED') && (e.mode || e.gameMode));
+          if (!resolvedMode && lastModeEv) {
+            resolvedMode = String(lastModeEv.mode || lastModeEv.gameMode);
+          }
+          if (!resolvedNames && lastModeEv && lastModeEv.duelTeamNames) {
+            resolvedNames = lastModeEv.duelTeamNames;
+          }
+          if (resolvedNames) {
+            state.teamNames = resolvedNames;
+            global.__scorearDuelTeamNames = resolvedNames;
+          }
+          if (snapStatus && snapStatus.exists()) {
+            const sVal = snapStatus.val();
+            if (sVal === 'closed') return { exists: false, isClosed: true };
+            const isLocked = snapLock && snapLock.exists() ? !!snapLock.val() : false;
+            state.roomMode = resolvedMode || 'SOLO';
+            global.__scorearJoinedRoomMode = state.roomMode;
+            return { exists: true, isLocked, players: [], mode: state.roomMode, teamNames: state.teamNames };
+          }
           const lastOpen = evs.slice().reverse().find(e => e.type === 'ROOM_OPENED');
           const lastClose = evs.slice().reverse().find(e => e.type === 'ROOM_CLOSED');
           if (lastClose && (!lastOpen || (lastClose._timestamp||0) > (lastOpen._timestamp||0))) {
@@ -318,11 +391,25 @@
           }
           const lastLock = evs.slice().reverse().find(e => e.type === 'ROOM_LOCK_STATE' || e.type === 'ROOM_LOCKED' || e.type === 'ROOM_UNLOCKED');
           const isLocked = lastLock ? (lastLock.type !== 'ROOM_UNLOCKED' && !!(lastLock.isLocked || lastLock.locked)) : false;
-          return { exists: true, isLocked, players: [] };
+          state.roomMode = resolvedMode || 'SOLO';
+          global.__scorearJoinedRoomMode = state.roomMode;
+          return { exists: true, isLocked, players: [], mode: state.roomMode, teamNames: state.teamNames };
+        }
+        if (resolvedNames) {
+          state.teamNames = resolvedNames;
+          global.__scorearDuelTeamNames = resolvedNames;
+        }
+        if (snapStatus && snapStatus.exists()) {
+          const sVal = snapStatus.val();
+          if (sVal === 'closed') return { exists: false, isClosed: true };
+          const isLocked = snapLock && snapLock.exists() ? !!snapLock.val() : false;
+          state.roomMode = resolvedMode || 'SOLO';
+          global.__scorearJoinedRoomMode = state.roomMode;
+          return { exists: true, isLocked, players: [], mode: state.roomMode, teamNames: state.teamNames };
         }
       }
     } catch(e) {}
-    return { exists: true, isLocked: false, players: [] };
+    return { exists: true, isLocked: false, players: [], mode: state.roomMode || 'SOLO', teamNames: state.teamNames };
   }
 
   function submitStep2() {
@@ -379,6 +466,7 @@
   async function submitStep3() {
     state.error = null;
     state.loading = true;
+    global.__scorearAmEliminated = false;
     render();
 
     try {
@@ -402,8 +490,11 @@
         global.renderLiveLobby(global.currentLobbyWorldId || 'royal', state.pin);
       }
       if (global.ScoreARRealtime && typeof global.ScoreARRealtime.publish === 'function') {
+        const chosenTeam = state.teamId || 'team_a';
+        global.__scorearStudentTeamId = chosenTeam;
+        try { sessionStorage.setItem('scorear_student_team_' + state.pin, chosenTeam); } catch(_) {}
         global.ScoreARRealtime.publish('STUDENT_JOIN', {
-          player: { id: student.uid, name: student.name, avatarId: chosenAvatar, characterId: chosenAvatar, cosmetics, isRegistered: !!state.isRegistered },
+          player: { id: student.uid, name: student.name, avatarId: chosenAvatar, characterId: chosenAvatar, cosmetics, teamId: chosenTeam, isRegistered: !!state.isRegistered },
           pin: state.pin
         });
       }
@@ -426,6 +517,10 @@
       state.pin = state.savedActiveSession.pin;
       state.name = state.savedActiveSession.name;
       state.avatarId = state.savedActiveSession.avatarId || 'char_01';
+      try {
+        const savedTeam = sessionStorage.getItem('scorear_student_team_' + state.pin);
+        if (savedTeam) state.teamId = savedTeam;
+      } catch(_) {}
       submitStep3();
     }
   }
@@ -447,6 +542,7 @@
     submitStep2,
     submitStep3,
     selectAvatar,
+    selectTeam,
     deduplicateName,
     fastReconnect
   };

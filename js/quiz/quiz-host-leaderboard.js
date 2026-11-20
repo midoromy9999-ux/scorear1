@@ -116,6 +116,7 @@
 
   function renderHostLeaderboard(stage, currentRoom, activeQuestions, currentQIndex, onNext, onPodium, onClose) {
     if (!stage || !currentRoom) return;
+    if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     if (!currentRoom._lbSessionToken) {
       currentRoom._lbSessionToken = `${currentRoom.pin || 'room'}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     }
@@ -124,8 +125,12 @@
       lastSessionToken = currentRoom._lbSessionToken;
     }
 
-    const sorted = [...(currentRoom.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
-    const hasNext = Array.isArray(activeQuestions) && (currentQIndex + 1 < activeQuestions.length);
+    const activeMode = global.ScoreARGameModes?.getMode?.() || currentRoom.gameMode || currentRoom.mode || 'SOLO';
+    const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeMode));
+    const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeMode));
+    const sorted = (isSurvival && global.ScoreARSurvivalEngine?.sortPlayersForSurvival)
+      ? global.ScoreARSurvivalEngine.sortPlayersForSurvival(currentRoom.players || [])
+      : [...(currentRoom.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
     const totalQ = Array.isArray(activeQuestions) && activeQuestions.length ? activeQuestions.length : 1;
     const worldId = (currentRoom.world && currentRoom.world.id) ? currentRoom.world.id : (currentRoom.worldId || 'royal');
     const theme = WORLD_RACE_THEMES[worldId] || WORLD_RACE_THEMES.royal;
@@ -135,7 +140,12 @@
     // Competition ranking with ties (1, 1, 3...) + textual rank delta hidden when no prior rank
     let curRank = 1;
     sorted.forEach((p, idx) => {
-      if (idx > 0 && (p.score || 0) < (sorted[idx - 1].score || 0)) curRank = idx + 1;
+      if (idx > 0) {
+        const lower = (isSurvival && global.ScoreARSurvivalEngine?.isLowerSurvivalRank)
+          ? global.ScoreARSurvivalEngine.isLowerSurvivalRank(p, sorted[idx - 1])
+          : ((p.score || 0) < (sorted[idx - 1].score || 0));
+        if (lower) curRank = idx + 1;
+      }
       p._currentRank = curRank;
       const hadPrev = previousRanks.has(p.id);
       p._rankDelta = hadPrev ? (previousRanks.get(p.id) - curRank) : null;
@@ -145,8 +155,22 @@
     sfx('whoosh');
     setTimeout(() => { sfx('reveal'); }, 320);
     const isMuted = Boolean(global.ScoreARAudio?.isMuted?.());
+    const duelSb = (isDuel && global.ScoreARArenaModes?.computeDuelScoreboard)
+      ? global.ScoreARArenaModes.computeDuelScoreboard(currentRoom.players || [])
+      : null;
+    const duelHeaderHtml = (duelSb && global.ScoreARArenaModes?.renderDuelScoreHudHtml)
+      ? global.ScoreARArenaModes.renderDuelScoreHudHtml(duelSb, { id: 'hostLbDuelScoreboard', compact: true })
+      : '';
+    const survStatus = (isSurvival && global.ScoreARSurvivalEngine?.getStatus)
+      ? global.ScoreARSurvivalEngine.getStatus(currentRoom, currentQIndex, totalQ)
+      : null;
+    const hasRecentElim = Boolean(survStatus?.lastElimEvent?.qIndex === currentQIndex && survStatus.lastElimEvent.eliminatedPlayers?.length);
+    const survHeaderHtml = (isSurvival && survStatus && global.ScoreARSurvivalEngine)
+      ? `<div id="hostLbSurvivalBanner" style="width:100%;max-width:920px;margin:0 auto;">${global.ScoreARSurvivalEngine.renderSurvivalHudHtml({ ...survStatus, isEliminationQuestion: false, questionsUntilNext: survStatus.nextElimQIndex !== null ? Math.max(1, survStatus.nextElimQIndex - currentQIndex) : null })}${hasRecentElim ? global.ScoreARSurvivalEngine.renderSurvivalElimBannerHtml(survStatus.lastElimEvent) : ''}</div>`
+      : '';
+    const hasNext = Array.isArray(activeQuestions) && (currentQIndex + 1 < activeQuestions.length) && !survStatus?.championEarly;
     const nextAction = hasNext ? `ScoreARQuizHost.launchQuestion(${currentQIndex + 1})` : 'ScoreARQuizHost.renderHostPodium()';
-    const nextLabel = hasNext ? 'السؤال التالي' : 'التتويج النهائي';
+    const nextLabel = survStatus?.championEarly ? 'تتويج الناجي الأقوى 🏆' : (hasNext ? 'السؤال التالي' : 'التتويج النهائي');
 
     stage.innerHTML = `
       <style>
@@ -203,6 +227,9 @@
           <span style="font-size:12px;color:#cbd5e1;font-weight:800;">المتسابقون: <b style="color:${theme.accentColor};">${sorted.length}</b></span>
         </header>
 
+        ${duelHeaderHtml ? `<div id="hostLbDuelScoreboardWrap" style="position:relative;z-index:12;padding:6px 18px 0;">${duelHeaderHtml}</div>` : ''}
+        ${survHeaderHtml ? `<div id="hostLbSurvivalBannerWrap" style="position:relative;z-index:12;padding:6px 18px 0;">${survHeaderHtml}</div>` : ''}
+
         <div class="sc-lb-wrap">
           <div class="sc-lb-board">
             <div class="sc-lb-inner">
@@ -222,8 +249,9 @@
                     const isFast = Boolean(p.isFastest || (fastestId && String(p.id) === fastestId));
                     const gapToAbove = idx > 0 ? Math.max(0, (sorted[idx - 1].score || 0) - (p.score || 0)) : 0;
                     const aboveRank = idx > 0 ? sorted[idx - 1]._currentRank : 1;
+                    const tMeta = (isDuel && global.ScoreARArenaModes?.getTeamMeta) ? global.ScoreARArenaModes.getTeamMeta(p.teamId) : null;
                     return `
-                      <div class="race-lane-card sc-lb-row ${rank === 1 ? 'is-first' : ''}" data-player-id="${escapeHtml(p.id || '')}" data-player-name="${escapeHtml(p.name || '')}" style="animation-delay:${(idx * 0.05).toFixed(2)}s;">
+                      <div class="race-lane-card sc-lb-row ${rank === 1 ? 'is-first' : ''}" data-player-id="${escapeHtml(p.id || '')}" data-player-name="${escapeHtml(p.name || '')}" style="animation-delay:${(idx * 0.05).toFixed(2)}s;${p.eliminated ? 'opacity:0.72;' : ''}">
                         <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
                           ${rankEmblemHtml(rank)}
                           <div class="sc-lb-avatar char-procedural-rig" data-char-code="${code}">
@@ -232,10 +260,12 @@
                           <div style="min-width:0;flex:1;">
                             <div class="sc-lb-name" title="${escapeHtml(p.name || '')}">${escapeHtml(p.name || 'متسابق')}</div>
                             <div class="sc-lb-meta">
+                              ${tMeta ? `<span class="sc-lb-chip" style="color:#fff;background:${tMeta.softBg};border:1px solid ${tMeta.border};">${tMeta.emoji} ${escapeHtml(tMeta.shortName)}</span>` : ''}
+                              ${(isSurvival && p.eliminated) ? `<span class="sc-lb-chip" style="color:#fca5a5;background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.4);">❌ أُقصي${p.eliminatedAtQ ? ` (س${p.eliminatedAtQ})` : ''}</span>` : ''}
                               ${deltaText ? `<span class="sc-lb-chip" style="color:${p._rankDelta > 0 ? '#6ee7b7' : '#fca5a5'};background:rgba(255,255,255,0.06);">${deltaText}</span>` : ''}
                               ${isFast ? `<span class="sc-lb-chip" style="color:#fde047;background:rgba(251,191,36,0.16);border:1px solid rgba(251,191,36,0.35);">⚡ الأسرع</span>` : ''}
                               ${(p.streak || 0) >= 2 ? `<span class="sc-lb-chip" style="color:#fdba74;background:rgba(249,115,22,0.16);">🔥 ${p.streak} متتالية</span>` : ''}
-                              ${idx === 1 && gapToAbove > 0 ? `<span class="sc-lb-chip" style="color:#cbd5e1;background:rgba(255,255,255,0.06);">تفصلك ${gapToAbove} نقطة عن المركز #${aboveRank}</span>` : ''}
+                              ${idx === 1 && gapToAbove > 0 && !p.eliminated ? `<span class="sc-lb-chip" style="color:#cbd5e1;background:rgba(255,255,255,0.06);">تفصلك ${gapToAbove} نقطة عن المركز #${aboveRank}</span>` : ''}
                             </div>
                           </div>
                         </div>
@@ -288,12 +318,15 @@
     if (global.ScoreARRealtime && typeof global.ScoreARRealtime.publish === 'function') {
       global.ScoreARRealtime.publish('LEADERBOARD_UPDATE', {
         worldId,
+        mode: activeMode,
+        duelScores: duelSb,
+        survivalState: survStatus,
         questionNumber: currentQIndex + 1,
         totalQuestions: totalQ,
-        top5: top5.map(p => ({ id: p.id, name: p.name, score: p.score || 0, rank: p._currentRank, avatarId: normAvatar(p) })),
+        top5: top5.map(p => ({ id: p.id, name: p.name, score: p.score || 0, rank: p._currentRank, avatarId: normAvatar(p), teamId: p.teamId || null, eliminated: Boolean(p.eliminated) })),
         totalPlayers: sorted.length,
         allRanks: sorted.map((p, i) => ({
-          id: p.id, name: p.name, avatarId: normAvatar(p),
+          id: p.id, name: p.name, avatarId: normAvatar(p), teamId: p.teamId || null, eliminated: Boolean(p.eliminated),
           rank: p._currentRank, score: p.score || 0,
           delta: p._rankDelta || 0, streak: p.streak || 0,
           gapToAbove: i > 0 ? Math.max(0, (sorted[i - 1].score || 0) - (p.score || 0)) : 0

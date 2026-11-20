@@ -117,10 +117,15 @@
     return id;
   }
 
-  function computeRanks(sorted) {
+  function computeRanks(sorted, isSurvival = false) {
     let r = 1;
     return sorted.map((p, i) => {
-      if (i > 0 && (p.score || 0) < (sorted[i - 1].score || 0)) r = i + 1;
+      if (i > 0) {
+        const lower = (isSurvival && global.ScoreARSurvivalEngine?.isLowerSurvivalRank)
+          ? global.ScoreARSurvivalEngine.isLowerSurvivalRank(p, sorted[i - 1])
+          : ((p.score || 0) < (sorted[i - 1].score || 0));
+        if (lower) r = i + 1;
+      }
       return { ...p, _rank: r };
     });
   }
@@ -444,6 +449,7 @@
 
   function renderHallCeremony(stage, currentRoom, onClose) {
     if (!stage || !currentRoom) return;
+    if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     cleanup();
     activeStage = stage;
     activeRoom = currentRoom;
@@ -451,13 +457,23 @@
 
     const worldId = (currentRoom.world && currentRoom.world.id) ? currentRoom.world.id : (currentRoom.worldId || 'royal');
     const cfg = HALL_CONFIGS[worldId] || HALL_CONFIGS.royal;
-    const sorted = [...(currentRoom.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
+    const activeMode = global.ScoreARGameModes?.getMode?.() || currentRoom.gameMode || currentRoom.mode || 'SOLO';
+    const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeMode));
+    const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeMode));
+    const sorted = (isSurvival && global.ScoreARSurvivalEngine?.sortPlayersForSurvival)
+      ? global.ScoreARSurvivalEngine.sortPlayersForSurvival(currentRoom.players || [])
+      : [...(currentRoom.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
     activeSorted = sorted;
-    activeRanked = computeRanks(sorted);
+    activeRanked = computeRanks(sorted, isSurvival);
     const top3 = activeRanked.slice(0, 3);
     const isReduced = Boolean(global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
     const isMuted = Boolean(global.ScoreARAudio?.isMuted?.());
     const quizTitle = resolveQuizTitle(currentRoom);
+    const duelBannerHtml = (isDuel && global.ScoreARArenaModes?.renderDuelWinnerBannerHtml)
+      ? global.ScoreARArenaModes.renderDuelWinnerBannerHtml(currentRoom.players || [], { id: 'hostDuelWinnerBanner' })
+      : ((isSurvival && global.ScoreARSurvivalEngine?.renderSurvivalWinnerBannerHtml)
+        ? global.ScoreARSurvivalEngine.renderSurvivalWinnerBannerHtml(sorted)
+        : '');
 
     const revealOrder2d = [3, 2, 1].filter(r => Boolean(top3[r - 1]));
     const firstStep2dLbl = revealOrder2d[0] === 3 ? '🥉 كشف المركز الثالث'
@@ -482,7 +498,13 @@
             ctrl = global.ScoreARHall3DStage.mountWorld3DStage(stage, currentRoom, activeRanked, onClose, quizTitle, specFn());
           }
         }
-        if (ctrl) { active3DCtrl = ctrl; return; }
+        if (ctrl) {
+          active3DCtrl = ctrl;
+          if (duelBannerHtml && typeof stage.insertAdjacentHTML === 'function') {
+            stage.insertAdjacentHTML('beforeend', `<div id="hostDuelHallBannerWrap" style="position:absolute;top:52px;left:0;right:0;display:flex;justify-content:center;pointer-events:none;z-index:48;">${duelBannerHtml}</div>`);
+          }
+          return;
+        }
       } catch (err) {
         console.warn(`[ScoreARWorldHalls] 3D ${worldId} fallback to 2D:`, err);
       }
@@ -592,6 +614,7 @@
         </header>
 
         <main class="sc-hall-stage">
+          ${duelBannerHtml ? `<div id="hostDuelHallBannerWrap" style="position:relative;z-index:32;margin:4px auto auto;">${duelBannerHtml}</div>` : ''}
           <div id="scHallPathGlow" class="sc-hall-path"></div>
           <div class="sc-hall-arch-halo"></div>
           ${buildWorldPropsHtml(worldId)}

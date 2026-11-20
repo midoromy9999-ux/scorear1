@@ -4,7 +4,7 @@
  * Ensures resilient classroom gameplay on slow or intermittent school networks.
  */
 
-const CACHE_NAME = 'scorear-v19-ceremony-audio';
+const CACHE_NAME = 'scorear-v21-survival-3d';
 const STATIC_ASSETS = [
   './',
   './index.html',

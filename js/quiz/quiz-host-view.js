@@ -92,6 +92,7 @@
   /* ── 1. LOBBY WITH COSMIC GLASS CONTROLS + FIXED WHITE PIN/QR BANNER & 3D START BUTTON ── */
   function renderHostLobby(stage, currentRoom, isRoomLocked) {
     if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
+    if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     currentLobbyPose = 'entrance';
     const worldId = (currentRoom && currentRoom.world && currentRoom.world.id) ? currentRoom.world.id : 'royal';
     const w = currentRoom.world || { name: 'المنافسة', tag: 'جاهز' };
@@ -99,7 +100,14 @@
     global.ScoreARMotionV3?.preloadCharacters?.(currentRoom?.players || [], ['walkRight', 'walkLeft', 'wave', 'idle']);
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + window.location.pathname + '?pin=' + currentRoom.pin)}`;
     const activeGameMode = (global.ScoreARGameModes && typeof global.ScoreARGameModes.getMode === 'function') ? global.ScoreARGameModes.getMode() : 'SOLO';
-    const modeLabel = activeGameMode === 'CARD_ARENA' ? 'طور حرب الكروت' : (activeGameMode === 'SQUADS' ? 'وضع الفريق' : 'التحدي الفردي');
+    const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeGameMode));
+    const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeGameMode));
+    if (isDuel && global.ScoreARArenaModes?.ensureAllTeamsAssigned) {
+      global.ScoreARArenaModes.ensureAllTeamsAssigned(currentRoom);
+    }
+    const modeLabel = global.ScoreARArenaModes?.getModeLabel
+      ? global.ScoreARArenaModes.getModeLabel(activeGameMode)
+      : (activeGameMode === 'CARD_ARENA' ? 'طور حرب الكروت' : (activeGameMode === 'SQUADS' ? 'وضع الفريق' : 'التحدي الفردي'));
     const celStyle = global.ScoreARMotionV3?.stampRoomCelebrationStyle
       ? global.ScoreARMotionV3.stampRoomCelebrationStyle(currentRoom)
       : (currentRoom?.celebrationStyle || 'classic');
@@ -155,6 +163,7 @@
       <div style="position:relative;z-index:14;text-align:center;margin-top:16px;pointer-events:none;">
         <div style="font-size:44px;font-weight:900;color:#ffffff;font-family:Montserrat,Cairo,sans-serif;text-shadow:0 6px 24px rgba(0,0,0,0.7);line-height:1;">ScoreAR!</div>
         <div class="launch-pill" style="margin-top:8px;background:rgba(24,23,46,0.85);border-color:rgba(172,139,242,0.38);color:#eceeff;font-size:13px;font-weight:900;padding:5px 16px;"><span class="live-dot"></span> ${modeLabel}</div>
+        <div id="hostDuelLobbyBar" style="margin-top:8px;display:${(isDuel || isSurvival) ? 'flex' : 'none'};justify-content:center;pointer-events:auto;">${isDuel ? renderDuelLobbySplitHtml(currentRoom) : (isSurvival ? renderSurvivalLobbySplitHtml(currentRoom) : '')}</div>
       </div>
 
       <div id="hostCharactersArena" class="host-lobby-characters-arena" style="position:absolute;bottom:52px;left:0;right:0;height:50vh;display:flex;align-items:flex-end;justify-content:center;gap:26px;padding:0 35px 14px;z-index:15;pointer-events:none;overflow-x:auto;">${renderFullbodyCharactersHtml(currentRoom)}</div>
@@ -224,8 +233,59 @@
     }, 35);
   }
 
+  function renderDuelLobbySplitHtml(currentRoom) {
+    if (!global.ScoreARArenaModes?.computeDuelScoreboard) return '';
+    const sb = global.ScoreARArenaModes.computeDuelScoreboard(currentRoom?.players || []);
+    return `
+      <div style="display:inline-flex;align-items:center;gap:14px;padding:6px 16px;border-radius:999px;background:rgba(10,14,34,0.86);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.16);box-shadow:0 8px 24px rgba(0,0,0,0.4);direction:rtl;">
+        <span style="font-size:12px;font-weight:900;color:#7dd3fc;">${sb.team_a.emoji} ${escapeHtml(sb.team_a.shortName)}: <b>${sb.team_a.count}</b></span>
+        <span style="color:rgba(255,255,255,0.28);font-weight:900;">VS</span>
+        <span style="font-size:12px;font-weight:900;color:#fdba74;">${sb.team_b.emoji} ${escapeHtml(sb.team_b.shortName)}: <b>${sb.team_b.count}</b></span>
+        <span style="font-size:10.5px;color:#cbd5e1;border-right:1px solid rgba(255,255,255,0.18);padding-right:10px;">اضغط شارة الفريق لتبديل اللاعب</span>
+      </div>`;
+  }
+
+  function renderSurvivalLobbySplitHtml(currentRoom) {
+    const count = Array.isArray(currentRoom?.players) ? currentRoom.players.length : 0;
+    const qTotal = Number(currentRoom?._lastTotalQuestions || global.contestQuestions?.length || 5);
+    const cps = global.ScoreARSurvivalEngine?.computeEliminationSchedule
+      ? global.ScoreARSurvivalEngine.computeEliminationSchedule(count, qTotal)
+      : [];
+    const note = count <= 2
+      ? 'مواجهة نهائية (أضف 3+ متسابقين لتفعيل مراحل الإقصاء)'
+      : `${cps.length} مراحل إقصاء ذكية عبر ${qTotal} أسئلة • تصفير النقاط بعد كل خروج`;
+    return `
+      <div id="hostSurvivalLobbyPill" style="display:inline-flex;align-items:center;gap:10px;padding:6px 16px;border-radius:999px;background:rgba(18,12,38,0.88);backdrop-filter:blur(12px);border:1px solid rgba(251,191,36,0.45);box-shadow:0 8px 24px rgba(0,0,0,0.4);direction:rtl;">
+        <span style="font-size:14px;">👑</span>
+        <span style="font-size:12px;font-weight:900;color:#fde68a;">وضع البقاء للأقوى — عداد إقصاء ذكي تلقائي</span>
+        <span style="font-size:11px;color:#cbd5e1;border-right:1px solid rgba(255,255,255,0.18);padding-right:10px;">${escapeHtml(note)}</span>
+      </div>`;
+  }
+
+  function renderDuelTeamPillHtml(p, pid) {
+    const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.());
+    if (!isDuel || !global.ScoreARArenaModes?.getTeamMeta) return '';
+    const tid = global.ScoreARArenaModes.normalizeTeamId(p?.teamId || p?.team) || 'team_a';
+    const meta = global.ScoreARArenaModes.getTeamMeta(tid);
+    const safePid = escapeHtml(pid);
+    return `<button type="button" data-duel-team-pill="${safePid}" onclick="ScoreARArenaModes.togglePlayerTeam('${safePid}')" style="margin-bottom:4px;padding:3px 10px;border-radius:999px;border:1px solid ${meta.border};background:${meta.gradient};color:#fff;font-family:Cairo,sans-serif;font-size:10.5px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 4px 12px ${meta.glow};position:relative;z-index:25;" title="اضغط للتبديل بين الفريقين">${meta.emoji} <span>${escapeHtml(meta.shortName)}</span></button>`;
+  }
+
   function refreshLobbyUi(currentRoom) {
     if (!currentRoom) return;
+    const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.());
+    const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.());
+    if (isDuel && global.ScoreARArenaModes?.ensureAllTeamsAssigned) {
+      global.ScoreARArenaModes.ensureAllTeamsAssigned(currentRoom);
+    }
+    const duelBar = document.getElementById('hostDuelLobbyBar');
+    if (duelBar) {
+      duelBar.style.display = (isDuel || isSurvival) ? 'flex' : 'none';
+      duelBar.innerHTML = isDuel
+        ? renderDuelLobbySplitHtml(currentRoom)
+        : (isSurvival ? renderSurvivalLobbySplitHtml(currentRoom) : '');
+    }
+
     const arena = document.getElementById('hostCharactersArena');
     const players = currentRoom.players || [];
     const countEl = document.getElementById('hostPlayerCount'), countPill = document.getElementById('hostConnectedPlayersPill');
@@ -282,6 +342,12 @@
         if (charSpan) charSpan.id = 'hostHeroSlot_' + idx;
         const imgEl = slotWrapper.querySelector('.host-hero-img');
         if (imgEl) imgEl.id = 'hostHeroImg_' + idx;
+        const oldPill = slotWrapper.querySelector('[data-duel-team-pill]');
+        if (oldPill) oldPill.remove();
+        if (isDuel) {
+          const pillHtml = renderDuelTeamPillHtml(p, pid);
+          if (pillHtml) slotWrapper.insertAdjacentHTML('afterbegin', pillHtml);
+        }
       }
     });
 
@@ -292,8 +358,15 @@
   }
 
   function updateLobbyModeBadge(mode) {
+    const label = global.ScoreARArenaModes?.getModeLabel
+      ? global.ScoreARArenaModes.getModeLabel(mode)
+      : (mode === 'CARD_ARENA' ? 'طور حرب الكروت' : (mode === 'SQUADS' ? 'وضع الفريق' : 'التحدي الفردي'));
     const txt = document.getElementById('hostGameModeBtnText');
-    if (txt) txt.textContent = mode === 'CARD_ARENA' ? 'طور حرب الكروت' : (mode === 'SQUADS' ? 'وضع الفريق' : 'التحدي الفردي');
+    if (txt) txt.textContent = label;
+    const lobbyPill = document.querySelector('.launch-pill');
+    if (lobbyPill && document.getElementById('hostCharactersArena')) {
+      lobbyPill.innerHTML = `<span class="live-dot"></span> ${label}`;
+    }
   }
 
   function renderLobbyHeroSlotHtml(p, idx, totalCount) {
@@ -302,8 +375,11 @@
     const delAction = p.isBot ? `ScoreARBots && ScoreARBots.removeBot('${escapeHtml(p.id)}')` : `ScoreARQuizHost.kickPlayer('${escapeHtml(p.id)}')`;
     const mountPose = resolveLobbySlotMountPose(idx, totalCount || 1);
     const hideWhileLoading = Boolean(global.ScoreARLobbyDirector && currentLobbyPose === 'entrance');
-    const pid = escapeHtml(p.id || ('slot_' + idx));
-    return `<div class="animate-enter-fullbody host-lobby-hero-slot" data-player-id="${pid}" data-player-name="${safeName}" style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:auto;animation-delay:${idx*0.06}s;min-width:132px;${hideWhileLoading ? 'opacity:0;' : ''}">
+    const pid = String(p.id || ('slot_' + idx));
+    const safePid = escapeHtml(pid);
+    const teamPill = renderDuelTeamPillHtml(p, pid);
+    return `<div class="animate-enter-fullbody host-lobby-hero-slot" data-player-id="${safePid}" data-player-name="${safeName}" style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:auto;animation-delay:${idx*0.06}s;min-width:132px;${hideWhileLoading ? 'opacity:0;' : ''}">
+        ${teamPill}
         <div class="player-name-floating-pill" style="margin-bottom:-30px;position:relative;z-index:24;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;box-shadow:0 8px 20px rgba(0,0,0,0.55);" title="إزالة اللاعب من القاعة">
           <span style="font-size:11px;color:#7550ef;">${isBot ? 'BOT' : '●'}</span>
           <span style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;">${safeName}</span>
@@ -326,6 +402,7 @@
   function renderContestIntroSequence(stage, currentRoom, quizTitle, totalQuestions, onDone) {
     if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
     if (global.ScoreARWorldHalls?.cleanup) global.ScoreARWorldHalls.cleanup();
+    if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
 
     const worldId = currentRoom?.world?.id || currentRoom?.worldId || 'royal';
@@ -420,16 +497,49 @@
     if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
     if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
     if (global.ScoreARWorldHalls?.cleanup) global.ScoreARWorldHalls.cleanup();
+    if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     const isReading = (phase === 'reading'), opts = qData.options || qData.opts || [];
     const questionText = qData.text || qData.q || '', imgUrl = qData.imageUrl || qData.img || null;
     const wid = String(worldId || 'royal').trim() || 'royal';
-    const roomPin = global.ScoreARQuizHost?.getPin?.() || global.currentLobbyPin || '';
+    const room = global.ScoreARQuizHost?.getCurrentRoom?.() || null;
+    const roomPin = room?.pin || global.ScoreARQuizHost?.getPin?.() || global.currentLobbyPin || '';
+    const activeMode = (global.ScoreARGameModes && typeof global.ScoreARGameModes.getMode === 'function')
+      ? global.ScoreARGameModes.getMode()
+      : (room?.gameMode || room?.mode || 'SOLO');
+    const isArenaMode = Boolean(global.ScoreARArenaModes?.is3DArenaMode?.(activeMode));
+    const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeMode));
+    const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeMode));
+    if (room) {
+      room._lastQIndex = currentQIndex;
+      room._lastTotalQuestions = total;
+    }
+    if (isDuel && room && global.ScoreARArenaModes?.ensureAllTeamsAssigned) {
+      global.ScoreARArenaModes.ensureAllTeamsAssigned(room);
+    }
+    const duelHudHtml = (isDuel && global.ScoreARArenaModes?.renderDuelScoreHudHtml)
+      ? global.ScoreARArenaModes.renderDuelScoreHudHtml(
+          global.ScoreARArenaModes.computeDuelScoreboard(room?.players || []),
+          { compact: true, id: 'hostDuelScoreHud' }
+        )
+      : '';
+    const survStatus = (isSurvival && room && global.ScoreARSurvivalEngine?.prepareNextRound)
+      ? global.ScoreARSurvivalEngine.prepareNextRound(room, currentQIndex, total)
+      : null;
+    const survivalHudHtml = (isSurvival && survStatus && global.ScoreARSurvivalEngine?.renderSurvivalHudHtml)
+      ? global.ScoreARSurvivalEngine.renderSurvivalHudHtml(survStatus)
+      : '';
+    const hasTopHud = isDuel || (isSurvival && Boolean(survivalHudHtml));
+    const displayPlayers = isSurvival
+      ? (room?.players || []).filter(p => p && !p.eliminated)
+      : (room?.players || []);
 
     stage.innerHTML = `
-      <div style="position:fixed;inset:0;overflow:hidden;z-index:0;background:url('assets/worlds/${wid}/question.jpg') center/cover no-repeat;pointer-events:none;">
-        <img src="assets/worlds/${wid}/question.jpg" alt="" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='assets/worlds/${wid}/lobby.jpg';}else{this.style.display='none';}" style="width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.84) saturate(1.1);">
-        <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 42%, rgba(20,16,52,0.28) 0%, rgba(10,12,28,0.68) 100%);"></div>
-      </div>
+      ${isArenaMode
+        ? `<div id="hostArena3DWrap" style="position:fixed;inset:0;overflow:hidden;z-index:1;pointer-events:none;background:#070a18;"></div>`
+        : `<div style="position:fixed;inset:0;overflow:hidden;z-index:0;background:url('assets/worlds/${wid}/question.jpg') center/cover no-repeat;pointer-events:none;">
+            <img src="assets/worlds/${wid}/question.jpg" alt="" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='assets/worlds/${wid}/lobby.jpg';}else{this.style.display='none';}" style="width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.84) saturate(1.1);">
+            <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 42%, rgba(20,16,52,0.28) 0%, rgba(10,12,28,0.68) 100%);"></div>
+          </div>`}
 
       <header class="scorear-control-bar" style="position:relative;z-index:30;min-height:44px;display:flex;align-items:center;justify-content:space-between;padding:4px 18px;color:#ffffff;direction:rtl;">
         <div onclick="ScoreARQuizHostView.toggleQrZoom('${roomPin}')" style="display:flex;align-items:center;gap:8px;cursor:pointer;" title="اضغط لتكبير الباركود">
@@ -439,23 +549,26 @@
         <div style="display:flex;align-items:center;gap:8px;direction:ltr;">
           <button type="button" class="scorear-gear-btn" onclick="if(!document.fullscreenElement){document.documentElement.requestFullscreen?.();}else{document.exitFullscreen?.();}" style="padding:4px 9px;">${uiIcon('maximize', 13)}</button>
           <button type="button" class="scorear-gear-btn scorear-audio-btn" onclick="ScoreARAudio?.toggleMute?.()" style="padding:4px 9px;">${uiIcon('volume', 13)}</button>
-          <span class="scorear-control-pill" style="padding:3px 9px;font-size:12px;">${uiIcon('users', 13)} <b id="hostTotalStudentsCount">0</b></span>
+          <span class="scorear-control-pill" style="padding:3px 9px;font-size:12px;">${uiIcon('users', 13)} <b id="hostTotalStudentsCount">${displayPlayers.length}</b></span>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARQuizHost.closeHostSession()" style="border-color:rgba(239,68,68,0.35);color:#fca5a5;padding:4px 9px;">${uiIcon('close', 13)}</button>
         </div>
       </header>
 
-      <div id="hostTopLeftActionWrap" style="position:absolute;top:54px;left:22px;z-index:28;">
+      ${isDuel ? `<div id="hostDuelScoreHudWrap" style="position:relative;z-index:26;padding:4px 20px 0;pointer-events:none;">${duelHudHtml}</div>` : ''}
+      ${isSurvival ? `<div id="hostSurvivalHudWrap" style="position:relative;z-index:26;padding:4px 20px 0;pointer-events:none;">${survivalHudHtml}</div>` : ''}
+
+      <div id="hostTopLeftActionWrap" style="position:absolute;top:${hasTopHud ? '118px' : '54px'};left:22px;z-index:28;">
         <button type="button" class="scorear-gear-btn" onclick="ScoreARQuizHost.finishCurrentQuestion()" style="background:rgba(14,15,32,0.88);border-color:rgba(255,255,255,0.22);color:#ffffff;padding:8px 16px;font-size:12.5px;box-shadow:0 6px 18px rgba(0,0,0,0.45);">${uiIcon('skipForward', 14)} <span>إنهاء السؤال</span></button>
       </div>
 
-      <main id="hostQuestionArena" class="host-question-arena" style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;justify-content:${isReading ? 'center' : 'space-between'};align-items:center;padding:12px 24px 18px;width:100%;box-sizing:border-box;">
-        <div id="hostReadingDiamondBadge" style="display:${isReading ? 'grid' : 'none'};width:54px;height:54px;border-radius:50%;background:rgba(17,17,17,0.75);place-items:center;margin-bottom:18px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+      <main id="hostQuestionArena" class="host-question-arena" style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;justify-content:${isReading ? 'center' : 'space-between'};align-items:center;padding:${isArenaMode ? '6px 24px 14px' : '12px 24px 18px'};width:100%;box-sizing:border-box;pointer-events:none;">
+        <div id="hostReadingDiamondBadge" style="display:${isReading ? 'grid' : 'none'};width:54px;height:54px;border-radius:50%;background:rgba(17,17,17,0.75);place-items:center;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
           <div style="width:34px;height:34px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;transform:rotate(12deg);"><div style="background:#e21b3c;border-radius:2px;display:grid;place-items:center;color:#fff;font-size:8px;">▲</div><div style="background:#1368ce;border-radius:2px;display:grid;place-items:center;color:#fff;font-size:8px;">◆</div><div style="background:#d89e00;border-radius:2px;display:grid;place-items:center;color:#fff;font-size:8px;">●</div><div style="background:#26890c;border-radius:2px;display:grid;place-items:center;color:#fff;font-size:8px;">■</div></div>
         </div>
 
         <!-- Preserved Constant: Navy Transparent Borderless Question Card -->
-        <div id="hostQuestionCard" class="host-question-card" style="background:rgba(10, 16, 38, 0.78);backdrop-filter:blur(18px);border:none !important;outline:none !important;border-radius:14px;padding:${isReading ? '34px 48px' : '18px 36px'};text-align:center;box-shadow:0 18px 50px rgba(0,0,0,0.55);margin:${isReading ? '10px auto 22px auto' : '4px auto 8px auto'};max-width:1060px;width:100%;transition:all 0.65s cubic-bezier(0.22, 1, 0.36, 1);">
-          <h2 id="hostQuestionText" style="font-size:${isReading ? '36px' : '26px'};font-weight:900;color:#ffffff;line-height:1.45;margin:0;transition:all 0.65s cubic-bezier(0.22, 1, 0.36, 1);text-shadow:0 3px 14px rgba(0,0,0,0.65);">${escapeHtml(questionText)}</h2>
+        <div id="hostQuestionCard" class="host-question-card" style="background:rgba(10, 16, 38, ${isArenaMode ? '0.82' : '0.78'});backdrop-filter:blur(18px);border:none !important;outline:none !important;border-radius:14px;padding:${isArenaMode ? (isReading ? '22px 34px' : '12px 26px') : (isReading ? '34px 48px' : '18px 36px')};text-align:center;box-shadow:0 18px 50px rgba(0,0,0,0.55);margin:${isReading ? '10px auto 18px auto' : '2px auto 6px auto'};max-width:${isArenaMode ? '680px' : '1060px'};width:100%;transition:all 0.65s cubic-bezier(0.22, 1, 0.36, 1);">
+          <h2 id="hostQuestionText" style="font-size:${isArenaMode ? (isReading ? '28px' : '22px') : (isReading ? '36px' : '26px')};font-weight:900;color:#ffffff;line-height:1.45;margin:0;transition:all 0.65s cubic-bezier(0.22, 1, 0.36, 1);text-shadow:0 3px 14px rgba(0,0,0,0.65);">${escapeHtml(questionText)}</h2>
           ${imgUrl ? `<div id="hostQuestionImgBox" style="display:flex;justify-content:center;margin:10px 0 0;max-height:${isReading ? '220px' : '150px'};transition:max-height 0.65s ease;"><img src="${imgUrl}" alt="" style="max-height:100%;max-width:100%;object-fit:contain;border-radius:10px;"></div>` : ''}
         </div>
 
@@ -477,13 +590,26 @@
         </div>
 
         <!-- Preserved Constant: Bottom 2x2 Options Grid (#e21b3c ▲, #1368ce ◆, #d89e00 ●, #26890c ■) -->
-        <div id="hostOptionsGrid" class="host-options-grid" style="display:${isReading ? 'none' : 'grid'};grid-template-columns:1fr 1fr;gap:12px;max-width:1260px;margin:0 auto;width:100%;direction:rtl;">
+        <div id="hostOptionsGrid" class="host-options-grid" style="display:${isReading ? 'none' : 'grid'};grid-template-columns:1fr 1fr;gap:12px;max-width:${isArenaMode ? '740px' : '1260px'};margin:0 auto;width:100%;direction:rtl;pointer-events:auto;">
           ${opts.slice(0, 4).map((optText, idx) => {
             const theme = OPTION_THEMES[idx % 4];
-            return `<div id="hostOptionCard_${idx}" class="host-option-card" style="background:${theme.bg};border:none;border-bottom:6px solid ${theme.border};border-radius:8px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 20px rgba(0,0,0,0.35);min-height:86px;transition:all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);position:relative;"><div style="display:flex;align-items:center;gap:16px;"><span style="font-size:26px;color:#ffffff;line-height:1;">${theme.shape}</span><span id="hostOptionText_${idx}" style="font-size:21px;font-weight:900;color:#ffffff;line-height:1.35;">${escapeHtml(optText)}</span></div><div id="hostOptionCountBadge_${idx}" style="display:none;background:rgba(0,0,0,0.45);border-radius:8px;padding:4px 12px;font-size:16px;font-weight:900;color:#fff;">0</div></div>`;
+            return `<div id="hostOptionCard_${idx}" class="host-option-card" style="background:${theme.bg};border:none;border-bottom:6px solid ${theme.border};border-radius:8px;padding:${isArenaMode ? '13px 18px' : '18px 24px'};display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 20px rgba(0,0,0,0.35);min-height:${isArenaMode ? '64px' : '86px'};transition:all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);position:relative;"><div style="display:flex;align-items:center;gap:14px;"><span style="font-size:${isArenaMode ? '21px' : '26px'};color:#ffffff;line-height:1;">${theme.shape}</span><span id="hostOptionText_${idx}" style="font-size:${isArenaMode ? '18px' : '21px'};font-weight:900;color:#ffffff;line-height:1.35;">${escapeHtml(optText)}</span></div><div id="hostOptionCountBadge_${idx}" style="display:none;background:rgba(0,0,0,0.45);border-radius:8px;padding:4px 12px;font-size:16px;font-weight:900;color:#fff;">0</div></div>`;
           }).join('')}
         </div>
       </main>`;
+
+    if (isArenaMode && global.ScoreARArena3D?.mount) {
+      const mountEl = document.getElementById('hostArena3DWrap');
+      global.ScoreARArena3D.mount(mountEl, {
+        worldId: wid,
+        mode: activeMode,
+        layout: isSurvival ? 'ring' : 'duel',
+        phase: isReading ? 'reading' : 'answering',
+        qIndex: currentQIndex,
+        players: displayPlayers,
+        room
+      });
+    }
   }
 
   function animateToAnswering(stage, qData, currentQIndex, total, worldId, timeRemaining) {
@@ -492,41 +618,83 @@
     const arena = document.getElementById('hostQuestionArena'), midRow = document.getElementById('hostAnsweringMidRow');
     const timerArea = document.getElementById('hostTimerArea'), optionsGrid = document.getElementById('hostOptionsGrid');
     if (!card || !readingArea || !midRow || !optionsGrid) { renderHostQuestionView(stage, 'answering', qData, currentQIndex, total, worldId, timeRemaining, 0); return; }
+    const isArena = Boolean(global.ScoreARArena3D?.isActive?.() || global.ScoreARArenaModes?.is3DArenaMode?.());
     if (diamond) diamond.style.display = 'none';
     readingArea.style.opacity = '0'; readingArea.style.transform = 'scale(0.85)';
     setTimeout(() => { readingArea.style.display = 'none'; }, 180);
     if (arena) arena.style.justifyContent = 'space-between';
-    card.style.margin = '4px auto 8px auto'; card.style.padding = '18px 36px';
-    if (textEl) textEl.style.fontSize = '26px';
+    card.style.margin = isArena ? '2px auto 6px auto' : '4px auto 8px auto';
+    card.style.padding = isArena ? '12px 26px' : '18px 36px';
+    if (textEl) textEl.style.fontSize = isArena ? '22px' : '26px';
     if (timerArea) timerArea.innerHTML = renderWorldTimerHtml(worldId, timeRemaining);
     midRow.style.display = 'flex'; optionsGrid.style.display = 'grid';
     (qData.options || qData.opts || []).slice(0, 4).forEach((_, idx) => {
       const optCard = document.getElementById(`hostOptionCard_${idx}`);
       if (optCard) { optCard.style.animation = 'none'; void optCard.offsetWidth; optCard.style.animation = `optionEntranceSlide 0.45s cubic-bezier(0.16, 1, 0.3, 1) both ${idx * 0.06}s`; }
     });
+    if (global.ScoreARArena3D?.isActive?.()) {
+      global.ScoreARArena3D.setPhase('answering', { qIndex: currentQIndex });
+    }
   }
 
   /* ── 4. 4-COLUMN BAR CHART + LAST-QUESTION DIRECT-TO-PODIUM RULE (Preserved Constant) ── */
   function renderQuestionResultBarChart(qData, counts, correctIndices, fastest, explanation, isLastQuestion = false) {
     const centerMount = document.getElementById('hostCenterResultMount') || document.getElementById('hostTimerArea');
     const timerArea = document.getElementById('hostTimerArea'), liveStats = document.getElementById('hostLiveAnswerStats'), topLeftWrap = document.getElementById('hostTopLeftActionWrap');
+    const optionsGrid = document.getElementById('hostOptionsGrid');
+    const isArena = Boolean(global.ScoreARArena3D?.isActive?.());
     if (timerArea && centerMount !== timerArea) timerArea.style.display = 'none';
     if (liveStats) liveStats.style.display = 'none';
     const nextAction = isLastQuestion ? 'ScoreARQuizHost.renderHostPodium()' : 'ScoreARQuizHost.renderHostLeaderboard()';
     const nextLabel = isLastQuestion ? 'منصة التتويج ❯' : 'التالي ❯';
     if (topLeftWrap) topLeftWrap.innerHTML = `<button type="button" onclick="${nextAction}" style="background:#ffffff;color:#111111;border:none;border-bottom:4px solid #cbd5e1;border-radius:6px;padding:9px 24px;font-size:15px;font-weight:900;cursor:pointer;font-family:Cairo,sans-serif;box-shadow:0 8px 22px rgba(0,0,0,0.5);">${nextLabel}</button>`;
+
+    if (isArena) {
+      if (optionsGrid) optionsGrid.style.display = 'none';
+      const room = global.ScoreARQuizHost?.getCurrentRoom?.() || null;
+      const evalRes = global.__scorearLastEvalResult || { fastest, playerResults: {}, correct: correctIndices };
+      global.ScoreARArena3D.onQuestionResult(evalRes, room?.players || []);
+      const hudWrap = document.getElementById('hostDuelScoreHudWrap');
+      if (hudWrap && global.ScoreARArenaModes?.computeDuelScoreboard && global.ScoreARArenaModes?.renderDuelScoreHudHtml) {
+        hudWrap.innerHTML = global.ScoreARArenaModes.renderDuelScoreHudHtml(
+          global.ScoreARArenaModes.computeDuelScoreboard(room?.players || []),
+          { compact: true, id: 'hostDuelScoreHud' }
+        );
+      }
+      const survWrap = document.getElementById('hostSurvivalHudWrap');
+      if (survWrap && global.ScoreARArenaModes?.isSurvivalMode?.() && global.ScoreARSurvivalEngine) {
+        const sRes = evalRes.survivalResult || room?._survival?.lastElimEvent;
+        const st = global.ScoreARSurvivalEngine.getStatus(room, room?._lastQIndex ?? 0, room?._lastTotalQuestions ?? 5);
+        survWrap.innerHTML = global.ScoreARSurvivalEngine.renderSurvivalHudHtml(st)
+          + ((sRes && Array.isArray(sRes.eliminatedPlayers) && sRes.eliminatedPlayers.length)
+            ? global.ScoreARSurvivalEngine.renderSurvivalElimBannerHtml(sRes)
+            : '');
+        if (sRes && Array.isArray(sRes.eliminatedPlayers) && sRes.eliminatedPlayers.length) {
+          global.ScoreARArena3D?.onSurvivalElimination?.(sRes.eliminatedPlayers, evalRes);
+        }
+        if (sRes?.championEarly && topLeftWrap) {
+          topLeftWrap.innerHTML = `<button type="button" onclick="ScoreARQuizHost.renderHostPodium()" style="background:#ffffff;color:#111111;border:none;border-bottom:4px solid #cbd5e1;border-radius:6px;padding:9px 24px;font-size:15px;font-weight:900;cursor:pointer;font-family:Cairo,sans-serif;box-shadow:0 8px 22px rgba(0,0,0,0.5);">🏆 تتويج البطل الأخير ❯</button>`;
+        }
+      }
+      const midRow = document.getElementById('hostAnsweringMidRow');
+      if (midRow) {
+        midRow.style.marginTop = 'auto';
+        midRow.style.alignItems = 'flex-end';
+      }
+    }
+
     if (!centerMount) return;
     const maxCount = Math.max(1, ...counts);
-    centerMount.innerHTML = `<div style="width:100%;max-width:780px;margin:0 auto;background:rgba(10,16,38,0.88);backdrop-filter:blur(18px);border:1px solid rgba(172,139,242,0.28);border-radius:18px;padding:16px 26px;box-shadow:0 20px 55px rgba(0,0,0,0.65);animation:optionEntranceSlide 0.4s cubic-bezier(0.16,1,0.3,1) both;">
-      <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:18px;align-items:end;height:150px;padding:10px 18px 0;direction:rtl;">
+    centerMount.innerHTML = `<div style="width:100%;max-width:${isArena ? '560px' : '780px'};margin:0 auto;background:rgba(10,16,38,${isArena ? '0.84' : '0.88'});backdrop-filter:blur(18px);border:1px solid rgba(172,139,242,0.28);border-radius:18px;padding:${isArena ? '10px 18px' : '16px 26px'};box-shadow:0 20px 55px rgba(0,0,0,0.65);animation:optionEntranceSlide 0.4s cubic-bezier(0.16,1,0.3,1) both;pointer-events:auto;">
+      <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:${isArena ? '12px' : '18px'};align-items:end;height:${isArena ? '100px' : '150px'};padding:8px 14px 0;direction:rtl;">
         ${[0, 1, 2, 3].map(i => {
           const theme = OPTION_THEMES[i % 4], count = counts[i] || 0, isCorrect = correctIndices.includes(i);
-          const heightPx = count > 0 ? Math.max(28, Math.round((count / maxCount) * 105)) : 14;
-          return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;font-size:18px;font-weight:900;color:#fff;">${isCorrect ? '<span style="color:#34d399;font-size:18px;">✓</span>' : ''}<span>${count}</span></div><div style="width:100%;max-width:96px;height:${heightPx}px;background:${theme.bg};border-bottom:5px solid ${theme.border};border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;transition:height 0.65s cubic-bezier(0.34,1.56,0.64,1);opacity:${isCorrect ? '1' : '0.48'};"><span style="font-size:18px;color:#fff;">${theme.shape}</span></div></div>`;
+          const heightPx = count > 0 ? Math.max(24, Math.round((count / maxCount) * (isArena ? 68 : 105))) : 12;
+          return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;font-size:${isArena ? '15px' : '18px'};font-weight:900;color:#fff;">${isCorrect ? '<span style="color:#34d399;font-size:16px;">✓</span>' : ''}<span>${count}</span></div><div style="width:100%;max-width:96px;height:${heightPx}px;background:${theme.bg};border-bottom:5px solid ${theme.border};border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;transition:height 0.65s cubic-bezier(0.34,1.56,0.64,1);opacity:${isCorrect ? '1' : '0.48'};"><span style="font-size:16px;color:#fff;">${theme.shape}</span></div></div>`;
         }).join('')}
       </div>
-      ${fastest && fastest.name ? `<div style="margin-top:10px;background:rgba(245,158,11,0.14);border:1px solid rgba(251,191,36,0.38);border-radius:12px;padding:6px 14px;display:inline-flex;align-items:center;gap:10px;"><img src="assets/characters/animated/${escapeHtml(fastest.avatarId || 'char_01')}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(fastest.name)}" style="width:34px;height:40px;object-fit:contain;"><span class="scorear-inline-icon" style="font-size:13px;font-weight:900;color:#fef08a;">${uiIcon('zap', 14)} الأسرع: ${escapeHtml(fastest.name)} (${fastest.timeSec}ث)</span></div>` : ''}
-      ${explanation ? `<div style="margin-top:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:7px 14px;font-size:13px;color:#f1f5f9;text-align:center;"><b>التفسير:</b> ${escapeHtml(explanation)}</div>` : ''}
+      ${fastest && fastest.name ? `<div style="margin-top:8px;background:rgba(245,158,11,0.14);border:1px solid rgba(251,191,36,0.38);border-radius:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:8px;"><img src="assets/characters/animated/${escapeHtml(fastest.avatarId || 'char_01')}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(fastest.name)}" style="width:30px;height:36px;object-fit:contain;"><span class="scorear-inline-icon" style="font-size:12.5px;font-weight:900;color:#fef08a;">${uiIcon('zap', 14)} الأسرع: ${escapeHtml(fastest.name)} (${fastest.timeSec}ث)</span></div>` : ''}
+      ${explanation ? `<div style="margin-top:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:6px 12px;font-size:12.5px;color:#f1f5f9;text-align:center;"><b>التفسير:</b> ${escapeHtml(explanation)}</div>` : ''}
     </div>`;
   }
 

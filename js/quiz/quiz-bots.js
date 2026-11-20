@@ -70,7 +70,7 @@
       else if (accuracySetting === 'high') acc = 0.85;
       else if (accuracySetting === 'mixed') acc = 0.25 + Math.random() * 0.65;
 
-      room.players.push({
+      const botPlayer = {
         id: 'bot_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
         name: uniqueName,
         avatarId: avatarId,
@@ -81,7 +81,11 @@
         score: 0,
         streak: 0,
         lastPointsGained: 0
-      });
+      };
+      if (global.ScoreARArenaModes?.isDuelMode?.() && global.ScoreARArenaModes?.assignPlayerTeam) {
+        global.ScoreARArenaModes.assignPlayerTeam(room, botPlayer, null);
+      }
+      room.players.push(botPlayer);
     }
 
     if (global.ScoreARQuizHost && typeof global.ScoreARQuizHost.refreshLobbyUi === 'function') {
@@ -127,7 +131,7 @@
     const room = getHostRoom();
     if (!room || !Array.isArray(room.players)) return;
 
-    const bots = room.players.filter(p => p && (p.isBot || p.isDemo));
+    const bots = room.players.filter(p => p && (p.isBot || p.isDemo) && !p.eliminated);
     if (!bots.length) return;
 
     const opts = qData.options || qData.opts || [];
