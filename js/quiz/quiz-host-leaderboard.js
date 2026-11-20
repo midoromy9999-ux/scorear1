@@ -114,9 +114,117 @@
     return `<span class="sc-lb-rank-circle" style="background:${bg};" aria-label="المركز ${rank}">${rank}</span>`;
   }
 
+  function pickTeamRoundStar(members) {
+    if (!Array.isArray(members) || !members.length) return null;
+    let best = null;
+    for (let i = 0; i < members.length; i++) {
+      const m = members[i];
+      if (!m || !(Number(m.lastPointsGained) > 0)) continue;
+      if (!best || Number(m.lastPointsGained) > Number(best.lastPointsGained)) best = m;
+    }
+    return best;
+  }
+
+  function renderDuelStandingsRecap(stage, currentRoom, activeQuestions, currentQIndex, theme, worldId, sorted, duelSb, nextAction, nextLabel, isMuted) {
+    const existingArenaWrap = typeof stage.querySelector === 'function' ? stage.querySelector('#hostArena3DWrap') : null;
+    const keepLive3D = Boolean(existingArenaWrap && global.ScoreARArena3D?.isActive?.());
+    const totalQ = Array.isArray(activeQuestions) && activeQuestions.length ? activeQuestions.length : 1;
+    const total = duelSb.team_a.score + duelSb.team_b.score;
+    const pctA = total > 0 ? Math.max(12, Math.min(88, (duelSb.team_a.score / total) * 100)) : 50;
+    const starA = pickTeamRoundStar(duelSb.team_a.members);
+    const starB = pickTeamRoundStar(duelSb.team_b.members);
+    const leaderText = duelSb.leaderTeamId === 'tie'
+      ? '⚖️ تعادل متقارب بين الفريقين'
+      : (duelSb.leaderTeamId === 'team_a'
+        ? `🦅 ${escapeHtml(duelSb.team_a.name)} في الصدارة (+${duelSb.diff})`
+        : `🦁 ${escapeHtml(duelSb.team_b.name)} في الصدارة (+${duelSb.diff})`);
+
+    const overlayHtml = `
+      <header class="scorear-control-bar" style="position:relative;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:8px 20px;gap:8px;flex-wrap:wrap;pointer-events:auto;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" class="scorear-gear-btn" onclick="ScoreARQuizHost.closeHostSession()" style="border-color:rgba(255,107,107,0.38);color:#fca5a5;">${uiIcon('close', 14)} <span>إنهاء القاعة</span></button>
+          <button type="button" id="hostAudioMuteBtn" class="scorear-gear-btn scorear-audio-btn" onclick="ScoreARHostLeaderboard.toggleMuteAudio()">${uiIcon(isMuted ? 'volumeOff' : 'volume', 14)} <span>${isMuted ? 'صامت' : 'الصوت'}</span></button>
+        </div>
+        <span class="scorear-control-pill" style="border-color:${theme.border};color:#fff;">${theme.emblem} <span>${escapeHtml(theme.name)}</span> · <bdi dir="ltr">${currentQIndex + 1} / ${totalQ}</bdi></span>
+        <span style="font-size:12px;color:#cbd5e1;font-weight:800;">المتسابقون: <b style="color:${theme.accentColor};">${sorted.length}</b></span>
+      </header>
+
+      <div id="hostTopLeftActionWrap" style="position:fixed;top:52px;left:18px;z-index:65;pointer-events:auto;">
+        <button type="button" id="hostNextQuestionBtn" onclick="${nextAction}" style="background:linear-gradient(135deg,#ffffff,#e2e8f0);color:#0f172a;border:2px solid #fbbf24;border-bottom:4px solid #cbd5e1;border-radius:999px;padding:9px 24px;font-size:15px;font-weight:900;cursor:pointer;font-family:Cairo,sans-serif;box-shadow:0 10px 26px rgba(0,0,0,0.5);display:inline-flex;align-items:center;gap:8px;">
+          <span>${nextLabel}</span> ${uiIcon(nextAction.includes('launchQuestion') ? 'arrow' : 'crown', 16)}
+        </button>
+      </div>
+
+      <div id="hostDuelClashRibbon" style="margin:auto auto 20px;width:min(860px,94%);padding:14px 22px;border-radius:22px;background:rgba(8,14,32,0.42);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.22);box-shadow:0 14px 38px rgba(0,0,0,0.38),inset 0 1px 0 rgba(255,255,255,0.18);pointer-events:auto;direction:rtl;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-weight:900;color:#e2e8f0;">⚔️ ملخص الجولة التراكمي</span>
+          <span style="padding:3px 14px;border-radius:999px;background:rgba(255,255,255,0.10);border:1px solid rgba(251,191,36,0.45);color:#fef08a;font-size:12px;font-weight:900;">${leaderText}</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin-bottom:10px;">
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;">
+            <div style="display:flex;align-items:center;gap:7px;">
+              <span style="font-size:24px;">🦅</span>
+              <span style="font-size:16px;font-weight:900;color:#7dd3fc;">${escapeHtml(duelSb.team_a.name)}</span>
+              <span style="font-size:11px;color:#bae6fd;">(${duelSb.team_a.count})</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <b style="font-size:26px;font-weight:900;color:#fff;font-family:Montserrat,Cairo,sans-serif;">${duelSb.team_a.score.toLocaleString('en-US')}</b>
+              ${duelSb.team_a.lastGain > 0 ? `<span style="padding:2px 8px;border-radius:999px;background:rgba(16,185,129,0.24);border:1px solid rgba(52,211,153,0.45);color:#6ee7b7;font-size:11.5px;font-weight:900;">+${duelSb.team_a.lastGain} الجولة</span>` : ''}
+            </div>
+            ${starA ? `<div style="font-size:11px;font-weight:800;color:#fde68a;">⭐ نجم الجولة: ${escapeHtml(starA.name)} (+${starA.lastPointsGained})</div>` : ''}
+          </div>
+
+          <div style="padding:6px 14px;border-radius:999px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);font-size:14px;font-weight:900;color:#fff;font-family:Montserrat,sans-serif;">VS</div>
+
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;text-align:left;">
+            <div style="display:flex;align-items:center;gap:7px;">
+              <span style="font-size:11px;color:#fed7aa;">(${duelSb.team_b.count})</span>
+              <span style="font-size:16px;font-weight:900;color:#fdba74;">${escapeHtml(duelSb.team_b.name)}</span>
+              <span style="font-size:24px;">🦁</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+              ${duelSb.team_b.lastGain > 0 ? `<span style="padding:2px 8px;border-radius:999px;background:rgba(16,185,129,0.24);border:1px solid rgba(52,211,153,0.45);color:#6ee7b7;font-size:11.5px;font-weight:900;">+${duelSb.team_b.lastGain} الجولة</span>` : ''}
+              <b style="font-size:26px;font-weight:900;color:#fff;font-family:Montserrat,Cairo,sans-serif;">${duelSb.team_b.score.toLocaleString('en-US')}</b>
+            </div>
+            ${starB ? `<div style="font-size:11px;font-weight:800;color:#fde68a;">⭐ نجم الجولة: ${escapeHtml(starB.name)} (+${starB.lastPointsGained})</div>` : ''}
+          </div>
+        </div>
+
+        <div style="position:relative;height:10px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,0.10);display:flex;">
+          <div style="width:${pctA.toFixed(1)}%;background:linear-gradient(90deg,#38bdf8,#0284c7);transition:width 0.65s cubic-bezier(0.22,1,0.36,1);"></div>
+          <div style="width:3px;background:#fff;box-shadow:0 0 8px #fff;z-index:2;flex-shrink:0;"></div>
+          <div style="width:${(100 - pctA).toFixed(1)}%;background:linear-gradient(90deg,#ea580c,#fb923c);transition:width 0.65s cubic-bezier(0.22,1,0.36,1);"></div>
+        </div>
+      </div>
+    `;
+
+    if (keepLive3D) {
+      Array.from(stage.children || []).forEach(ch => { if (ch !== existingArenaWrap) ch.remove(); });
+      const overlay = document.createElement('div');
+      overlay.id = 'hostDuelStandingsOverlay';
+      overlay.style.cssText = 'position:relative;z-index:20;display:flex;flex-direction:column;width:100%;height:100%;direction:rtl;font-family:Cairo,Tajawal,sans-serif;pointer-events:none;';
+      overlay.innerHTML = overlayHtml;
+      stage.appendChild(overlay);
+      global.ScoreARArena3D?.setStandingsOverview?.('DUEL_TEAMS', duelSb);
+    } else {
+      stage.innerHTML = `<div id="hostArena3DWrap" style="position:fixed;inset:0;overflow:hidden;z-index:1;pointer-events:none;background:#070a18;"></div><div id="hostDuelStandingsOverlay" style="position:relative;z-index:20;display:flex;flex-direction:column;width:100%;height:100%;direction:rtl;font-family:Cairo,Tajawal,sans-serif;pointer-events:none;">${overlayHtml}</div>`;
+      if (global.ScoreARArena3D?.mount) {
+        const mountEl = typeof stage.querySelector === 'function' ? stage.querySelector('#hostArena3DWrap') : null;
+        if (mountEl) {
+          global.ScoreARArena3D.mount(mountEl, { worldId, mode: 'DUEL_TEAMS', layout: 'duel', phase: 'overview', qIndex: currentQIndex, players: currentRoom.players || [], room: currentRoom });
+          global.ScoreARArena3D.setStandingsOverview?.('DUEL_TEAMS', duelSb);
+        }
+      }
+    }
+  }
+
   function renderHostLeaderboard(stage, currentRoom, activeQuestions, currentQIndex, onNext, onPodium, onClose) {
     if (!stage || !currentRoom) return;
-    if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
+    const activeMode = global.ScoreARGameModes?.getMode?.() || currentRoom.gameMode || currentRoom.mode || 'SOLO';
+    const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeMode));
+    const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeMode));
+    if (!isDuel && global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     if (!currentRoom._lbSessionToken) {
       currentRoom._lbSessionToken = `${currentRoom.pin || 'room'}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     }
@@ -125,9 +233,6 @@
       lastSessionToken = currentRoom._lbSessionToken;
     }
 
-    const activeMode = global.ScoreARGameModes?.getMode?.() || currentRoom.gameMode || currentRoom.mode || 'SOLO';
-    const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeMode));
-    const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeMode));
     const sorted = (isSurvival && global.ScoreARSurvivalEngine?.sortPlayersForSurvival)
       ? global.ScoreARSurvivalEngine.sortPlayersForSurvival(currentRoom.players || [])
       : [...(currentRoom.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
@@ -158,19 +263,43 @@
     const duelSb = (isDuel && global.ScoreARArenaModes?.computeDuelScoreboard)
       ? global.ScoreARArenaModes.computeDuelScoreboard(currentRoom.players || [])
       : null;
-    const duelHeaderHtml = (duelSb && global.ScoreARArenaModes?.renderDuelScoreHudHtml)
-      ? global.ScoreARArenaModes.renderDuelScoreHudHtml(duelSb, { id: 'hostLbDuelScoreboard', compact: true })
-      : '';
     const survStatus = (isSurvival && global.ScoreARSurvivalEngine?.getStatus)
       ? global.ScoreARSurvivalEngine.getStatus(currentRoom, currentQIndex, totalQ)
       : null;
+    const hasNext = Array.isArray(activeQuestions) && (currentQIndex + 1 < activeQuestions.length) && !survStatus?.championEarly;
+    const nextAction = hasNext ? `ScoreARQuizHost.launchQuestion(${currentQIndex + 1})` : 'ScoreARQuizHost.renderHostPodium()';
+    const nextLabel = survStatus?.championEarly ? 'تتويج الناجي الأقوى 🏆' : (hasNext ? (isDuel ? 'السؤال التالي' : 'السؤال التالي') : (isDuel ? '🏆 تتويج الفريق الفائز' : 'التتويج النهائي'));
+
+    if (isDuel && duelSb) {
+      renderDuelStandingsRecap(stage, currentRoom, activeQuestions, currentQIndex, theme, worldId, sorted, duelSb, nextAction, nextLabel, isMuted);
+      if (global.ScoreARRealtime && typeof global.ScoreARRealtime.publish === 'function') {
+        global.ScoreARRealtime.publish('LEADERBOARD_UPDATE', {
+          worldId,
+          mode: activeMode,
+          duelScores: duelSb,
+          survivalState: null,
+          questionNumber: currentQIndex + 1,
+          totalQuestions: totalQ,
+          top5: top5.map(p => ({ id: p.id, name: p.name, score: p.score || 0, rank: p._currentRank, avatarId: normAvatar(p), teamId: p.teamId || null, eliminated: false })),
+          totalPlayers: sorted.length,
+          allRanks: sorted.map((p, i) => ({
+            id: p.id, name: p.name, avatarId: normAvatar(p), teamId: p.teamId || null, eliminated: false,
+            rank: p._currentRank, score: p.score || 0,
+            delta: p._rankDelta || 0, streak: p.streak || 0,
+            gapToAbove: i > 0 ? Math.max(0, (sorted[i - 1].score || 0) - (p.score || 0)) : 0
+          }))
+        });
+      }
+      return;
+    }
+
+    const duelHeaderHtml = (duelSb && global.ScoreARArenaModes?.renderDuelScoreHudHtml)
+      ? global.ScoreARArenaModes.renderDuelScoreHudHtml(duelSb, { id: 'hostLbDuelScoreboard', compact: true })
+      : '';
     const hasRecentElim = Boolean(survStatus?.lastElimEvent?.qIndex === currentQIndex && survStatus.lastElimEvent.eliminatedPlayers?.length);
     const survHeaderHtml = (isSurvival && survStatus && global.ScoreARSurvivalEngine)
       ? `<div id="hostLbSurvivalBanner" style="width:100%;max-width:920px;margin:0 auto;">${global.ScoreARSurvivalEngine.renderSurvivalHudHtml({ ...survStatus, isEliminationQuestion: false, questionsUntilNext: survStatus.nextElimQIndex !== null ? Math.max(1, survStatus.nextElimQIndex - currentQIndex) : null })}${hasRecentElim ? global.ScoreARSurvivalEngine.renderSurvivalElimBannerHtml(survStatus.lastElimEvent) : ''}</div>`
       : '';
-    const hasNext = Array.isArray(activeQuestions) && (currentQIndex + 1 < activeQuestions.length) && !survStatus?.championEarly;
-    const nextAction = hasNext ? `ScoreARQuizHost.launchQuestion(${currentQIndex + 1})` : 'ScoreARQuizHost.renderHostPodium()';
-    const nextLabel = survStatus?.championEarly ? 'تتويج الناجي الأقوى 🏆' : (hasNext ? 'السؤال التالي' : 'التتويج النهائي');
 
     stage.innerHTML = `
       <style>
@@ -224,7 +353,10 @@
             <button type="button" id="hostAudioMuteBtn" class="scorear-gear-btn scorear-audio-btn" onclick="ScoreARHostLeaderboard.toggleMuteAudio()">${uiIcon(isMuted ? 'volumeOff' : 'volume', 14)} <span>${isMuted ? 'صامت' : 'الصوت'}</span></button>
           </div>
           <span class="scorear-control-pill" style="border-color:${theme.border};color:#fff;">${theme.emblem} <span>${escapeHtml(theme.name)}</span></span>
-          <span style="font-size:12px;color:#cbd5e1;font-weight:800;">المتسابقون: <b style="color:${theme.accentColor};">${sorted.length}</b></span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            ${isSurvival ? `<button type="button" onclick="${nextAction}" style="background:#ffffff;color:#0f172a;border:2px solid #fbbf24;border-radius:999px;padding:5px 16px;font-size:12.5px;font-weight:900;cursor:pointer;font-family:inherit;">${nextLabel}</button>` : ''}
+            <span style="font-size:12px;color:#cbd5e1;font-weight:800;">المتسابقون: <b style="color:${theme.accentColor};">${sorted.length}</b></span>
+          </div>
         </header>
 
         ${duelHeaderHtml ? `<div id="hostLbDuelScoreboardWrap" style="position:relative;z-index:12;padding:6px 18px 0;">${duelHeaderHtml}</div>` : ''}

@@ -200,6 +200,7 @@
   function renderHostPodium(stage, currentRoom, onClose) {
     if (!stage || !currentRoom) return;
     if (global.ScoreARWorldHalls?.cleanup) global.ScoreARWorldHalls.cleanup();
+    if (global.ScoreARDuelCoronation?.cleanup) global.ScoreARDuelCoronation.cleanup();
     if (scenes()?.stopStage) scenes().stopStage();
     clearPodiumTimers();
     celebrationClassicStarted = false;
@@ -231,6 +232,12 @@
         mode: activeMode, duelScores, survivalState,
         podium: sorted.slice(0, 3), totalPlayers: sorted.length, leaderboard: sorted
       });
+    }
+
+    if (isDuel && global.ScoreARDuelCoronation?.renderDuelTeamCoronation) {
+      global.ScoreARAudio?.playMusic?.(wid, 0.18);
+      global.ScoreARDuelCoronation.renderDuelTeamCoronation(stage, currentRoom, onClose);
+      return;
     }
 
     if (celStyle === 'hall' && global.ScoreARWorldHalls?.renderHallCeremony) {

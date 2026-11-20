@@ -136,12 +136,12 @@
         const rowCount = isBack ? Math.max(1, backCount) : Math.max(1, frontCount);
         const rowIdx = isBack ? (i - frontCount) : i;
         const t = rowCount === 1 ? 0.5 : rowIdx / (rowCount - 1);
-        const baseX = sideSign * (isBack ? 5.85 : 3.55);
-        const depthZ = isBack ? (-2.4 + (t - 0.5) * 4.4) : (2.1 - t * 4.2);
-        const staggerX = baseX + sideSign * (Math.abs(t - 0.5) * 1.15);
+        const baseX = sideSign * (isBack ? 5.35 : 3.25);
+        const staggerX = baseX + sideSign * (Math.abs(t - 0.5) * (isBack ? 1.25 : 1.15));
+        const depthZ = isBack ? (1.3 - t * 3.8) : (1.85 - t * 3.9);
         positions.set(p.id, {
           x: staggerX,
-          y: 0,
+          y: isBack ? 0.60 : 0,
           z: depthZ,
           teamId: sideSign > 0 ? 'team_a' : 'team_b',
           rotY: sideSign > 0 ? -0.35 : 0.35
@@ -164,11 +164,11 @@
       const ringIdx = isOuter ? (idx - innerCap) : idx;
       const u = ringCount === 1 ? 0.5 : ringIdx / (ringCount - 1);
       const angle = (-Math.PI * 0.88) + u * (Math.PI * 0.76);
-      const radius = isOuter ? 7.3 : 5.2;
+      const radius = isOuter ? 7.45 : 5.4;
       positions.set(p.id, {
         x: Math.cos(angle) * radius,
-        y: 0,
-        z: Math.sin(angle) * radius + 1.1,
+        y: isOuter ? 0.66 : 0,
+        z: Math.sin(angle) * radius + 0.9,
         teamId: normalizeTeam(p, idx),
         rotY: -angle - Math.PI * 0.5
       });
@@ -483,14 +483,19 @@
       if (envMap && envMap.texture) scene.environment = envMap.texture;
 
       const camera = new THREE.PerspectiveCamera(44, w / h, 0.1, 140);
+      const wideCam = displayedPlayers.length > 10;
+      const defCamPos = wideCam ? [0, 4.45, 14.8] : [0, 3.85, 12.6];
+      const defCamLook = wideCam ? [0, 1.45, -0.6] : [0, 1.35, -0.8];
+      instance.defaultCamPos = defCamPos;
+      instance.defaultCamLook = defCamLook;
       const camDirector = Engine.createCameraDirector
         ? Engine.createCameraDirector(camera, containerEl)
         : null;
       if (camDirector) {
-        camDirector.snapShot([0, 3.85, 12.6], [0, 1.35, -0.8]);
+        camDirector.snapShot(defCamPos, defCamLook);
       } else {
-        camera.position.set(0, 3.85, 12.6);
-        camera.lookAt(0, 1.35, -0.8);
+        camera.position.set(defCamPos[0], defCamPos[1], defCamPos[2]);
+        camera.lookAt(defCamLook[0], defCamLook[1], defCamLook[2]);
       }
 
       const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.92);
@@ -546,11 +551,21 @@
       const isSurvMode = mode === 'SURVIVAL';
       displayedPlayers.forEach((p, idx) => {
         const slot = posMap.get(p.id) || { x: (idx - 1) * 2, y: 0, z: 0, teamId: normalizeTeam(p, idx), rotY: 0 };
+        const slotY = slot.y || 0;
         const teamId = slot.teamId;
         const baseColor = isSurvMode ? 0xa855f7 : (teamId === 'team_b' ? 0xf97316 : 0x38bdf8);
         const pod = buildPodMesh(THREE, baseColor);
-        pod.podGroup.position.set(slot.x, 0, slot.z);
+        pod.podGroup.position.set(slot.x, slotY, slot.z);
         scene.add(pod.podGroup);
+
+        if (slotY > 0.05) {
+          const riserGeo = new THREE.CylinderGeometry(0.78, 0.90, slotY, 24);
+          const riserMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.5, roughness: 0.45, transparent: true, opacity: 0.85 });
+          const riserMesh = new THREE.Mesh(riserGeo, riserMat);
+          riserMesh.position.set(slot.x, slotY * 0.5, slot.z);
+          scene.add(riserMesh);
+          instance.disposables.push(riserGeo, riserMat);
+        }
 
         const hero = Engine.createHero3DActor(p, {
           height: 2.35,
@@ -563,7 +578,7 @@
           initialOpacity: 1
         });
         if (hero && hero.group) {
-          hero.group.position.set(slot.x, 0.12, slot.z);
+          hero.group.position.set(slot.x, slotY + 0.12, slot.z);
           if (hero.preloadMoves) hero.preloadMoves(['idle', 'clap', 'jump', 'win', 'sad', 'wave']);
           scene.add(hero.group);
         }
@@ -579,7 +594,7 @@
         const plateMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
         const plateSprite = new THREE.Sprite(plateMat);
         plateSprite.scale.set(1.75, 0.48, 1);
-        plateSprite.position.set(slot.x, 0.28, slot.z + 0.85);
+        plateSprite.position.set(slot.x, slotY + 0.28, slot.z + 0.85);
         scene.add(plateSprite);
 
         instance.disposables.push(
@@ -595,7 +610,7 @@
           status: 'idle',
           motion: 'idle',
           podColor: baseColor,
-          pos: { x: slot.x, y: 0.12, z: slot.z },
+          pos: { x: slot.x, y: slotY + 0.12, z: slot.z, slotY },
           pod,
           hero,
           plateSprite,
@@ -789,12 +804,15 @@
         updateEntryNameplate(entry, '', defaultIdlePlateColor(entry));
       });
       if (state.cameraDirector) {
-        state.cameraDirector.setShot([0, 3.85, 12.6], [0, 1.35, -0.8], 2.0);
+        const dp = state.defaultCamPos || [0, 3.85, 12.6];
+        const dl = state.defaultCamLook || [0, 1.35, -0.8];
+        state.cameraDirector.setShot(dp, dl, 2.0);
       }
     } else if (state.phase === 'answering' && prev !== 'answering') {
       state.patrolTimer = 1.9;
       if (state.cameraDirector) {
-        state.cameraDirector.setShot([1.6, 3.6, 11.6], [0.6, 1.35, -0.8], 2.4);
+        const dp = state.defaultCamPos || [0, 3.85, 12.6];
+        state.cameraDirector.setShot([1.6, dp[1] - 0.25, dp[2] - 0.8], [0.6, 1.35, -0.8], 2.4);
       }
     }
   }
@@ -901,18 +919,20 @@
       }
       if (state.cameraDirector) {
         const camX = winnerEntry.pos.x * 0.75;
+        const sy = winnerEntry.pos.slotY || 0;
         const camZ = Math.max(2.6, winnerEntry.pos.z + 4.25);
-        state.cameraDirector.setShot([camX, 2.05, camZ], [winnerEntry.pos.x, 1.32, winnerEntry.pos.z], 3.1);
+        state.cameraDirector.setShot([camX, 2.05 + sy, camZ], [winnerEntry.pos.x, 1.32 + sy, winnerEntry.pos.z], 3.1);
         state.cameraDirector.impulse(0.25);
       }
       if (state.particles?.spawnFountain) {
-        state.particles.spawnFountain(winnerEntry.pos.x, 0.25, winnerEntry.pos.z, 0xfde047, 45);
+        state.particles.spawnFountain(winnerEntry.pos.x, (winnerEntry.pos.slotY || 0) + 0.25, winnerEntry.pos.z, 0xfde047, 45);
       }
       try {
         if (state.audio?.playFanfareChord) state.audio.playFanfareChord();
       } catch (_) {}
     } else if (state.cameraDirector) {
-      state.cameraDirector.setShot([0, 3.6, 11.4], [0, 1.3, -0.6], 2.2);
+      const dp = state.defaultCamPos || [0, 3.6, 11.4];
+      state.cameraDirector.setShot(dp, state.defaultCamLook || [0, 1.3, -0.6], 2.2);
     }
   }
 
@@ -924,13 +944,22 @@
     const capturedState = state;
     const runElimSpotlight = () => {
       if (!state || state !== capturedState || !state.active) return;
-      const victimEntries = elimList
-        .map(p => state.actors.get(String(p.id || p)))
-        .filter(Boolean);
+      const reasonMap = new Map();
+      const victimEntries = [];
+      elimList.forEach(p => {
+        const id = String(p?.id || p);
+        const e = state.actors.get(id);
+        if (e) {
+          victimEntries.push(e);
+          const unans = (p && p.reason === 'unanswered') || Boolean(evalResult?.playerResults?.[id]?.unanswered);
+          reasonMap.set(id, unans ? 'unanswered' : 'slowest');
+        }
+      });
       if (!victimEntries.length) return;
 
       const leadVictim = victimEntries[0];
-      if (state.ambientLight) state.ambientLight.intensity = 0.28;
+      const sy = leadVictim.pos.slotY || 0;
+      if (state.ambientLight) state.ambientLight.intensity = 0.26;
       if (state.spotlight && state.spotlight.mesh) {
         state.spotlight.mesh.position.set(leadVictim.pos.x, 11.2, leadVictim.pos.z);
         state.spotlight.mesh.visible = true;
@@ -938,13 +967,14 @@
           state.spotlight.material.uniforms.uColor.value.setHex(0xef4444);
         }
         if (state.spotlight.material?.uniforms?.uOpacity) {
-          state.spotlight.material.uniforms.uOpacity.value = 0.48;
+          state.spotlight.material.uniforms.uOpacity.value = 0.50;
         }
       }
       if (state.cameraDirector) {
-        const camX = leadVictim.pos.x * 0.72;
-        const camZ = Math.max(2.6, leadVictim.pos.z + 4.1);
-        state.cameraDirector.setShot([camX, 2.0, camZ], [leadVictim.pos.x, 1.25, leadVictim.pos.z], 2.8);
+        const multiPad = victimEntries.length > 1 ? 1.15 : 0;
+        const camX = leadVictim.pos.x * 0.68;
+        const camZ = Math.max(2.9, leadVictim.pos.z + 4.1 + multiPad);
+        state.cameraDirector.setShot([camX, 2.0 + sy + multiPad * 0.25, camZ], [leadVictim.pos.x, 1.25 + sy, leadVictim.pos.z], 2.8);
         state.cameraDirector.impulse(0.22);
       }
       try {
@@ -954,7 +984,8 @@
       victimEntries.forEach(entry => {
         entry.status = 'eliminated';
         applyPodColor(entry, 0xef4444, true);
-        updateEntryNameplate(entry, '❌ غادر المنافسة', '#ef4444');
+        const label = reasonMap.get(entry.id) === 'unanswered' ? '❌ لم يُجب' : '❌ غادر المنافسة';
+        updateEntryNameplate(entry, label, '#ef4444');
         entry.setMotion('sad', true);
 
         const tWave = setTimeout(() => {
@@ -967,8 +998,30 @@
       });
     };
 
-    const tDelay = setTimeout(runElimSpotlight, 1250);
+    const tDelay = setTimeout(runElimSpotlight, 1350);
     state.timers.push(tDelay);
+  }
+
+  function setStandingsOverview(mode, data) {
+    if (!state || !state.active) return;
+    state.phase = 'overview';
+    if (state.spotlight?.mesh) state.spotlight.mesh.visible = false;
+    if (state.ambientLight) state.ambientLight.intensity = 0.88;
+    if (state.cameraDirector) {
+      const ovPos = state.defaultCamPos ? [0, state.defaultCamPos[1], state.defaultCamPos[2]] : [0, 4.35, 14.4];
+      state.cameraDirector.setShot(ovPos, [0, 1.45, -0.6], 2.2);
+    }
+    const leaderTeamId = (mode === 'DUEL_TEAMS' && data?.leaderTeamId) ? data.leaderTeamId : null;
+    state.actors.forEach(entry => {
+      if (entry.status === 'eliminated') return;
+      if (leaderTeamId && leaderTeamId !== 'tie') {
+        const isLeading = entry.teamId === leaderTeamId;
+        applyPodColor(entry, entry.teamId === 'team_b' ? 0xf97316 : 0x38bdf8, isLeading);
+        entry.setMotion(isLeading ? 'clap' : 'idle', true);
+      } else {
+        entry.setMotion('clap', true);
+      }
+    });
   }
 
   function updatePlayers(players) {
@@ -1061,6 +1114,7 @@
     onPlayerAnswered,
     onQuestionResult,
     onSurvivalElimination,
+    setStandingsOverview,
     updatePlayers,
     isActive,
     getDebugState,

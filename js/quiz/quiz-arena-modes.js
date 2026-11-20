@@ -281,42 +281,44 @@
     const sb = scoreboard || computeDuelScoreboard([]);
     const o = opts || {};
     const compact = Boolean(o.compact);
+    const showGain = Boolean(o.showGain);
     const id = o.id || 'hostDuelScoreHud';
     const total = sb.team_a.score + sb.team_b.score;
     const pctA = total > 0 ? Math.max(12, Math.min(88, (sb.team_a.score / total) * 100)) : 50;
-    const pctB = 100 - pctA;
     const leaderPill = sb.leaderTeamId === 'tie'
       ? '⚖️ تعادل مشترك'
       : (sb.leaderTeamId === 'team_a' ? `${TEAMS.team_a.emoji} ${esc(sb.team_a.shortName)} يتقدمون بفارق ${sb.diff}` : `${TEAMS.team_b.emoji} ${esc(sb.team_b.shortName)} يتقدمون بفارق ${sb.diff}`);
+    const gainA = showGain && sb.team_a.lastGain > 0 ? `<span style="padding:1px 7px;border-radius:999px;background:rgba(16,185,129,0.24);border:1px solid rgba(52,211,153,0.45);color:#6ee7b7;font-size:10.5px;font-weight:900;margin-inline-start:6px;">+${sb.team_a.lastGain}</span>` : '';
+    const gainB = showGain && sb.team_b.lastGain > 0 ? `<span style="padding:1px 7px;border-radius:999px;background:rgba(16,185,129,0.24);border:1px solid rgba(52,211,153,0.45);color:#6ee7b7;font-size:10.5px;font-weight:900;margin-inline-end:6px;">+${sb.team_b.lastGain}</span>` : '';
 
     return `
-      <div id="${id}" style="width:100%;max-width:${compact ? '760px' : '920px'};margin:0 auto;padding:${compact ? '8px 14px' : '10px 18px'};border-radius:18px;background:rgba(10,14,32,0.82);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.14);box-shadow:0 12px 32px rgba(0,0,0,0.45);direction:rtl;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px;">
+      <div id="${id}" style="width:100%;max-width:${compact ? '740px' : '900px'};margin:0 auto;padding:${compact ? '7px 14px' : '9px 18px'};border-radius:18px;background:rgba(8,14,32,0.40);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.20);box-shadow:0 10px 30px rgba(0,0,0,0.34),inset 0 1px 0 rgba(255,255,255,0.16);direction:rtl;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
           <div style="display:flex;align-items:center;gap:8px;min-width:0;">
             <span style="font-size:${compact ? '18px' : '22px'};filter:drop-shadow(0 2px 6px ${TEAMS.team_a.glow});">🦅</span>
             <div>
               <div style="font-size:${compact ? '12px' : '13px'};font-weight:900;color:#7dd3fc;line-height:1.1;">${esc(TEAMS.team_a.name)} <span style="opacity:0.78;font-size:11px;">(${sb.team_a.count})</span></div>
-              <div style="font-size:${compact ? '17px' : '21px'};font-weight:900;color:#fff;font-family:Montserrat,Cairo,sans-serif;line-height:1.1;">${sb.team_a.score.toLocaleString('en-US')}</div>
+              <div style="font-size:${compact ? '17px' : '21px'};font-weight:900;color:#fff;font-family:Montserrat,Cairo,sans-serif;line-height:1.1;display:flex;align-items:center;"><span>${sb.team_a.score.toLocaleString('en-US')}</span>${gainA}</div>
             </div>
           </div>
 
-          <div style="padding:4px 12px;border-radius:999px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);color:#fde68a;font-size:11px;font-weight:900;white-space:nowrap;">
+          <div style="padding:3px 12px;border-radius:999px;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.20);color:#fef08a;font-size:11px;font-weight:900;white-space:nowrap;">
             ${leaderPill}
           </div>
 
           <div style="display:flex;align-items:center;gap:8px;min-width:0;text-align:left;">
             <div>
               <div style="font-size:${compact ? '12px' : '13px'};font-weight:900;color:#fdba74;line-height:1.1;"><span style="opacity:0.78;font-size:11px;">(${sb.team_b.count})</span> ${esc(TEAMS.team_b.name)}</div>
-              <div style="font-size:${compact ? '17px' : '21px'};font-weight:900;color:#fff;font-family:Montserrat,Cairo,sans-serif;line-height:1.1;">${sb.team_b.score.toLocaleString('en-US')}</div>
+              <div style="font-size:${compact ? '17px' : '21px'};font-weight:900;color:#fff;font-family:Montserrat,Cairo,sans-serif;line-height:1.1;display:flex;align-items:center;justify-content:flex-end;">${gainB}<span>${sb.team_b.score.toLocaleString('en-US')}</span></div>
             </div>
             <span style="font-size:${compact ? '18px' : '22px'};filter:drop-shadow(0 2px 6px ${TEAMS.team_b.glow});">🦁</span>
           </div>
         </div>
 
-        <div style="position:relative;height:10px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,0.08);display:flex;box-shadow:inset 0 2px 5px rgba(0,0,0,0.45);">
+        <div style="position:relative;height:8px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,0.10);display:flex;box-shadow:inset 0 2px 5px rgba(0,0,0,0.45);">
           <div style="width:${pctA.toFixed(1)}%;background:linear-gradient(90deg,#38bdf8,#0284c7);transition:width 0.65s cubic-bezier(0.22,1,0.36,1);box-shadow:0 0 12px ${TEAMS.team_a.glow};"></div>
           <div style="width:3px;background:#fff;box-shadow:0 0 8px #fff;z-index:2;flex-shrink:0;"></div>
-          <div style="width:${pctB.toFixed(1)}%;background:linear-gradient(90deg,#ea580c,#fb923c);transition:width 0.65s cubic-bezier(0.22,1,0.36,1);box-shadow:0 0 12px ${TEAMS.team_b.glow};"></div>
+          <div style="width:${(100 - pctA).toFixed(1)}%;background:linear-gradient(90deg,#ea580c,#fb923c);transition:width 0.65s cubic-bezier(0.22,1,0.36,1);box-shadow:0 0 12px ${TEAMS.team_b.glow};"></div>
         </div>
       </div>
     `;
@@ -562,7 +564,7 @@
           <button type="button" id="scorearModeModalCloseBtn" style="width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:18px;font-weight:900;cursor:pointer;">✕</button>
         </div>
 
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             ${filterTabs.map(t => {
               const active = modalFilter === t.id;
@@ -576,7 +578,27 @@
           </button>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:20px;">
+        ${modalSelectedMode === 'DUEL_TEAMS' ? `
+          <div id="duelCustomTeamNamesPanel" style="margin-bottom:14px;padding:12px 16px;border-radius:16px;background:rgba(14,165,233,0.14);backdrop-filter:blur(10px);border:1px solid rgba(56,189,248,0.42);box-shadow:0 8px 24px rgba(0,0,0,0.28);">
+            <div style="font-size:12.5px;font-weight:900;color:#7dd3fc;margin-bottom:8px;">✏️ أسماء الفريقين (اختياري — اتركهما فارغين للأسماء الافتراضية):</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <label style="display:flex;flex-direction:column;gap:4px;">
+                <span style="font-size:11.5px;font-weight:800;color:#bae6fd;">🦅 اسم الفريق الأول:</span>
+                <input id="duelTeamANameInput" type="text" maxlength="24" value="${esc(modalTeamNames.team_a === DEFAULT_TEAM_NAMES.team_a ? '' : modalTeamNames.team_a)}" placeholder="${DEFAULT_TEAM_NAMES.team_a}" oninput="ScoreARArenaModes._setDraftTeamName('team_a', this.value)" style="padding:8px 12px;border-radius:10px;border:1px solid rgba(56,189,248,0.5);background:rgba(9,13,30,0.72);color:#fff;font-family:Cairo,sans-serif;font-size:13px;font-weight:800;">
+              </label>
+              <label style="display:flex;flex-direction:column;gap:4px;">
+                <span style="font-size:11.5px;font-weight:800;color:#fed7aa;">🦁 اسم الفريق الثاني:</span>
+                <input id="duelTeamBNameInput" type="text" maxlength="24" value="${esc(modalTeamNames.team_b === DEFAULT_TEAM_NAMES.team_b ? '' : modalTeamNames.team_b)}" placeholder="${DEFAULT_TEAM_NAMES.team_b}" oninput="ScoreARArenaModes._setDraftTeamName('team_b', this.value)" style="padding:8px 12px;border-radius:10px;border:1px solid rgba(251,146,60,0.5);background:rgba(9,13,30,0.72);color:#fff;font-family:Cairo,sans-serif;font-size:13px;font-weight:800;">
+              </label>
+            </div>
+          </div>
+        ` : (modalSelectedMode === 'SURVIVAL' ? `
+          <div id="survivalModeInfoStrip" style="margin-bottom:14px;padding:10px 16px;border-radius:14px;background:rgba(245,158,11,0.14);backdrop-filter:blur(10px);border:1px solid rgba(251,191,36,0.42);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <span style="font-size:12.5px;font-weight:900;color:#fde68a;">👑 قواعد البقاء للأقوى: عداد إقصاء ذكي تلقائي • يخرج الأبطأ ومن لم يُجب (حتى 3 + غير المجيبين) • تصفير النقاط بعد كل خروج!</span>
+          </div>
+        ` : '')}
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:18px;">
           ${cards.map(c => {
             const selected = modalSelectedMode === c.id && !c.comingSoon;
             const badgeBg = c.comingSoon
@@ -605,26 +627,6 @@
           }).join('')}
         </div>
 
-        ${modalSelectedMode === 'DUEL_TEAMS' ? `
-          <div id="duelCustomTeamNamesPanel" style="margin-bottom:16px;padding:14px 16px;border-radius:16px;background:rgba(14,165,233,0.10);border:1px solid rgba(56,189,248,0.32);">
-            <div style="font-size:13px;font-weight:900;color:#7dd3fc;margin-bottom:8px;">✏️ أسماء الفريقين (اختياري — اتركهما فارغين لاستخدام الأسماء الافتراضية):</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-              <label style="display:flex;flex-direction:column;gap:4px;">
-                <span style="font-size:11.5px;font-weight:800;color:#bae6fd;">🦅 اسم الفريق الأول:</span>
-                <input id="duelTeamANameInput" type="text" maxlength="24" value="${esc(modalTeamNames.team_a === DEFAULT_TEAM_NAMES.team_a ? '' : modalTeamNames.team_a)}" placeholder="${DEFAULT_TEAM_NAMES.team_a}" oninput="ScoreARArenaModes._setDraftTeamName('team_a', this.value)" style="padding:8px 12px;border-radius:10px;border:1px solid rgba(56,189,248,0.45);background:rgba(9,13,30,0.85);color:#fff;font-family:Cairo,sans-serif;font-size:13px;font-weight:800;">
-              </label>
-              <label style="display:flex;flex-direction:column;gap:4px;">
-                <span style="font-size:11.5px;font-weight:800;color:#fed7aa;">🦁 اسم الفريق الثاني:</span>
-                <input id="duelTeamBNameInput" type="text" maxlength="24" value="${esc(modalTeamNames.team_b === DEFAULT_TEAM_NAMES.team_b ? '' : modalTeamNames.team_b)}" placeholder="${DEFAULT_TEAM_NAMES.team_b}" oninput="ScoreARArenaModes._setDraftTeamName('team_b', this.value)" style="padding:8px 12px;border-radius:10px;border:1px solid rgba(251,146,60,0.45);background:rgba(9,13,30,0.85);color:#fff;font-family:Cairo,sans-serif;font-size:13px;font-weight:800;">
-              </label>
-            </div>
-          </div>
-        ` : (modalSelectedMode === 'SURVIVAL' ? `
-          <div id="survivalModeInfoStrip" style="margin-bottom:16px;padding:12px 16px;border-radius:16px;background:rgba(245,158,11,0.12);border:1px solid rgba(251,191,36,0.38);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-            <span style="font-size:13px;font-weight:900;color:#fde68a;">👑 قواعد البقاء للأقوى: عداد إقصاء ذكي حسب عدد الطلاب والأسئلة • خروج المتعادلين في ذيل الترتيب معاً • تصفير النقاط بعد كل خروج!</span>
-          </div>
-        ` : '')}
-
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;border-top:1px solid rgba(255,255,255,0.10);padding-top:14px;">
           <button type="button" id="scorearModeCancelBtn" style="padding:10px 20px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e2e8f0;font-family:Cairo,sans-serif;font-size:13px;font-weight:800;cursor:pointer;">إلغاء</button>
           <button type="button" id="btnConfirmGameMode" onclick="ScoreARGameModes.confirmSelection()" style="padding:10px 26px;border-radius:12px;border:0;background:linear-gradient(135deg,#0284c7,#7c3aed);color:#fff;font-family:Cairo,sans-serif;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 8px 24px rgba(124,58,237,0.45);">اعتماد الوضع: ${getModeLabel(modalSelectedMode)}</button>
@@ -641,6 +643,60 @@
   function _setDraftTeamName(teamKey, val) {
     if (teamKey === 'team_b') modalTeamNames.team_b = String(val ?? '');
     else modalTeamNames.team_a = String(val ?? '');
+  }
+
+  function closeLobbyTeamNamesEditor() {
+    const el = typeof document !== 'undefined' ? document.getElementById('duelLobbyTeamNamesModal') : null;
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }
+
+  function saveLobbyTeamNamesEditor() {
+    const inpA = typeof document !== 'undefined' ? document.getElementById('duelLobbyTeamAInput') : null;
+    const inpB = typeof document !== 'undefined' ? document.getElementById('duelLobbyTeamBInput') : null;
+    const pair = setCustomTeamNames(inpA ? inpA.value : '', inpB ? inpB.value : '');
+    const pin = global.ScoreARQuizHost?.getPin?.() || global.currentLobbyPin || '';
+    if (pin) syncRoomModeToFirebase(pin, getCurrentMode(), isCurrentAIEnabled());
+    try {
+      if (global.ScoreARQuizHost?.refreshLobbyUi) global.ScoreARQuizHost.refreshLobbyUi();
+    } catch (_) {}
+    closeLobbyTeamNamesEditor();
+    if (global.toast) global.toast(`✓ تم تحديث اسمَي الفريقين: ${pair.team_a} و ${pair.team_b}`);
+    return pair;
+  }
+
+  function openLobbyTeamNamesEditor() {
+    if (typeof document === 'undefined') return null;
+    closeLobbyTeamNamesEditor();
+    const cur = getTeamNames();
+    const overlay = document.createElement('div');
+    overlay.id = 'duelLobbyTeamNamesModal';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(4,7,18,0.78);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl;font-family:Cairo,sans-serif;';
+    overlay.onclick = closeLobbyTeamNamesEditor;
+    overlay.innerHTML = `
+      <div onclick="event.stopPropagation()" style="width:min(480px,94vw);border-radius:22px;background:rgba(12,18,40,0.92);backdrop-filter:blur(16px);border:1px solid rgba(56,189,248,0.42);box-shadow:0 24px 64px rgba(0,0,0,0.75);padding:20px 22px;color:#fff;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <h3 style="margin:0;font-size:17px;font-weight:900;color:#7dd3fc;">✏️ تسمية فريقَي التحدي</h3>
+          <button type="button" onclick="ScoreARArenaModes.closeLobbyTeamNamesEditor()" style="width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-weight:900;cursor:pointer;">✕</button>
+        </div>
+        <p style="margin:0 0 12px;font-size:12px;color:#cbd5e1;">اكتب الأسماء المفضلة للفريقين (أو اتركهما فارغين لاستعادة الافتراضي):</p>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
+          <label style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:12px;font-weight:800;color:#bae6fd;">🦅 الفريق الأول:</span>
+            <input id="duelLobbyTeamAInput" type="text" maxlength="24" value="${esc(cur.team_a === DEFAULT_TEAM_NAMES.team_a ? '' : cur.team_a)}" placeholder="${DEFAULT_TEAM_NAMES.team_a}" style="padding:9px 12px;border-radius:10px;border:1px solid rgba(56,189,248,0.5);background:rgba(6,10,24,0.85);color:#fff;font-family:Cairo,sans-serif;font-size:13.5px;font-weight:800;">
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:12px;font-weight:800;color:#fed7aa;">🦁 الفريق الثاني:</span>
+            <input id="duelLobbyTeamBInput" type="text" maxlength="24" value="${esc(cur.team_b === DEFAULT_TEAM_NAMES.team_b ? '' : cur.team_b)}" placeholder="${DEFAULT_TEAM_NAMES.team_b}" style="padding:9px 12px;border-radius:10px;border:1px solid rgba(251,146,60,0.5);background:rgba(6,10,24,0.85);color:#fff;font-family:Cairo,sans-serif;font-size:13.5px;font-weight:800;">
+          </label>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button type="button" onclick="ScoreARArenaModes.closeLobbyTeamNamesEditor()" style="padding:8px 18px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.06);color:#e2e8f0;font-family:Cairo,sans-serif;font-size:12.5px;font-weight:800;cursor:pointer;">إلغاء</button>
+          <button type="button" id="btnSaveLobbyTeamNames" onclick="ScoreARArenaModes.saveLobbyTeamNamesEditor()" style="padding:8px 22px;border-radius:10px;border:0;background:linear-gradient(135deg,#0284c7,#7c3aed);color:#fff;font-family:Cairo,sans-serif;font-size:13px;font-weight:900;cursor:pointer;">حفظ وتحديث</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
   }
 
   function closePickerModal(cancelled) {
@@ -755,6 +811,9 @@
     getTeamNames,
     setCustomTeamNames,
     _setDraftTeamName,
+    openLobbyTeamNamesEditor,
+    closeLobbyTeamNamesEditor,
+    saveLobbyTeamNamesEditor,
     assignPlayerTeam,
     ensureAllTeamsAssigned,
     togglePlayerTeam,

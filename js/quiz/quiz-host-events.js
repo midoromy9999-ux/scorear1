@@ -33,7 +33,9 @@
     try {
       const db = (global.ScoreARAuth?.getDb?.()) || global.firebase?.database?.();
       if (db && pStr) {
-        db.ref('rooms/' + pStr).update({ status: 'open', isLocked: false, openedAt: Date.now(), mode, gameMode, aiEnabled }).catch(()=>{});
+        const openPatch = { status: 'open', isLocked: false, openedAt: Date.now(), mode, gameMode, aiEnabled };
+        if (mode === 'DUEL_TEAMS' && duelTeamNames) openPatch.duelTeamNames = duelTeamNames;
+        db.ref('rooms/' + pStr).update(openPatch).catch(()=>{});
         db.ref('rooms/' + pStr).onDisconnect().update({ status: 'closed', closedAt: Date.now() });
       }
     } catch(e){}
@@ -164,11 +166,24 @@
         ? evaluator.isCorrect(qData, chosen, optionOrder)
         : (ans && Array.isArray(qData.correct) && qData.correct.includes(Number(ans.optionIndex))));
 
+      const rawTs = (ans && typeof ans.ts === 'number' && !isNaN(ans.ts))
+        ? ans.ts
+        : (ans && typeof ans.answeredAt === 'number' && !isNaN(ans.answeredAt) ? ans.answeredAt : null);
+      let answerElapsedMs = null;
+      if (ans) {
+        if (typeof ans.exactElapsedMs === 'number' && isFinite(ans.exactElapsedMs)) {
+          answerElapsedMs = Math.max(100, Math.min(totalMs, ans.exactElapsedMs));
+        } else if (typeof questionStartTime === 'number' && questionStartTime > 0 && rawTs !== null) {
+          answerElapsedMs = Math.max(100, Math.min(totalMs, rawTs - questionStartTime));
+        } else if (typeof ans.timeRemaining === 'number' && isFinite(ans.timeRemaining)) {
+          answerElapsedMs = Math.max(100, Math.min(totalMs, (limitSec - ans.timeRemaining) * 1000));
+        } else {
+          answerElapsedMs = totalMs;
+        }
+      }
+
       let elapsedMs = totalMs, respTime = null;
       if (isAnsCorrect) {
-        const rawTs = (ans && typeof ans.ts === 'number' && !isNaN(ans.ts))
-          ? ans.ts
-          : (ans && typeof ans.answeredAt === 'number' ? ans.answeredAt : null);
         if (ans && typeof ans.exactElapsedMs === 'number' && !isNaN(ans.exactElapsedMs)) {
           elapsedMs = Math.max(100, Math.min(totalMs, ans.exactElapsedMs));
         } else if (typeof questionStartTime === 'number' && questionStartTime > 0 && rawTs !== null) {
@@ -181,7 +196,7 @@
         respTime = (elapsedMs / 1000).toFixed(1);
       }
 
-      evaluated.push({ p, pIdStr, ans, cardP, wasPinned, isAnsCorrect, elapsedMs, respTime });
+      evaluated.push({ p, pIdStr, ans, cardP, wasPinned, isAnsCorrect, elapsedMs, respTime, answerElapsedMs, unanswered: !ans });
     });
 
     const correctSorted = evaluated.filter(e => e.isAnsCorrect).sort((a, b) => a.elapsedMs - b.elapsedMs);
@@ -196,7 +211,7 @@
       avatarId: firstFast.p.avatarId || 'char_01'
     } : null;
 
-    evaluated.forEach(({ p, pIdStr, ans, cardP, wasPinned, isAnsCorrect, elapsedMs, respTime }) => {
+    evaluated.forEach(({ p, pIdStr, ans, cardP, wasPinned, isAnsCorrect, elapsedMs, respTime, answerElapsedMs, unanswered }) => {
       let earned = 0;
       let scoreFormula = wasPinned ? 'مجمد بكارت تثبيت ❄️' : 'إجابة خاطئة (0 نقطة)';
       const speedRank = speedRankMap.get(pIdStr) || 0;
@@ -246,6 +261,8 @@
         respTime,
         speedRank,
         elapsedMs: isAnsCorrect ? elapsedMs : null,
+        answerElapsedMs,
+        unanswered: Boolean(unanswered),
         scoreFormula
       };
     });
@@ -330,7 +347,10 @@
   }
 
   function renderHostLeaderboard(stage, currentRoom, activeQuestions, currentQIndex, onNext, onPodium, onClose) {
-    if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
+    const activeMode = global.ScoreARGameModes?.getMode?.() || currentRoom?.gameMode || currentRoom?.mode || 'SOLO';
+    if (!global.ScoreARArenaModes?.isDuelMode?.(activeMode) && global.ScoreARArena3D?.dispose) {
+      global.ScoreARArena3D.dispose();
+    }
     if (lb()) lb().renderHostLeaderboard(stage, currentRoom, activeQuestions, currentQIndex, onNext, onPodium, onClose);
   }
 

@@ -125,6 +125,7 @@ const BUNDLE_DEFINITIONS = [
       'js/quiz/quiz-hall-3d-royal.js',
       'js/quiz/quiz-hall-3d-worlds-a.js',
       'js/quiz/quiz-hall-3d-worlds-b.js',
+      'js/quiz/quiz-duel-coronation.js',
       'js/quiz/quiz-world-halls.js',
       'js/quiz/quiz-podium-effects.js',
       'js/quiz/quiz-student-view.js'

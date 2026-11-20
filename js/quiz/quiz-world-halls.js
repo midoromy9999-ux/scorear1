@@ -109,6 +109,7 @@
     isSettled = false;
     if (global.ScoreARStageFx?.stop) global.ScoreARStageFx.stop();
     if (global.ScoreARPodiumScenes?.stopStage) global.ScoreARPodiumScenes.stopStage();
+    if (global.ScoreARDuelCoronation?.cleanup) global.ScoreARDuelCoronation.cleanup();
   }
 
   function schedule(fn, ms) {
@@ -459,6 +460,11 @@
     const cfg = HALL_CONFIGS[worldId] || HALL_CONFIGS.royal;
     const activeMode = global.ScoreARGameModes?.getMode?.() || currentRoom.gameMode || currentRoom.mode || 'SOLO';
     const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeMode));
+    if (isDuel && global.ScoreARDuelCoronation?.renderDuelTeamCoronation) {
+      global.ScoreARAudio?.playMusic?.(worldId, 0.18);
+      global.ScoreARDuelCoronation.renderDuelTeamCoronation(stage, currentRoom, onClose);
+      return;
+    }
     const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeMode));
     const sorted = (isSurvival && global.ScoreARSurvivalEngine?.sortPlayersForSurvival)
       ? global.ScoreARSurvivalEngine.sortPlayersForSurvival(currentRoom.players || [])

@@ -252,31 +252,50 @@
 
   function renderStudentFinalPodium(stage, data, currentStudent, currentScore, currentWorldId) {
     const myId = String(currentStudent.uid);
+    const activeMode = data?.mode || data?.gameMode || global.__scorearJoinedRoomMode || 'SOLO';
+    const isDuel = activeMode === 'DUEL_TEAMS';
+    const myTeamId = isDuel ? resolveStudentTeamId(data, currentStudent) : null;
+    const duelNames = isDuel ? getMobileDuelTeamNames(data?.duelScores) : null;
+    const myTeamName = isDuel ? (myTeamId === 'team_b' ? duelNames.team_b : duelNames.team_a) : '';
+    const myTeamEmoji = myTeamId === 'team_b' ? '🦁' : '🦅';
+    const leaderTeamId = data?.duelScores?.leaderTeamId || 'tie';
+    const duelTeamWon = isDuel && leaderTeamId === myTeamId;
+    const duelIsTie = isDuel && leaderTeamId === 'tie';
+
     let myFinalRank = '-';
     const rankSource = Array.isArray(data.leaderboard) ? data.leaderboard : (Array.isArray(data.podium) ? data.podium : (Array.isArray(data.top3) ? data.top3 : []));
-    if (rankSource.length) {
+    if (!isDuel && rankSource.length) {
       const idx = rankSource.findIndex(p => String(p?.id) === myId || p?.name === currentStudent.name);
       if (idx !== -1) myFinalRank = idx + 1;
     }
-    stage.innerHTML = `
-      <div style="position:absolute;inset:0;background:url('assets/worlds/${currentWorldId}/podium.jpg') center/cover no-repeat;filter:brightness(0.78) saturate(1.1);z-index:1;"></div>
-      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 25%, rgba(42,34,84,0.34) 0%, rgba(10,11,22,0.72) 100%);z-index:2;"></div>
-      <header class="scorear-control-bar" style="position:relative;z-index:10;padding:12px;text-align:center;"><span style="font-size:15px;font-weight:900;color:#fcd34d;display:inline-flex;align-items:center;gap:6px;">${uiIcon('crown', 16)} نهاية التحدي والتتويج</span></header>
-      <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:12px;">
-        <div id="studentHeroAvatarV3" style="width:120px;height:148px;display:flex;align-items:flex-end;justify-content:center;"><img id="studentHeroAvatarImg" src="assets/characters/animated/${currentStudent?.avatarId || 'char_01'}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(currentStudent?.name || 'البطل')}" style="width:100px;height:120px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));"></div>
-        <h2 style="font-size:19px;font-weight:900;color:#ffffff;margin:0;">أحسنت يا ${escapeHtml(currentStudent?.name || 'البطل')}!</h2>
-        ${data.duelScores ? renderStudentDuelStripHtml(data.duelScores, resolveStudentTeamId(data, currentStudent)) : ''}
+    const duelStatusCard = isDuel ? `
+        <div id="studentDuelFinaleCard" style="background:rgba(12,18,40,0.88);backdrop-filter:blur(16px);border:1.5px solid ${duelTeamWon ? '#fbbf24' : (duelIsTie ? '#38bdf8' : 'rgba(255,255,255,0.22)')};border-radius:18px;padding:14px 16px;width:100%;max-width:330px;">
+          <div style="font-size:15px;font-weight:900;color:${duelTeamWon ? '#fde047' : '#e2e8f0'};">
+            ${duelTeamWon ? `🏆 فريقك (${myTeamEmoji} ${escapeHtml(myTeamName)}) بطل التحدي!` : (duelIsTie ? '⚖️ تعادل بطولي بين الفريقين!' : `👏 أداء رائع لفريقك (${myTeamEmoji} ${escapeHtml(myTeamName)})!`)}
+          </div>
+          <div style="font-size:12px;color:#cbd5e1;margin-top:4px;">مساهمتك الشخصية للفريق: <b style="color:#58dce3;">${currentScore} نقطة</b></div>
+        </div>` : `
         <div style="background:rgba(18,20,44,0.9);backdrop-filter:blur(16px);border:1px solid rgba(251,191,36,0.45);border-radius:18px;padding:14px;width:100%;max-width:310px;">
           <div style="font-size:11px;color:#a1a4be;">مجموع نقاطك النهائي:</div>
           <div style="font-size:26px;font-weight:900;color:#f5c518;margin:2px 0;">${currentScore} نقطة</div>
           ${myFinalRank !== '-' ? `<div style="font-size:12px;font-weight:900;color:#34d399;">بطل في منصة التتويج (المركز ${myFinalRank})</div>` : ''}
-        </div>
+        </div>`;
+
+    stage.innerHTML = `
+      <div style="position:absolute;inset:0;background:url('assets/worlds/${currentWorldId}/podium.jpg') center/cover no-repeat;filter:brightness(0.78) saturate(1.1);z-index:1;"></div>
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 25%, rgba(42,34,84,0.34) 0%, rgba(10,11,22,0.72) 100%);z-index:2;"></div>
+      <header class="scorear-control-bar" style="position:relative;z-index:10;padding:12px;text-align:center;"><span style="font-size:15px;font-weight:900;color:#fcd34d;display:inline-flex;align-items:center;gap:6px;">${uiIcon('crown', 16)} ${isDuel ? 'تتويج بطل التحدي' : 'نهاية التحدي والتتويج'}</span></header>
+      <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:12px;">
+        <div id="studentHeroAvatarV3" style="width:120px;height:148px;display:flex;align-items:flex-end;justify-content:center;"><img id="studentHeroAvatarImg" src="assets/characters/animated/${currentStudent?.avatarId || 'char_01'}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(currentStudent?.name || 'البطل')}" style="width:100px;height:120px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));"></div>
+        <h2 style="font-size:19px;font-weight:900;color:#ffffff;margin:0;">أحسنت يا ${escapeHtml(currentStudent?.name || 'البطل')}!</h2>
+        ${data.duelScores ? renderStudentDuelStripHtml(data.duelScores, resolveStudentTeamId(data, currentStudent)) : ''}
+        ${duelStatusCard}
         ${renderHeroActionDock(true)}
-        ${(myFinalRank !== '-' && myFinalRank <= 3) ? `<button data-scorear-certificate="true" class="btn launch-primary" style="font-weight:900;font-size:13px;border-radius:12px;padding:10px 20px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">${uiIcon('award', 15)} تحميل شهادتي التقديرية (PNG)</button>` : ''}
+        ${(!isDuel && myFinalRank !== '-' && myFinalRank <= 3) ? `<button data-scorear-certificate="true" class="btn launch-primary" style="font-weight:900;font-size:13px;border-radius:12px;padding:10px 20px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">${uiIcon('award', 15)} تحميل شهادتي التقديرية (PNG)</button>` : ''}
         <button onclick="ScoreARQuizStudent.closeStudentSession()" class="scorear-gear-btn" style="padding:10px 22px;font-size:13px;">${uiIcon('home', 14)} العودة للرئيسية</button>
       </main>`;
 
-    mountStudentV3Hero('studentHeroAvatarV3', currentStudent?.avatarId || 'char_01', (myFinalRank !== '-' && myFinalRank <= 3) ? 'win' : 'clap', 120, 148, true);
+    mountStudentV3Hero('studentHeroAvatarV3', currentStudent?.avatarId || 'char_01', (duelTeamWon || (!isDuel && myFinalRank !== '-' && myFinalRank <= 3)) ? 'win' : 'clap', 120, 148, true);
     let isGuest = true;
     try {
       const u = (global.ScoreARAuth && (global.ScoreARAuth.getUser || global.ScoreARAuth.getCurrentUser)) ? (global.ScoreARAuth.getUser || global.ScoreARAuth.getCurrentUser)() : null;

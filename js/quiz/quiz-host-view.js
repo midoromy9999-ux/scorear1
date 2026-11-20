@@ -70,6 +70,19 @@
     return typeof str !== 'string' ? String(str || '') : str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   }
 
+  const ARENA_WORLD_ACCENTS = {
+    royal: '#fbbf24',
+    stadium: '#38bdf8',
+    cosmic: '#c084fc',
+    treasure: '#f59e0b',
+    oasis: '#34d399',
+    magic: '#e879f9'
+  };
+
+  function renderArenaMicroTimerHtml(wAccent, timeRemaining) {
+    return `<div id="hostWorldTimerContainer" style="width:60px;height:60px;border-radius:50%;background:rgba(8,14,32,0.44);backdrop-filter:blur(10px);border:1.5px solid ${wAccent}88;box-shadow:0 8px 22px rgba(0,0,0,0.34);display:flex;align-items:center;justify-content:center;position:relative;"><svg width="60" height="60" viewBox="0 0 100 100" style="width:100% !important;height:100% !important;max-width:none !important;transform:rotate(-90deg);position:absolute;inset:0;"><circle cx="50" cy="50" r="41" stroke="rgba(255,255,255,0.14)" stroke-width="7" fill="none" /><circle id="hostQuestionTimerRing" cx="50" cy="50" r="41" stroke="${wAccent}" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="257.6" stroke-dashoffset="0" style="transition:stroke-dashoffset 1s linear;" /></svg><span id="hostQuestionTimerNum" style="position:relative;z-index:2;font-size:23px;font-weight:900;color:#ffffff;font-family:Montserrat,Arial,monospace;">${timeRemaining}</span></div>`;
+  }
+
   function renderWorldTimerHtml(worldId, timeRemaining) {
     return `<div id="hostWorldTimerContainer" style="width:94px;height:94px;border-radius:50%;background:#3b147a;border:4px solid rgba(255,255,255,0.22);box-shadow:0 12px 30px rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;position:relative;"><svg width="94" height="94" viewBox="0 0 100 100" style="transform:rotate(-90deg);position:absolute;inset:0;"><circle cx="50" cy="50" r="41" stroke="rgba(255,255,255,0.12)" stroke-width="7" fill="none" /><circle id="hostQuestionTimerRing" cx="50" cy="50" r="41" stroke="#ffffff" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="257.6" stroke-dashoffset="0" style="transition:stroke-dashoffset 1s linear;" /></svg><span id="hostQuestionTimerNum" style="position:relative;z-index:2;font-size:36px;font-weight:900;color:#ffffff;font-family:Montserrat,Arial,monospace;">${timeRemaining}</span></div>`;
   }
@@ -93,6 +106,7 @@
   function renderHostLobby(stage, currentRoom, isRoomLocked) {
     if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
     if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
+    if (global.ScoreARDuelCoronation?.cleanup) global.ScoreARDuelCoronation.cleanup();
     currentLobbyPose = 'entrance';
     const worldId = (currentRoom && currentRoom.world && currentRoom.world.id) ? currentRoom.world.id : 'royal';
     const w = currentRoom.world || { name: 'المنافسة', tag: 'جاهز' };
@@ -237,11 +251,12 @@
     if (!global.ScoreARArenaModes?.computeDuelScoreboard) return '';
     const sb = global.ScoreARArenaModes.computeDuelScoreboard(currentRoom?.players || []);
     return `
-      <div style="display:inline-flex;align-items:center;gap:14px;padding:6px 16px;border-radius:999px;background:rgba(10,14,34,0.86);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.16);box-shadow:0 8px 24px rgba(0,0,0,0.4);direction:rtl;">
+      <div style="display:inline-flex;align-items:center;gap:12px;padding:6px 14px;border-radius:999px;background:rgba(10,14,34,0.72);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.20);box-shadow:0 8px 24px rgba(0,0,0,0.4);direction:rtl;flex-wrap:wrap;justify-content:center;">
         <span style="font-size:12px;font-weight:900;color:#7dd3fc;">${sb.team_a.emoji} ${escapeHtml(sb.team_a.shortName)}: <b>${sb.team_a.count}</b></span>
         <span style="color:rgba(255,255,255,0.28);font-weight:900;">VS</span>
         <span style="font-size:12px;font-weight:900;color:#fdba74;">${sb.team_b.emoji} ${escapeHtml(sb.team_b.shortName)}: <b>${sb.team_b.count}</b></span>
-        <span style="font-size:10.5px;color:#cbd5e1;border-right:1px solid rgba(255,255,255,0.18);padding-right:10px;">اضغط شارة الفريق لتبديل اللاعب</span>
+        <button type="button" id="btnLobbyRenameTeams" onclick="ScoreARArenaModes.openLobbyTeamNamesEditor()" style="padding:3px 10px;border-radius:999px;border:1px solid rgba(56,189,248,0.5);background:rgba(56,189,248,0.20);color:#e0f2fe;font-family:Cairo,sans-serif;font-size:11px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">✏️ تسمية الفريقين</button>
+        <span style="font-size:10.5px;color:#cbd5e1;border-right:1px solid rgba(255,255,255,0.18);padding-right:8px;">اضغط شارة الفريق لتبديل اللاعب</span>
       </div>`;
   }
 
@@ -403,6 +418,7 @@
     if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
     if (global.ScoreARWorldHalls?.cleanup) global.ScoreARWorldHalls.cleanup();
     if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
+    if (global.ScoreARDuelCoronation?.cleanup) global.ScoreARDuelCoronation.cleanup();
     if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
 
     const worldId = currentRoom?.world?.id || currentRoom?.worldId || 'royal';
@@ -492,15 +508,17 @@
     }, 2400));
   }
 
-  /* ── 3. QUESTION READING & ANSWERING STAGE (Preserving 100% Question Card & 4-Color Choices) ── */
+  /* ── 3. QUESTION READING & ANSWERING STAGE (Classic preserved 100%; 3D Arena uses Sheer Crystal Broadcast UI) ── */
   function renderHostQuestionView(stage, phase, qData, currentQIndex, total, worldId, timeRemaining, readingTimeRemaining) {
     if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
     if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
     if (global.ScoreARWorldHalls?.cleanup) global.ScoreARWorldHalls.cleanup();
     if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
+    if (global.ScoreARDuelCoronation?.cleanup) global.ScoreARDuelCoronation.cleanup();
     const isReading = (phase === 'reading'), opts = qData.options || qData.opts || [];
     const questionText = qData.text || qData.q || '', imgUrl = qData.imageUrl || qData.img || null;
     const wid = String(worldId || 'royal').trim() || 'royal';
+    const wAccent = ARENA_WORLD_ACCENTS[wid] || '#38bdf8';
     const room = global.ScoreARQuizHost?.getCurrentRoom?.() || null;
     const roomPin = room?.pin || global.ScoreARQuizHost?.getPin?.() || global.currentLobbyPin || '';
     const activeMode = (global.ScoreARGameModes && typeof global.ScoreARGameModes.getMode === 'function')
@@ -533,6 +551,44 @@
       ? (room?.players || []).filter(p => p && !p.eliminated)
       : (room?.players || []);
 
+    const qCardStyle = isArenaMode
+      ? `background:rgba(8,14,32,0.40);backdrop-filter:blur(12px);border:1px solid ${wAccent}55;border-top:2px solid ${wAccent};outline:none !important;border-radius:16px;padding:${isReading ? '18px 30px' : '10px 24px'};text-align:center;box-shadow:0 12px 34px rgba(0,0,0,0.32);margin:${isReading ? '8px auto 14px auto' : '2px auto 4px auto'};max-width:${isReading ? '720px' : '780px'};width:100%;transition:all 0.55s cubic-bezier(0.22, 1, 0.36, 1);`
+      : `background:rgba(10, 16, 38, 0.78);backdrop-filter:blur(18px);border:none !important;outline:none !important;border-radius:14px;padding:${isReading ? '34px 48px' : '18px 36px'};text-align:center;box-shadow:0 18px 50px rgba(0,0,0,0.55);margin:${isReading ? '10px auto 18px auto' : '2px auto 6px auto'};max-width:1060px;width:100%;transition:all 0.65s cubic-bezier(0.22, 1, 0.36, 1);`;
+
+    const actionWrapPos = isArenaMode
+      ? 'position:fixed;top:52px;left:18px;z-index:65;pointer-events:auto;'
+      : `position:absolute;top:${hasTopHud ? '118px' : '54px'};left:22px;z-index:28;`;
+
+    const timerHtml = isArenaMode
+      ? renderArenaMicroTimerHtml(wAccent, timeRemaining)
+      : renderWorldTimerHtml(worldId, timeRemaining);
+
+    const statsHtml = isArenaMode
+      ? `<div style="width:54px;height:54px;border-radius:50%;background:rgba(8,14,32,0.44);backdrop-filter:blur(10px);border:1.5px solid rgba(56,189,248,0.55);display:grid;place-items:center;box-shadow:0 8px 22px rgba(0,0,0,0.34);"><b id="hostAnsweredCount" style="color:#ffffff;font-size:21px;font-weight:900;font-family:Montserrat,monospace;">0</b></div>
+         <span style="background:rgba(8,14,32,0.48);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.16);color:#e2e8f0;font-size:10.5px;font-weight:900;padding:1px 10px;border-radius:999px;">إجابات</span>`
+      : `<div style="width:78px;height:78px;border-radius:50%;background:#3b147a;border:3px solid rgba(255,255,255,0.2);display:grid;place-items:center;box-shadow:0 10px 25px rgba(0,0,0,0.5);"><b id="hostAnsweredCount" style="color:#ffffff;font-size:30px;font-weight:900;font-family:Montserrat,monospace;">0</b></div>
+         <span style="background:#3b147a;color:#ffffff;font-size:12px;font-weight:900;padding:2px 14px;border-radius:999px;">إجابات</span>`;
+
+    const readingHtml = isArenaMode
+      ? `<div style="position:relative;width:76px;height:76px;display:flex;align-items:center;justify-content:center;background:rgba(8,14,32,0.44);backdrop-filter:blur(10px);border:1px solid ${wAccent}66;border-radius:50%;box-shadow:0 10px 28px rgba(0,0,0,0.34);">
+           <svg width="76" height="76" viewBox="0 0 96 96" style="width:100% !important;height:100% !important;max-width:none !important;transform:rotate(-90deg);position:absolute;inset:0;"><circle cx="48" cy="48" r="40" stroke="rgba(255,255,255,0.14)" stroke-width="6" fill="none"/><circle id="hostReadingProgressCircle" cx="48" cy="48" r="40" stroke="${wAccent}" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="0" style="transition:stroke-dashoffset 1s linear;"/></svg>
+           <div id="hostReadingCountdownNum" style="position:relative;z-index:2;font-size:28px;font-weight:900;color:#ffffff;font-family:Montserrat,monospace;">${readingTimeRemaining}</div>
+         </div>
+         <div style="background:rgba(8,14,32,0.48);backdrop-filter:blur(10px);border:1px solid ${wAccent}66;color:#ffffff;padding:4px 18px;border-radius:999px;font-size:14px;font-weight:900;direction:ltr;">${currentQIndex + 1} / ${total}</div>`
+      : `<div style="position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center;background:rgba(10,16,38,0.82);border-radius:50%;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+           <svg width="96" height="96" style="transform:rotate(-90deg);"><circle cx="48" cy="48" r="40" stroke="rgba(255,255,255,0.12)" stroke-width="6" fill="none"/><circle id="hostReadingProgressCircle" cx="48" cy="48" r="40" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="0" style="transition:stroke-dashoffset 1s linear;"/></svg>
+           <div id="hostReadingCountdownNum" style="position:absolute;font-size:34px;font-weight:900;color:#ffffff;font-family:Montserrat,monospace;">${readingTimeRemaining}</div>
+         </div>
+         <div style="background:#3b147a;color:#ffffff;padding:6px 22px;border-radius:999px;font-size:16px;font-weight:900;direction:ltr;">${currentQIndex + 1} / ${total}</div>`;
+
+    const optionsHtml = opts.slice(0, 4).map((optText, idx) => {
+      const theme = OPTION_THEMES[idx % 4];
+      if (isArenaMode) {
+        return `<div id="hostOptionCard_${idx}" class="host-option-card" style="background:linear-gradient(135deg,rgba(8,14,32,0.46),${theme.bg}28);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.16);border-right:6px solid ${theme.bg};border-radius:14px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 22px rgba(0,0,0,0.28);min-height:54px;transition:all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);position:relative;"><div style="display:flex;align-items:center;gap:12px;"><span style="width:28px;height:28px;border-radius:8px;background:${theme.bg};display:grid;place-items:center;font-size:13px;color:#ffffff;flex-shrink:0;box-shadow:0 3px 10px ${theme.bg}66;">${theme.shape}</span><span id="hostOptionText_${idx}" style="font-size:17px;font-weight:900;color:#ffffff;line-height:1.35;text-shadow:0 2px 8px rgba(0,0,0,0.65);">${escapeHtml(optText)}</span></div><div id="hostOptionCountBadge_${idx}" style="display:none;background:rgba(0,0,0,0.45);border-radius:8px;padding:3px 10px;font-size:14px;font-weight:900;color:#fff;">0</div></div>`;
+      }
+      return `<div id="hostOptionCard_${idx}" class="host-option-card" style="background:${theme.bg};border:none;border-bottom:6px solid ${theme.border};border-radius:8px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 20px rgba(0,0,0,0.35);min-height:86px;transition:all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);position:relative;"><div style="display:flex;align-items:center;gap:14px;"><span style="font-size:26px;color:#ffffff;line-height:1;">${theme.shape}</span><span id="hostOptionText_${idx}" style="font-size:21px;font-weight:900;color:#ffffff;line-height:1.35;">${escapeHtml(optText)}</span></div><div id="hostOptionCountBadge_${idx}" style="display:none;background:rgba(0,0,0,0.45);border-radius:8px;padding:4px 12px;font-size:16px;font-weight:900;color:#fff;">0</div></div>`;
+    }).join('');
+
     stage.innerHTML = `
       ${isArenaMode
         ? `<div id="hostArena3DWrap" style="position:fixed;inset:0;overflow:hidden;z-index:1;pointer-events:none;background:#070a18;"></div>`
@@ -554,47 +610,35 @@
         </div>
       </header>
 
-      ${isDuel ? `<div id="hostDuelScoreHudWrap" style="position:relative;z-index:26;padding:4px 20px 0;pointer-events:none;">${duelHudHtml}</div>` : ''}
-      ${isSurvival ? `<div id="hostSurvivalHudWrap" style="position:relative;z-index:26;padding:4px 20px 0;pointer-events:none;">${survivalHudHtml}</div>` : ''}
+      ${isDuel ? `<div id="hostDuelScoreHudWrap" style="position:relative;z-index:26;padding:3px 18px 0;pointer-events:none;">${duelHudHtml}</div>` : ''}
+      ${isSurvival ? `<div id="hostSurvivalHudWrap" style="position:relative;z-index:26;padding:3px 18px 0;pointer-events:none;">${survivalHudHtml}</div>` : ''}
 
-      <div id="hostTopLeftActionWrap" style="position:absolute;top:${hasTopHud ? '118px' : '54px'};left:22px;z-index:28;">
+      <div id="hostTopLeftActionWrap" style="${actionWrapPos}">
         <button type="button" class="scorear-gear-btn" onclick="ScoreARQuizHost.finishCurrentQuestion()" style="background:rgba(14,15,32,0.88);border-color:rgba(255,255,255,0.22);color:#ffffff;padding:8px 16px;font-size:12.5px;box-shadow:0 6px 18px rgba(0,0,0,0.45);">${uiIcon('skipForward', 14)} <span>إنهاء السؤال</span></button>
       </div>
 
-      <main id="hostQuestionArena" class="host-question-arena" style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;justify-content:${isReading ? 'center' : 'space-between'};align-items:center;padding:${isArenaMode ? '6px 24px 14px' : '12px 24px 18px'};width:100%;box-sizing:border-box;pointer-events:none;">
+      <main id="hostQuestionArena" class="host-question-arena" style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;justify-content:${isReading ? 'center' : 'space-between'};align-items:center;padding:${isArenaMode ? '4px 20px 12px' : '12px 24px 18px'};width:100%;box-sizing:border-box;pointer-events:none;">
         <div id="hostReadingDiamondBadge" style="display:${isReading ? 'grid' : 'none'};width:54px;height:54px;border-radius:50%;background:rgba(17,17,17,0.75);place-items:center;margin-bottom:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);">
           <div style="width:34px;height:34px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;transform:rotate(12deg);"><div style="background:#e21b3c;border-radius:2px;display:grid;place-items:center;color:#fff;font-size:8px;">▲</div><div style="background:#1368ce;border-radius:2px;display:grid;place-items:center;color:#fff;font-size:8px;">◆</div><div style="background:#d89e00;border-radius:2px;display:grid;place-items:center;color:#fff;font-size:8px;">●</div><div style="background:#26890c;border-radius:2px;display:grid;place-items:center;color:#fff;font-size:8px;">■</div></div>
         </div>
 
-        <!-- Preserved Constant: Navy Transparent Borderless Question Card -->
-        <div id="hostQuestionCard" class="host-question-card" style="background:rgba(10, 16, 38, ${isArenaMode ? '0.82' : '0.78'});backdrop-filter:blur(18px);border:none !important;outline:none !important;border-radius:14px;padding:${isArenaMode ? (isReading ? '22px 34px' : '12px 26px') : (isReading ? '34px 48px' : '18px 36px')};text-align:center;box-shadow:0 18px 50px rgba(0,0,0,0.55);margin:${isReading ? '10px auto 18px auto' : '2px auto 6px auto'};max-width:${isArenaMode ? '680px' : '1060px'};width:100%;transition:all 0.65s cubic-bezier(0.22, 1, 0.36, 1);">
-          <h2 id="hostQuestionText" style="font-size:${isArenaMode ? (isReading ? '28px' : '22px') : (isReading ? '36px' : '26px')};font-weight:900;color:#ffffff;line-height:1.45;margin:0;transition:all 0.65s cubic-bezier(0.22, 1, 0.36, 1);text-shadow:0 3px 14px rgba(0,0,0,0.65);">${escapeHtml(questionText)}</h2>
-          ${imgUrl ? `<div id="hostQuestionImgBox" style="display:flex;justify-content:center;margin:10px 0 0;max-height:${isReading ? '220px' : '150px'};transition:max-height 0.65s ease;"><img src="${imgUrl}" alt="" style="max-height:100%;max-width:100%;object-fit:contain;border-radius:10px;"></div>` : ''}
+        <div id="hostQuestionCard" class="host-question-card" style="${qCardStyle}">
+          <h2 id="hostQuestionText" style="font-size:${isArenaMode ? (isReading ? '26px' : '21px') : (isReading ? '36px' : '26px')};font-weight:900;color:#ffffff;line-height:1.45;margin:0;transition:all 0.55s cubic-bezier(0.22, 1, 0.36, 1);text-shadow:0 3px 14px rgba(0,0,0,0.65);">${escapeHtml(questionText)}</h2>
+          ${imgUrl ? `<div id="hostQuestionImgBox" style="display:flex;justify-content:center;margin:10px 0 0;max-height:${isReading ? '200px' : '130px'};transition:max-height 0.55s ease;"><img src="${imgUrl}" alt="" style="max-height:100%;max-width:100%;object-fit:contain;border-radius:10px;"></div>` : ''}
         </div>
 
-        <div id="hostReadingCountdownArea" style="display:${isReading ? 'flex' : 'none'};flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:8px;transition:opacity 0.35s ease, transform 0.35s ease;">
-          <div style="position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center;background:rgba(10,16,38,0.82);border-radius:50%;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-            <svg width="96" height="96" style="transform:rotate(-90deg);"><circle cx="48" cy="48" r="40" stroke="rgba(255,255,255,0.12)" stroke-width="6" fill="none"/><circle id="hostReadingProgressCircle" cx="48" cy="48" r="40" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="0" style="transition:stroke-dashoffset 1s linear;"/></svg>
-            <div id="hostReadingCountdownNum" style="position:absolute;font-size:34px;font-weight:900;color:#ffffff;font-family:Montserrat,monospace;">${readingTimeRemaining}</div>
-          </div>
-          <div style="background:#3b147a;color:#ffffff;padding:6px 22px;border-radius:999px;font-size:16px;font-weight:900;direction:ltr;">${currentQIndex + 1} / ${total}</div>
+        <div id="hostReadingCountdownArea" style="display:${isReading ? 'flex' : 'none'};flex-direction:column;align-items:center;justify-content:center;gap:12px;margin-top:8px;transition:opacity 0.35s ease, transform 0.35s ease;">
+          ${readingHtml}
         </div>
 
-        <div id="hostAnsweringMidRow" style="display:${isReading ? 'none' : 'flex'};width:100%;max-width:1220px;align-items:center;justify-content:space-between;padding:0 12px;margin:auto 0;direction:rtl;">
-          <div id="hostTimerArea" style="display:flex;align-items:center;justify-content:center;">${renderWorldTimerHtml(worldId, timeRemaining)}</div>
-          <div id="hostCenterResultMount" style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 20px;"></div>
-          <div id="hostLiveAnswerStats" style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <div style="width:78px;height:78px;border-radius:50%;background:#3b147a;border:3px solid rgba(255,255,255,0.2);display:grid;place-items:center;box-shadow:0 10px 25px rgba(0,0,0,0.5);"><b id="hostAnsweredCount" style="color:#ffffff;font-size:30px;font-weight:900;font-family:Montserrat,monospace;">0</b></div>
-            <span style="background:#3b147a;color:#ffffff;font-size:12px;font-weight:900;padding:2px 14px;border-radius:999px;">إجابات</span>
-          </div>
+        <div id="hostAnsweringMidRow" style="display:${isReading ? 'none' : 'flex'};width:100%;max-width:1240px;flex:${isArenaMode ? '1' : '0 0 auto'};align-items:${isArenaMode ? 'flex-start' : 'center'};justify-content:space-between;padding:${isArenaMode ? '4px 12px 6px' : '0 12px'};margin:${isArenaMode ? '0 auto' : 'auto 0'};direction:rtl;">
+          <div id="hostTimerArea" style="display:flex;align-items:center;justify-content:center;">${timerHtml}</div>
+          <div id="hostCenterResultMount" style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 16px;"></div>
+          <div id="hostLiveAnswerStats" style="display:flex;flex-direction:column;align-items:center;gap:4px;">${statsHtml}</div>
         </div>
 
-        <!-- Preserved Constant: Bottom 2x2 Options Grid (#e21b3c ▲, #1368ce ◆, #d89e00 ●, #26890c ■) -->
-        <div id="hostOptionsGrid" class="host-options-grid" style="display:${isReading ? 'none' : 'grid'};grid-template-columns:1fr 1fr;gap:12px;max-width:${isArenaMode ? '740px' : '1260px'};margin:0 auto;width:100%;direction:rtl;pointer-events:auto;">
-          ${opts.slice(0, 4).map((optText, idx) => {
-            const theme = OPTION_THEMES[idx % 4];
-            return `<div id="hostOptionCard_${idx}" class="host-option-card" style="background:${theme.bg};border:none;border-bottom:6px solid ${theme.border};border-radius:8px;padding:${isArenaMode ? '13px 18px' : '18px 24px'};display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 20px rgba(0,0,0,0.35);min-height:${isArenaMode ? '64px' : '86px'};transition:all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);position:relative;"><div style="display:flex;align-items:center;gap:14px;"><span style="font-size:${isArenaMode ? '21px' : '26px'};color:#ffffff;line-height:1;">${theme.shape}</span><span id="hostOptionText_${idx}" style="font-size:${isArenaMode ? '18px' : '21px'};font-weight:900;color:#ffffff;line-height:1.35;">${escapeHtml(optText)}</span></div><div id="hostOptionCountBadge_${idx}" style="display:none;background:rgba(0,0,0,0.45);border-radius:8px;padding:4px 12px;font-size:16px;font-weight:900;color:#fff;">0</div></div>`;
-          }).join('')}
+        <div id="hostOptionsGrid" class="host-options-grid" style="display:${isReading ? 'none' : 'grid'};grid-template-columns:1fr 1fr;gap:${isArenaMode ? '10px' : '12px'};max-width:${isArenaMode ? '820px' : '1260px'};margin:0 auto;width:100%;direction:rtl;pointer-events:auto;">
+          ${optionsHtml}
         </div>
       </main>`;
 
@@ -619,15 +663,24 @@
     const timerArea = document.getElementById('hostTimerArea'), optionsGrid = document.getElementById('hostOptionsGrid');
     if (!card || !readingArea || !midRow || !optionsGrid) { renderHostQuestionView(stage, 'answering', qData, currentQIndex, total, worldId, timeRemaining, 0); return; }
     const isArena = Boolean(global.ScoreARArena3D?.isActive?.() || global.ScoreARArenaModes?.is3DArenaMode?.());
+    const wid = String(worldId || 'royal').trim() || 'royal';
+    const wAccent = ARENA_WORLD_ACCENTS[wid] || '#38bdf8';
     if (diamond) diamond.style.display = 'none';
     readingArea.style.opacity = '0'; readingArea.style.transform = 'scale(0.85)';
     setTimeout(() => { readingArea.style.display = 'none'; }, 180);
     if (arena) arena.style.justifyContent = 'space-between';
-    card.style.margin = isArena ? '2px auto 6px auto' : '4px auto 8px auto';
-    card.style.padding = isArena ? '12px 26px' : '18px 36px';
-    if (textEl) textEl.style.fontSize = isArena ? '22px' : '26px';
-    if (timerArea) timerArea.innerHTML = renderWorldTimerHtml(worldId, timeRemaining);
-    midRow.style.display = 'flex'; optionsGrid.style.display = 'grid';
+    card.style.margin = isArena ? '2px auto 4px auto' : '4px auto 8px auto';
+    card.style.padding = isArena ? '10px 24px' : '18px 36px';
+    if (isArena) card.style.maxWidth = '780px';
+    if (textEl) textEl.style.fontSize = isArena ? '21px' : '26px';
+    if (timerArea) timerArea.innerHTML = isArena ? renderArenaMicroTimerHtml(wAccent, timeRemaining) : renderWorldTimerHtml(worldId, timeRemaining);
+    midRow.style.display = 'flex';
+    if (isArena) {
+      midRow.style.flex = '1';
+      midRow.style.alignItems = 'flex-start';
+      midRow.style.margin = '0 auto';
+    }
+    optionsGrid.style.display = 'grid';
     (qData.options || qData.opts || []).slice(0, 4).forEach((_, idx) => {
       const optCard = document.getElementById(`hostOptionCard_${idx}`);
       if (optCard) { optCard.style.animation = 'none'; void optCard.offsetWidth; optCard.style.animation = `optionEntranceSlide 0.45s cubic-bezier(0.16, 1, 0.3, 1) both ${idx * 0.06}s`; }
@@ -637,44 +690,60 @@
     }
   }
 
-  /* ── 4. 4-COLUMN BAR CHART + LAST-QUESTION DIRECT-TO-PODIUM RULE (Preserved Constant) ── */
+  /* ── 4. 4-COLUMN BAR CHART + FRAMELESS 3D ARENA LIGHT-BARS + DIRECT SURVIVAL NEXT ── */
   function renderQuestionResultBarChart(qData, counts, correctIndices, fastest, explanation, isLastQuestion = false) {
     const centerMount = document.getElementById('hostCenterResultMount') || document.getElementById('hostTimerArea');
     const timerArea = document.getElementById('hostTimerArea'), liveStats = document.getElementById('hostLiveAnswerStats'), topLeftWrap = document.getElementById('hostTopLeftActionWrap');
     const optionsGrid = document.getElementById('hostOptionsGrid');
-    const isArena = Boolean(global.ScoreARArena3D?.isActive?.());
+    const activeMode = (global.ScoreARGameModes && typeof global.ScoreARGameModes.getMode === 'function')
+      ? global.ScoreARGameModes.getMode()
+      : 'SOLO';
+    const isArena = Boolean(global.ScoreARArena3D?.isActive?.() || global.ScoreARArenaModes?.is3DArenaMode?.(activeMode));
+    const isDuel = Boolean(global.ScoreARArenaModes?.isDuelMode?.(activeMode));
+    const isSurvival = Boolean(global.ScoreARArenaModes?.isSurvivalMode?.(activeMode));
     if (timerArea && centerMount !== timerArea) timerArea.style.display = 'none';
     if (liveStats) liveStats.style.display = 'none';
-    const nextAction = isLastQuestion ? 'ScoreARQuizHost.renderHostPodium()' : 'ScoreARQuizHost.renderHostLeaderboard()';
-    const nextLabel = isLastQuestion ? 'منصة التتويج ❯' : 'التالي ❯';
-    if (topLeftWrap) topLeftWrap.innerHTML = `<button type="button" onclick="${nextAction}" style="background:#ffffff;color:#111111;border:none;border-bottom:4px solid #cbd5e1;border-radius:6px;padding:9px 24px;font-size:15px;font-weight:900;cursor:pointer;font-family:Cairo,sans-serif;box-shadow:0 8px 22px rgba(0,0,0,0.5);">${nextLabel}</button>`;
+
+    const room = global.ScoreARQuizHost?.getCurrentRoom?.() || null;
+    const evalRes = global.__scorearLastEvalResult || { fastest, playerResults: {}, correct: correctIndices };
+
+    let nextAction = isLastQuestion ? 'ScoreARQuizHost.renderHostPodium()' : 'ScoreARQuizHost.renderHostLeaderboard()';
+    let nextLabel = isLastQuestion ? 'منصة التتويج ❯' : 'التالي ❯';
 
     if (isArena) {
       if (optionsGrid) optionsGrid.style.display = 'none';
-      const room = global.ScoreARQuizHost?.getCurrentRoom?.() || null;
-      const evalRes = global.__scorearLastEvalResult || { fastest, playerResults: {}, correct: correctIndices };
-      global.ScoreARArena3D.onQuestionResult(evalRes, room?.players || []);
-      const hudWrap = document.getElementById('hostDuelScoreHudWrap');
-      if (hudWrap && global.ScoreARArenaModes?.computeDuelScoreboard && global.ScoreARArenaModes?.renderDuelScoreHudHtml) {
-        hudWrap.innerHTML = global.ScoreARArenaModes.renderDuelScoreHudHtml(
-          global.ScoreARArenaModes.computeDuelScoreboard(room?.players || []),
-          { compact: true, id: 'hostDuelScoreHud' }
-        );
+      if (global.ScoreARArena3D?.isActive?.()) {
+        global.ScoreARArena3D.onQuestionResult(evalRes, room?.players || []);
       }
-      const survWrap = document.getElementById('hostSurvivalHudWrap');
-      if (survWrap && global.ScoreARArenaModes?.isSurvivalMode?.() && global.ScoreARSurvivalEngine) {
+      if (isDuel) {
+        const hudWrap = document.getElementById('hostDuelScoreHudWrap');
+        if (hudWrap && global.ScoreARArenaModes?.computeDuelScoreboard && global.ScoreARArenaModes?.renderDuelScoreHudHtml) {
+          hudWrap.innerHTML = global.ScoreARArenaModes.renderDuelScoreHudHtml(
+            global.ScoreARArenaModes.computeDuelScoreboard(room?.players || []),
+            { compact: true, showGain: true, id: 'hostDuelScoreHud' }
+          );
+        }
+        nextAction = isLastQuestion ? 'ScoreARQuizHost.renderHostPodium()' : 'ScoreARQuizHost.renderHostLeaderboard()';
+        nextLabel = isLastQuestion ? '🏆 تتويج الفريق الفائز ❯' : 'ملخص الجولة ❯';
+      }
+      if (isSurvival && global.ScoreARSurvivalEngine) {
+        const survWrap = document.getElementById('hostSurvivalHudWrap');
         const sRes = evalRes.survivalResult || room?._survival?.lastElimEvent;
-        const st = global.ScoreARSurvivalEngine.getStatus(room, room?._lastQIndex ?? 0, room?._lastTotalQuestions ?? 5);
-        survWrap.innerHTML = global.ScoreARSurvivalEngine.renderSurvivalHudHtml(st)
-          + ((sRes && Array.isArray(sRes.eliminatedPlayers) && sRes.eliminatedPlayers.length)
-            ? global.ScoreARSurvivalEngine.renderSurvivalElimBannerHtml(sRes)
-            : '');
+        const qIdxNow = room?._lastQIndex ?? 0;
+        const totalQs = room?._lastTotalQuestions ?? 1;
+        if (survWrap) {
+          const st = global.ScoreARSurvivalEngine.getStatus(room, qIdxNow, totalQs);
+          survWrap.innerHTML = global.ScoreARSurvivalEngine.renderSurvivalHudHtml(st)
+            + ((sRes && Array.isArray(sRes.eliminatedPlayers) && sRes.eliminatedPlayers.length)
+              ? global.ScoreARSurvivalEngine.renderSurvivalElimBannerHtml(sRes)
+              : '');
+        }
         if (sRes && Array.isArray(sRes.eliminatedPlayers) && sRes.eliminatedPlayers.length) {
           global.ScoreARArena3D?.onSurvivalElimination?.(sRes.eliminatedPlayers, evalRes);
         }
-        if (sRes?.championEarly && topLeftWrap) {
-          topLeftWrap.innerHTML = `<button type="button" onclick="ScoreARQuizHost.renderHostPodium()" style="background:#ffffff;color:#111111;border:none;border-bottom:4px solid #cbd5e1;border-radius:6px;padding:9px 24px;font-size:15px;font-weight:900;cursor:pointer;font-family:Cairo,sans-serif;box-shadow:0 8px 22px rgba(0,0,0,0.5);">🏆 تتويج البطل الأخير ❯</button>`;
-        }
+        const goPodium = Boolean(isLastQuestion || sRes?.championEarly || (qIdxNow + 1 >= totalQs));
+        nextAction = goPodium ? 'ScoreARQuizHost.renderHostPodium()' : `ScoreARQuizHost.launchQuestion(${qIdxNow + 1})`;
+        nextLabel = goPodium ? '🏆 تتويج الناجي الأقوى ❯' : 'السؤال التالي ❯';
       }
       const midRow = document.getElementById('hostAnsweringMidRow');
       if (midRow) {
@@ -683,14 +752,54 @@
       }
     }
 
+    if (topLeftWrap) {
+      topLeftWrap.innerHTML = `<button type="button" id="hostNextQuestionBtn" onclick="${nextAction}" style="background:${isArena ? 'linear-gradient(135deg,#ffffff,#e2e8f0)' : '#ffffff'};color:#0f172a;border:${isArena ? '2px solid #fbbf24' : 'none'};border-bottom:4px solid #cbd5e1;border-radius:${isArena ? '999px' : '6px'};padding:9px 24px;font-size:15px;font-weight:900;cursor:pointer;font-family:Cairo,sans-serif;box-shadow:0 10px 26px rgba(0,0,0,0.5);pointer-events:auto;">${nextLabel}</button>`;
+    }
+
     if (!centerMount) return;
     const maxCount = Math.max(1, ...counts);
-    centerMount.innerHTML = `<div style="width:100%;max-width:${isArena ? '560px' : '780px'};margin:0 auto;background:rgba(10,16,38,${isArena ? '0.84' : '0.88'});backdrop-filter:blur(18px);border:1px solid rgba(172,139,242,0.28);border-radius:18px;padding:${isArena ? '10px 18px' : '16px 26px'};box-shadow:0 20px 55px rgba(0,0,0,0.65);animation:optionEntranceSlide 0.4s cubic-bezier(0.16,1,0.3,1) both;pointer-events:auto;">
-      <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:${isArena ? '12px' : '18px'};align-items:end;height:${isArena ? '100px' : '150px'};padding:8px 14px 0;direction:rtl;">
+
+    if (isArena) {
+      const totalAns = counts.reduce((acc, c) => acc + (c || 0), 0);
+      const optsList = qData?.options || qData?.opts || [];
+      const correctText = (Array.isArray(correctIndices) && correctIndices.length && optsList[correctIndices[0]])
+        ? optsList[correctIndices[0]]
+        : (evalRes?.correctAnswerText || '');
+      centerMount.innerHTML = `
+        <div id="hostArenaFramelessResults" style="width:100%;max-width:680px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto;animation:optionEntranceSlide 0.4s cubic-bezier(0.16,1,0.3,1) both;">
+          <div style="width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:end;height:112px;padding:0 12px;direction:rtl;">
+            ${[0, 1, 2, 3].map(i => {
+              const theme = OPTION_THEMES[i % 4], count = counts[i] || 0, isCorrect = correctIndices.includes(i);
+              const pct = totalAns > 0 ? Math.round((count / totalAns) * 100) : 0;
+              const heightPx = count > 0 ? Math.max(26, Math.round((count / maxCount) * 74)) : 14;
+              return `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;">
+                  <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;font-size:14px;font-weight:900;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,0.92);">
+                    ${isCorrect ? '<span style="color:#34d399;font-size:15px;">✓</span>' : ''}
+                    <span>${count}</span>
+                    ${totalAns > 0 ? `<small style="font-size:11px;opacity:0.78;">(${pct}%)</small>` : ''}
+                  </div>
+                  <div style="width:100%;max-width:84px;height:${heightPx}px;background:linear-gradient(180deg,${theme.bg}${isCorrect ? 'e6' : '88'} 0%,${theme.bg}22 100%);backdrop-filter:blur(8px);border:1.5px solid ${isCorrect ? '#34d399' : theme.bg + '88'};border-top:4px solid ${isCorrect ? '#6ee7b7' : theme.bg};border-radius:12px 12px 4px 4px;display:flex;align-items:center;justify-content:center;transition:height 0.65s cubic-bezier(0.34,1.56,0.64,1);box-shadow:${isCorrect ? '0 0 24px rgba(52,211,153,0.45)' : '0 6px 18px rgba(0,0,0,0.28)'};">
+                    <span style="font-size:15px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,0.7);">${theme.shape}</span>
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+            ${correctText ? `<div style="background:rgba(8,14,32,0.44);backdrop-filter:blur(10px);border:1px solid rgba(52,211,153,0.48);border-radius:999px;padding:4px 14px;font-size:12.5px;font-weight:900;color:#6ee7b7;">✓ الإجابة: <span style="color:#fff;">${escapeHtml(correctText)}</span></div>` : ''}
+            ${fastest && fastest.name ? `<div style="background:rgba(245,158,11,0.18);backdrop-filter:blur(10px);border:1px solid rgba(251,191,36,0.48);border-radius:999px;padding:4px 14px;display:inline-flex;align-items:center;gap:6px;"><span class="scorear-inline-icon" style="font-size:12px;font-weight:900;color:#fef08a;">${uiIcon('zap', 13)} الأسرع: ${escapeHtml(fastest.name)} (${fastest.timeSec}ث)</span></div>` : ''}
+            ${explanation ? `<div style="background:rgba(8,14,32,0.42);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.16);border-radius:999px;padding:4px 14px;font-size:11.5px;color:#e2e8f0;font-weight:800;">💡 ${escapeHtml(explanation)}</div>` : ''}
+          </div>
+        </div>`;
+      return;
+    }
+
+    centerMount.innerHTML = `<div style="width:100%;max-width:780px;margin:0 auto;background:rgba(10,16,38,0.88);backdrop-filter:blur(18px);border:1px solid rgba(172,139,242,0.28);border-radius:18px;padding:16px 26px;box-shadow:0 20px 55px rgba(0,0,0,0.65);animation:optionEntranceSlide 0.4s cubic-bezier(0.16,1,0.3,1) both;pointer-events:auto;">
+      <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:18px;align-items:end;height:150px;padding:8px 14px 0;direction:rtl;">
         ${[0, 1, 2, 3].map(i => {
           const theme = OPTION_THEMES[i % 4], count = counts[i] || 0, isCorrect = correctIndices.includes(i);
-          const heightPx = count > 0 ? Math.max(24, Math.round((count / maxCount) * (isArena ? 68 : 105))) : 12;
-          return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;font-size:${isArena ? '15px' : '18px'};font-weight:900;color:#fff;">${isCorrect ? '<span style="color:#34d399;font-size:16px;">✓</span>' : ''}<span>${count}</span></div><div style="width:100%;max-width:96px;height:${heightPx}px;background:${theme.bg};border-bottom:5px solid ${theme.border};border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;transition:height 0.65s cubic-bezier(0.34,1.56,0.64,1);opacity:${isCorrect ? '1' : '0.48'};"><span style="font-size:16px;color:#fff;">${theme.shape}</span></div></div>`;
+          const heightPx = count > 0 ? Math.max(24, Math.round((count / maxCount) * 105)) : 12;
+          return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;font-size:18px;font-weight:900;color:#fff;">${isCorrect ? '<span style="color:#34d399;font-size:16px;">✓</span>' : ''}<span>${count}</span></div><div style="width:100%;max-width:96px;height:${heightPx}px;background:${theme.bg};border-bottom:5px solid ${theme.border};border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;transition:height 0.65s cubic-bezier(0.34,1.56,0.64,1);opacity:${isCorrect ? '1' : '0.48'};"><span style="font-size:16px;color:#fff;">${theme.shape}</span></div></div>`;
         }).join('')}
       </div>
       ${fastest && fastest.name ? `<div style="margin-top:8px;background:rgba(245,158,11,0.14);border:1px solid rgba(251,191,36,0.38);border-radius:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:8px;"><img src="assets/characters/animated/${escapeHtml(fastest.avatarId || 'char_01')}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(fastest.name)}" style="width:30px;height:36px;object-fit:contain;"><span class="scorear-inline-icon" style="font-size:12.5px;font-weight:900;color:#fef08a;">${uiIcon('zap', 14)} الأسرع: ${escapeHtml(fastest.name)} (${fastest.timeSec}ث)</span></div>` : ''}
