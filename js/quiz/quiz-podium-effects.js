@@ -9,7 +9,7 @@
 (function (global) {
   'use strict';
   const esc = s => String(s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-  const sfx = n => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n); };
+  const sfx = (n, v) => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n, v); };
   const $   = id => (typeof document !== 'undefined' ? document.getElementById(id) : null);
   const ic  = (n, sz = 14) => (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function') ? global.ScoreARUI.icon(n, { size: sz }) : '';
   const scenes = () => global.ScoreARPodiumScenes || null;
@@ -18,7 +18,13 @@
 
   const POSES = ['idle', 'walk', 'walkRight', 'walkLeft', 'walkForward', 'jump', 'clap', 'win', 'celebrate', 'run', 'runRight', 'runLeft', 'wave', 'climb', 'fly'];
   let revealStep = 0, players = [], revealOrder = [], room = null;
-  let rafId = null, partTimer = null, spotCanvas = null, currentPose = 'celebrate', podiumTimers = [];
+  let rafId = null, partTimer = null, spotCanvas = null, currentPose = 'celebrate', podiumTimers = [], celebrationClassicStarted = false;
+
+  function ensureCelebrationClassicMusic() {
+    if (celebrationClassicStarted) return;
+    celebrationClassicStarted = true;
+    global.ScoreARAudio?.crossfadeMusic?.('celebration', 0.32, 650);
+  }
 
   function schedulePodium(fn, ms) {
     const id = setTimeout(() => {
@@ -32,6 +38,8 @@
   function clearPodiumTimers() {
     podiumTimers.forEach(id => clearTimeout(id));
     podiumTimers = [];
+    global.ScoreARAudio?.stopAllSfx?.();
+    global.ScoreARAudio?.unduckMusic?.(100);
   }
 
   function computeRanks(sorted) {
@@ -78,8 +86,10 @@
   }
 
   function resetRovingSpotlight() {
-    const r = $('scRovingSpotlight');
-    if (r) { r.style.display = 'none'; r.style.opacity = '0'; r.style.animation = 'none'; }
+    ['scRovingSpotlight', 'scCrossSpotL', 'scCrossSpotR'].forEach(id => {
+      const r = $(id);
+      if (r && r.style) { r.style.display = 'none'; r.style.opacity = '0'; r.style.animation = 'none'; }
+    });
   }
 
   function pedestal3D(slot, displayRank, heightPx, widthPx) {
@@ -187,6 +197,7 @@
     if (global.ScoreARWorldHalls?.cleanup) global.ScoreARWorldHalls.cleanup();
     if (scenes()?.stopStage) scenes().stopStage();
     clearPodiumTimers();
+    celebrationClassicStarted = false;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     if (partTimer) { clearInterval(partTimer); partTimer = null; }
     spotCanvas = null; revealStep = 0;
@@ -206,7 +217,7 @@
 
     if (celStyle === 'hall' && global.ScoreARWorldHalls?.renderHallCeremony) {
       try {
-        if (global.ScoreARAudio?.playMusic) global.ScoreARAudio.playMusic('victory', 0.28);
+        global.ScoreARAudio?.playMusic?.(wid, 0.18);
         global.ScoreARWorldHalls.renderHallCeremony(stage, currentRoom, onClose);
         return;
       } catch (err) {
@@ -220,7 +231,7 @@
     const p1 = ranked[0] || null, p2 = ranked[1] || null, p3 = ranked[2] || null;
     revealOrder = [3, 2, 1].filter(s => Boolean(slotPlayer(s)));
 
-    if (global.ScoreARAudio?.playMusic) global.ScoreARAudio.playMusic('victory', 0.28);
+    global.ScoreARAudio?.playMusic?.(wid, 0.18);
 
     const P1 = p1 ? pedestal3D(1, p1._rank, 152, 214) : '';
     const P2 = p2 ? pedestal3D(2, p2._rank, 122, 192) : '';
@@ -259,7 +270,10 @@
   }
   @keyframes crownDrop{0%{transform:translateY(-28px) scale(0.5);opacity:0;}70%{transform:translateY(3px) scale(1.08);opacity:1;}100%{transform:translateY(0) scale(1);opacity:1;}}
   @keyframes floatUp{0%{transform:translateY(0);opacity:1;}100%{transform:translateY(-220px);opacity:0;}}
-  @keyframes theatricalSpotRoam{0%{transform:translate(-155%,-12%) scale(0.88);opacity:0;}16%{transform:translate(-115%,-34%) scale(1.02);opacity:0.9;}44%{transform:translate(18%,-20%) scale(1.06);opacity:0.9;}72%{transform:translate(-75%,-44%) scale(0.98);opacity:0.94;}84%{transform:translate(-50%,-34%) scale(1.08);opacity:0.84;}100%{transform:translate(-50%,-34%) scale(1.12);opacity:0;}}
+  @keyframes theatricalSpotRoam{0%{transform:translate(-155%,-12%) scale(0.88);opacity:0;}16%{transform:translate(-115%,-34%) scale(1.02);opacity:0.75;}48%{transform:translate(18%,-20%) scale(1.06);opacity:0.8;}75%{transform:translate(-75%,-44%) scale(0.98);opacity:0.9;}92%{transform:translate(-50%,-34%) scale(1.1);opacity:0.95;}100%{transform:translate(-50%,-34%) scale(1.12);opacity:0;}}
+  @keyframes classicCrossL{0%{transform:translateX(-50%) rotate(-44deg);opacity:0;}12%{transform:translateX(-50%) rotate(-40deg);opacity:0.94;}36%{transform:translateX(-50%) rotate(-8deg);opacity:0.94;}60%{transform:translateX(-50%) rotate(-42deg);opacity:0.94;}78%{transform:translateX(-50%) rotate(-16deg);opacity:0.98;}100%{transform:translateX(-50%) rotate(-26deg);opacity:1;}}
+  @keyframes classicCrossR{0%{transform:translateX(-50%) rotate(44deg);opacity:0;}12%{transform:translateX(-50%) rotate(40deg);opacity:0.94;}36%{transform:translateX(-50%) rotate(8deg);opacity:0.94;}60%{transform:translateX(-50%) rotate(42deg);opacity:0.94;}78%{transform:translateX(-50%) rotate(16deg);opacity:0.98;}100%{transform:translateX(-50%) rotate(26deg);opacity:1;}}
+  .sc-classic-cross-spot{display:none;position:absolute;top:-36px;width:210px;height:125%;transform-origin:top center;clip-path:polygon(44% 0%,56% 0%,100% 100%,0% 100%);background:linear-gradient(180deg,rgba(255,244,178,0.84) 0%,rgba(251,191,36,0.28) 65%,rgba(251,191,36,0) 100%);filter:blur(7px);mix-blend-mode:screen;opacity:0;pointer-events:none;z-index:24;}
   ${scenes()?.getSceneStylesHtml ? scenes().getSceneStylesHtml() : ''}
 </style>
 <div id="podiumStageRoot" data-ceremony-theme="${esc(initialMode)}">
@@ -271,7 +285,9 @@
   <canvas id="scPart" style="position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;opacity:0.85;"></canvas>
   ${scenes()?.getStageOverlaysHtml ? scenes().getStageOverlaysHtml() : ''}
 
-  <div id="scDarknessOverlay" style="position:absolute;inset:0;background:rgba(4,2,14,0.84);opacity:0;pointer-events:none;transition:opacity 0.55s ease;z-index:18;"></div>
+  <div id="scDarknessOverlay" style="position:absolute;inset:0;background:rgba(4,2,14,0.88);opacity:0;pointer-events:none;transition:opacity 0.55s ease;z-index:18;"></div>
+  <div id="scCrossSpotL" class="sc-classic-cross-spot" style="left:16%;"></div>
+  <div id="scCrossSpotR" class="sc-classic-cross-spot" style="left:84%;"></div>
   <div id="scRovingSpotlight" style="display:none;position:absolute;top:38%;left:50%;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle, rgba(255,250,220,0.6) 0%, rgba(251,191,36,0.24) 40%, rgba(167,139,250,0.10) 62%, rgba(255,255,255,0) 76%);filter:blur(16px);mix-blend-mode:screen;opacity:0;transition:opacity 0.5s ease;pointer-events:none;z-index:24;"></div>
   <div id="scReact" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:150;"></div>
 
@@ -367,32 +383,36 @@
       return;
     }
 
+    ensureCelebrationClassicMusic();
     const targetSlot = revealOrder[revealStep];
     revealStep++;
     const btn = $('scRevBtn'), wid = room?.world?.id || room?.worldId || 'royal';
     const sc = $('scSpot'), c1 = $('col_1'), c2 = $('col_2'), c3 = $('col_3');
-    const dark = $('scDarknessOverlay'), roving = $('scRovingSpotlight');
+    const dark = $('scDarknessOverlay'), roving = $('scRovingSpotlight'), crossL = $('scCrossSpotL'), crossR = $('scCrossSpotR');
 
     if (targetSlot === 3 && c3 && slotPlayer(3)) {
-      sfx('whoosh'); sfx('pop');
+      sfx('rank3Reveal', 0.90);
       if (sc) runSpotlights(sc, wid, 1);
       c3.style.pointerEvents = 'auto'; c3.style.zIndex = '25'; c3.style.opacity = '1';
       c3.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))';
       schedulePodium(() => {
+        sfx('applauseWarm', 0.88);
+        if (global.confetti && !isReduced()) global.confetti({ particleCount: 40, spread: 72, origin: { x: 0.25, y: 0.62 }, colors: ['#fdba74', '#fb923c', '#fef08a'] });
         if (scenes()?.animateHeroEntry) scenes().animateHeroEntry(3, getTheme(), mountHero, slotPlayer(3));
         else { const h3 = $('podiumHeroArea_3'); if (h3) { h3.style.display = 'flex'; mountHero($('hm_3'), slotPlayer(3).avatarId, 'clap'); } }
         setMysteryScore(3, slotPlayer(3).score || 0, '#fed7aa');
       }, 240);
       if (btn) btn.innerHTML = nextRevealLabel(revealStep);
     } else if (targetSlot === 2 && c2 && slotPlayer(2)) {
-      sfx('whoosh');
+      sfx('rank2Reveal', 0.92);
       if (sc) runSpotlights(sc, wid, 2);
       if (c3) { c3.style.zIndex = '5'; c3.style.transform = 'translate(calc(-50% + var(--pod-recede, 240px)), 28px) scale(calc(0.76 * var(--pod-s, 1)))'; c3.style.opacity = '0'; c3.style.pointerEvents = 'none'; }
       schedulePodium(() => {
-        sfx('pop');
         c2.style.pointerEvents = 'auto'; c2.style.zIndex = '25'; c2.style.opacity = '1';
         c2.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))';
         schedulePodium(() => {
+          sfx('applauseStrong', 0.92);
+          if (global.confetti && !isReduced()) global.confetti({ particleCount: 60, spread: 84, origin: { x: 0.75, y: 0.58 }, colors: ['#e2e8f0', '#93c5fd', '#fef08a'] });
           if (scenes()?.animateHeroEntry) scenes().animateHeroEntry(2, getTheme(), mountHero, slotPlayer(2));
           else { const h2 = $('podiumHeroArea_2'); if (h2) { h2.style.display = 'flex'; mountHero($('hm_2'), slotPlayer(2).avatarId, 'clap'); } }
           setMysteryScore(2, slotPlayer(2).score || 0, '#e2e8f0');
@@ -404,15 +424,23 @@
       sfx('whoosh');
       if (c2) { c2.style.zIndex = '6'; c2.style.transform = 'translate(calc(-50% - var(--pod-recede, 240px)), 26px) scale(calc(0.78 * var(--pod-s, 1)))'; c2.style.opacity = '0'; }
       schedulePodium(() => {
-        sfx('drumroll');
+        global.ScoreARAudio?.duckMusic?.(0.05, 500);
+        sfx('drumroll', 0.96);
         if (dark && !isReduced()) dark.style.opacity = '1';
         if (c2) { c2.style.transform = 'translate(calc(-50% - var(--pod-dx, 240px)), 4px) scale(calc(0.94 * var(--pod-s, 1)))'; c2.style.opacity = '0.28'; c2.style.filter = 'brightness(0.55)'; }
         if (c3) { c3.style.transform = 'translate(calc(-50% + var(--pod-dx, 240px)), 6px) scale(calc(0.90 * var(--pod-s, 1)))'; c3.style.opacity = '0.28'; c3.style.filter = 'brightness(0.55)'; }
         c1.style.pointerEvents = 'auto'; c1.style.zIndex = '30'; c1.style.opacity = '1';
         c1.style.transform = 'translate(-50%, 0) scale(calc(1.04 * var(--pod-s, 1)))';
-        if (roving && !isReduced()) { roving.style.animation = 'none'; void roving.offsetWidth; roving.style.display = 'block'; roving.style.opacity = '1'; roving.style.animation = 'theatricalSpotRoam 2.1s cubic-bezier(0.42, 0, 0.58, 1) forwards'; }
+        if (!isReduced()) {
+          if (crossL?.style) { crossL.style.animation = 'none'; void crossL.offsetWidth; crossL.style.display = 'block'; crossL.style.opacity = '1'; crossL.style.animation = 'classicCrossL 4s cubic-bezier(0.4, 0, 0.2, 1) forwards'; }
+          if (crossR?.style) { crossR.style.animation = 'none'; void crossR.offsetWidth; crossR.style.display = 'block'; crossR.style.opacity = '1'; crossR.style.animation = 'classicCrossR 4s cubic-bezier(0.4, 0, 0.2, 1) forwards'; }
+          if (roving?.style) { roving.style.animation = 'none'; void roving.offsetWidth; roving.style.display = 'block'; roving.style.opacity = '1'; roving.style.animation = 'theatricalSpotRoam 4s cubic-bezier(0.42, 0, 0.58, 1) forwards'; }
+        }
         schedulePodium(() => {
-          sfx('fanfare');
+          sfx('spotlightLock', 0.96);
+          sfx('victoryFanfare', 0.96);
+          sfx('applauseGrand', 0.92);
+          global.ScoreARAudio?.unduckMusic?.(550);
           if (sc) runSpotlights(sc, wid, 3);
           const crown = $('championCrownEl');
           if (scenes()?.animateHeroEntry) scenes().animateHeroEntry(1, getTheme(), mountHero, slotPlayer(1));
@@ -424,14 +452,14 @@
             resetRovingSpotlight();
             if (c2) { c2.style.opacity = '1'; c2.style.filter = 'brightness(1)'; c2.style.pointerEvents = 'auto'; }
             if (c3) { c3.style.opacity = '1'; c3.style.filter = 'brightness(1)'; c3.style.pointerEvents = 'auto'; }
-          }, 420);
+          }, 520);
           if (global.confetti && !isReduced()) {
             global.confetti({ particleCount: 200, spread: 165, origin: { y: 0.5 } });
             schedulePodium(() => global.confetti && global.confetti({ particleCount: 130, spread: 135, angle: 60, origin: { x: 0, y: 0.6 } }), 280);
             schedulePodium(() => global.confetti && global.confetti({ particleCount: 130, spread: 135, angle: 120, origin: { x: 1, y: 0.6 } }), 560);
           }
           finishChampionState();
-        }, isReduced() ? 40 : 1750);
+        }, isReduced() ? 40 : 4000);
       }, isReduced() ? 20 : 320);
     }
   }
@@ -442,6 +470,7 @@
     clearPodiumTimers();
     if (scenes()?.cancelPending) scenes().cancelPending();
     resetRovingSpotlight();
+    ensureCelebrationClassicMusic();
     if (isReduced()) { revealAll(); return; }
     const cinBtn = $('scCinBtn'); if (cinBtn) cinBtn.disabled = true;
     const revAllBtn = $('scRevAllBtn'); if (revAllBtn) revAllBtn.style.display = '';
@@ -454,8 +483,10 @@
     const crown = $('championCrownEl'); if (crown) crown.style.visibility = 'hidden';
     revealStep = 0;
     advanceReveal();
+    let offset = 0;
     for (let i = 1; i < revealOrder.length; i++) {
-      schedulePodium(() => advanceReveal(), i * 4200);
+      offset += (revealOrder[i - 1] === 3 ? 4600 : 5000);
+      schedulePodium(() => advanceReveal(), offset);
     }
   }
 
@@ -464,6 +495,7 @@
     clearPodiumTimers();
     if (scenes()?.cancelPending) scenes().cancelPending();
     resetRovingSpotlight();
+    ensureCelebrationClassicMusic();
     revealStep = revealOrder.length;
     const sc = $('scSpot'), wid = room?.world?.id || room?.worldId || 'royal';
     if (sc) runSpotlights(sc, wid, 3);
@@ -482,6 +514,7 @@
       setMysteryScore(r, pl.score || 0, r === 1 ? '#fef08a' : r === 2 ? '#e2e8f0' : '#fed7aa');
     });
     const crown = $('championCrownEl'); if (crown) crown.style.visibility = 'visible';
+    sfx('victoryFanfare', 0.90);
     finishChampionState();
   }
 

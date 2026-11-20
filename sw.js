@@ -4,7 +4,7 @@
  * Ensures resilient classroom gameplay on slow or intermittent school networks.
  */
 
-const CACHE_NAME = 'scorear-v18-podium-nav';
+const CACHE_NAME = 'scorear-v19-ceremony-audio';
 const STATIC_ASSETS = [
   './',
   './index.html',

@@ -190,7 +190,7 @@
           ];
         }
         return [
-          { from: [-5.2, 0.02, 2.38], to: [0, 0.02, 2.15], durMs: 2300, move: 'walkRight', loop: true, jumpH: 0 },
+          { from: [-4.35, 0.02, 2.34], to: [0, 0.02, 2.15], durMs: 2300, move: 'walkRight', loop: true, jumpH: 0 },
           { from: [0, 0.02, 2.15], to: [0, 0.02, 2.15], durMs: 900, move: 'wave', loop: true, jumpH: 0 },
           { from: [0, 0.02, 2.15], to: [0, t.topY, t.z], durMs: 880, move: 'jump', loop: false, jumpH: 0.78 }
         ];

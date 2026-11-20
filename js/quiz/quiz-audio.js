@@ -10,6 +10,10 @@
   let currentTrackName = null;
   let desiredTrack = null;
   let desiredVol = null;
+  let preDuckVol = null;
+  let musicFadeTimer = null;
+  const outFadeTimers = new Set();
+  const activeSfx = new Set();
   let autoplayBlocked = false;
   let audioCtx = null;
   let isMuted = false;
@@ -18,6 +22,7 @@
   } catch(e){}
   let musicVolume = 0.28;
   let sfxVolume = 0.85;
+  const clamp01 = v => Math.max(0, Math.min(1, Number(v) || 0));
 
   const MUSIC_TRACKS = {
     lobby: 'assets/audio/music/treasure.mp3',
@@ -29,7 +34,8 @@
     treasure: 'assets/audio/music/magic.mp3',
     stadium: 'assets/audio/music/magic.mp3',
     magic: 'assets/audio/music/magic.mp3',
-    victory: 'assets/audio/music/magic.mp3'
+    celebration: 'assets/audio/music/celebration.wav',
+    victory: 'assets/audio/music/celebration.wav'
   };
 
   const SFX_FILES = {
@@ -40,7 +46,14 @@
     tick: 'assets/audio/sfx/tick.mp3',
     whoosh: 'assets/audio/sfx/whoosh.mp3',
     fanfare: 'assets/audio/sfx/fanfare.mp3',
-    drumroll: 'assets/audio/sfx/fanfare.mp3'
+    drumroll: 'assets/audio/sfx/drumroll-4s.wav',
+    applauseWarm: 'assets/audio/sfx/applause-warm.wav',
+    applauseStrong: 'assets/audio/sfx/applause-strong.wav',
+    applauseGrand: 'assets/audio/sfx/applause-grand.wav',
+    spotlightLock: 'assets/audio/sfx/spotlight-lock.wav',
+    rank3Reveal: 'assets/audio/sfx/rank3-reveal.wav',
+    rank2Reveal: 'assets/audio/sfx/rank2-reveal.wav',
+    victoryFanfare: 'assets/audio/sfx/victory-fanfare.wav'
   };
 
   function getCtx() {
@@ -92,9 +105,18 @@
     if (type === 'pop') return tone(540, 0.08, 'sine', v, 0, 820);
     if (type === 'whoosh') return tone(380, 0.18, 'sine', v * 0.8, 0, 140);
     if (type === 'reveal') { tone(523, 0.11, 'triangle', v, 0); return tone(784, 0.16, 'triangle', v, 0.08); }
+    if (type === 'rank3Reveal') { [440, 554.37, 659.25].forEach((f, i) => tone(f, 0.18, 'triangle', v, i * 0.09)); return; }
+    if (type === 'rank2Reveal') { [493.88, 622.25, 739.99, 987.77].forEach((f, i) => tone(f, 0.18, 'triangle', v, i * 0.08)); return; }
+    if (type === 'spotlightLock') { tone(98, 0.32, 'sine', v * 1.1, 0, 62); [587.33, 739.99, 880].forEach((f, i) => tone(f, 0.35, 'triangle', v * 0.85, i * 0.03)); return; }
     if (type === 'correct') { [523, 659, 784].forEach((f, i) => tone(f, 0.16, 'triangle', v, i * 0.07)); return; }
     if (type === 'wrong') return tone(230, 0.24, 'sawtooth', v * 0.75, 0, 145);
-    if (type === 'fanfare' || type === 'drumroll') { [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.22, 'triangle', v, i * 0.08)); }
+    if (type === 'drumroll') { [196, 220, 247, 293.66].forEach((f, i) => tone(f, 0.25, 'triangle', v * 0.6, i * 0.18)); return; }
+    if (type === 'applauseWarm' || type === 'applauseStrong' || type === 'applauseGrand') {
+      const cnt = type === 'applauseGrand' ? 12 : (type === 'applauseStrong' ? 9 : 6);
+      for (let i = 0; i < cnt; i++) tone(900 + (i % 4) * 260, 0.06, 'triangle', v * 0.32, i * 0.09);
+      return;
+    }
+    if (type === 'fanfare' || type === 'victoryFanfare') { [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.24, 'triangle', v, i * 0.08)); }
   }
 
   function unlockAudio() {
@@ -119,17 +141,59 @@
     });
   }
 
-  function playMusic(trackId, customVol = null) {
+  function resolveMusicKey(trackId) {
     const rawKey = String(trackId || 'magic').toLowerCase().trim();
-    const key = (rawKey === 'lobby' || rawKey === 'waiting') ? 'lobby' : (MUSIC_TRACKS[rawKey] ? rawKey : 'magic');
-    const vol = (typeof customVol === 'number') ? customVol : musicVolume;
+    return (rawKey === 'lobby' || rawKey === 'waiting') ? 'lobby' : (MUSIC_TRACKS[rawKey] ? rawKey : 'magic');
+  }
+
+  function clearMainFade() {
+    if (musicFadeTimer) { clearInterval(musicFadeTimer); musicFadeTimer = null; }
+  }
+
+  function clearOutFades() {
+    outFadeTimers.forEach(id => clearInterval(id));
+    outFadeTimers.clear();
+  }
+
+  function fadeAudioVolume(aud, targetVol, durMs, isMain, onDone) {
+    const target = clamp01(targetVol);
+    if (!aud) { onDone?.(); return; }
+    if (isMain) clearMainFade();
+    const startVol = clamp01(typeof aud.volume === 'number' ? aud.volume : target);
+    if (durMs <= 0 || typeof setInterval !== 'function' || Math.abs(target - startVol) < 0.005) {
+      try { aud.volume = target; } catch(e){}
+      onDone?.();
+      return;
+    }
+    const steps = Math.max(2, Math.round(durMs / 30));
+    let step = 0;
+    const tid = setInterval(() => {
+      step++;
+      const t = Math.min(1, step / steps);
+      try { aud.volume = clamp01(startVol + (target - startVol) * t); } catch(e){}
+      if (t >= 1) {
+        clearInterval(tid);
+        if (isMain && musicFadeTimer === tid) musicFadeTimer = null;
+        outFadeTimers.delete(tid);
+        onDone?.();
+      }
+    }, 30);
+    if (isMain) musicFadeTimer = tid;
+    else outFadeTimers.add(tid);
+  }
+
+  function playMusic(trackId, customVol = null) {
+    const key = resolveMusicKey(trackId);
+    const vol = (typeof customVol === 'number') ? clamp01(customVol) : musicVolume;
     desiredTrack = key;
     desiredVol = vol;
+    preDuckVol = null;
+    clearMainFade();
     if (isMuted) { updateMuteIcons(); return; }
     const url = MUSIC_TRACKS[key] || 'assets/audio/music/magic.mp3';
 
     if (currentMusic && currentTrackName === key) {
-      currentMusic.volume = vol;
+      try { currentMusic.volume = vol; } catch(e){}
       if (currentMusic.paused || autoplayBlocked) {
         const p = currentMusic.play();
         if (p && typeof p.then === 'function') {
@@ -162,7 +226,81 @@
     }
   }
 
+  function crossfadeMusic(trackId, customVol = null, durMs = 650) {
+    const key = resolveMusicKey(trackId);
+    const vol = (typeof customVol === 'number') ? clamp01(customVol) : musicVolume;
+    desiredTrack = key;
+    desiredVol = vol;
+    preDuckVol = null;
+    if (isMuted) { updateMuteIcons(); return; }
+    const url = MUSIC_TRACKS[key] || 'assets/audio/music/magic.mp3';
+
+    if (currentMusic && currentTrackName === key) {
+      if (currentMusic.paused || autoplayBlocked) {
+        const p = currentMusic.play();
+        if (p && typeof p.then === 'function') {
+          p.then(() => { autoplayBlocked = false; updateMuteIcons(); }).catch(() => { autoplayBlocked = true; updateMuteIcons(); });
+        }
+      }
+      fadeAudioVolume(currentMusic, vol, durMs, true);
+      return;
+    }
+
+    const oldMusic = currentMusic;
+    clearMainFade();
+    clearOutFades();
+    currentMusic = null;
+    currentTrackName = null;
+
+    if (oldMusic) {
+      fadeAudioVolume(oldMusic, 0.005, Math.max(120, Math.round(durMs * 0.45)), false, () => {
+        try { oldMusic.pause(); oldMusic.currentTime = 0; } catch(e){}
+      });
+    }
+
+    try {
+      const aud = new Audio(url);
+      aud.loop = true;
+      aud.volume = 0.01;
+      currentMusic = aud;
+      currentTrackName = key;
+      const p = aud.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          autoplayBlocked = false;
+          updateMuteIcons();
+          if (currentMusic === aud && !isMuted) fadeAudioVolume(aud, vol, durMs, true);
+        }).catch(() => {
+          autoplayBlocked = true;
+          try { aud.volume = vol; } catch(e){}
+          updateMuteIcons();
+        });
+      } else {
+        fadeAudioVolume(aud, vol, durMs, true);
+      }
+    } catch(e) {
+      console.warn('[ScoreAR Audio] Crossfade music notice:', e);
+    }
+  }
+
+  function duckMusic(targetVol = 0.05, durMs = 450) {
+    if (isMuted) return;
+    if (preDuckVol === null) {
+      preDuckVol = clamp01(typeof desiredVol === 'number' ? desiredVol : (currentMusic ? currentMusic.volume : musicVolume));
+    }
+    if (currentMusic) fadeAudioVolume(currentMusic, clamp01(targetVol), durMs, true);
+  }
+
+  function unduckMusic(durMs = 600) {
+    const restoreVol = clamp01(preDuckVol !== null ? preDuckVol : (typeof desiredVol === 'number' ? desiredVol : musicVolume));
+    preDuckVol = null;
+    if (!isMuted && currentMusic) fadeAudioVolume(currentMusic, restoreVol, durMs, true);
+  }
+
   function stopMusic(clearDesired = true) {
+    clearMainFade();
+    clearOutFades();
+    preDuckVol = null;
     if (clearDesired) { desiredTrack = null; autoplayBlocked = false; }
     if (currentMusic) {
       try {
@@ -174,18 +312,32 @@
     }
   }
 
+  function stopAllSfx() {
+    activeSfx.forEach(aud => {
+      try { aud.pause(); aud.currentTime = 0; } catch(e){}
+    });
+    activeSfx.clear();
+  }
+
   function playSfx(type, customVol = null) {
     if (isMuted) return;
     const url = SFX_FILES[type];
-    const vol = (typeof customVol === 'number') ? customVol : sfxVolume;
+    const vol = (typeof customVol === 'number') ? clamp01(customVol) : sfxVolume;
     if (!url) { playSynthSfx(type, vol); return; }
 
     try {
       const aud = new Audio(url);
       aud.volume = vol;
+      activeSfx.add(aud);
+      const cleanupSfx = () => activeSfx.delete(aud);
+      if (typeof aud.addEventListener === 'function') {
+        aud.addEventListener('ended', cleanupSfx, { once: true });
+        aud.addEventListener('error', cleanupSfx, { once: true });
+      }
+      if (typeof setTimeout === 'function') setTimeout(cleanupSfx, 7000);
       const p = aud.play();
       if (p && typeof p.catch === 'function') {
-        p.catch(() => { playSynthSfx(type, vol); });
+        p.catch(() => { cleanupSfx(); playSynthSfx(type, vol); });
       }
     } catch(e) {
       playSynthSfx(type, vol);
@@ -214,6 +366,9 @@
       }
     } catch(e){}
     if (isMuted) {
+      clearMainFade();
+      clearOutFades();
+      stopAllSfx();
       if (currentMusic) currentMusic.pause();
     } else {
       if (currentMusic) {
@@ -248,16 +403,20 @@
 
   global.ScoreARAudio = {
     playMusic,
+    crossfadeMusic,
+    duckMusic,
+    unduckMusic,
     stopMusic,
     playSfx,
+    stopAllSfx,
     toggleMute,
     updateMuteIcons,
     unlock: unlockAudio,
     isMuted: () => isMuted,
     isAutoplayBlocked: () => autoplayBlocked,
     getCurrentTrack: () => currentTrackName || desiredTrack,
-    setMusicVolume: (v) => { musicVolume = Math.max(0, Math.min(1, v)); if (currentMusic) currentMusic.volume = musicVolume; },
-    setSfxVolume: (v) => { sfxVolume = Math.max(0, Math.min(1, v)); }
+    setMusicVolume: (v) => { musicVolume = clamp01(v); preDuckVol = null; if (currentMusic) currentMusic.volume = musicVolume; },
+    setSfxVolume: (v) => { sfxVolume = clamp01(v); }
   };
 
 })(typeof window !== 'undefined' ? window : this);

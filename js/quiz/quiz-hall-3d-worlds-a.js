@@ -201,7 +201,7 @@
           ];
         }
         return [
-          { from: [-5.6, 0.02, 2.48], to: [0, 0.02, 2.15], durMs: 2250, move: 'runRight', loop: true, curveZ: 0.42, jumpH: 0 },
+          { from: [-4.5, 0.02, 2.42], to: [0, 0.02, 2.15], durMs: 2250, move: 'runRight', loop: true, curveZ: 0.42, jumpH: 0 },
           { from: [0, 0.02, 2.15], to: [0, 0.02, 2.15], durMs: 900, move: 'wave', loop: true, jumpH: 0 },
           { from: [0, 0.02, 2.15], to: [0, t.topY, t.z], durMs: 880, move: 'jump', loop: false, jumpH: 0.78 }
         ];
@@ -231,6 +231,9 @@
         });
         d.floodL.mesh.rotation.z = 0.56 + Math.sin(elapsed * 0.85) * 0.24;
         d.floodR.mesh.rotation.z = -0.56 - Math.cos(elapsed * 0.78) * 0.24;
+        const floodDim = 1 - (ctx.blackoutLevel || 0) * 0.78;
+        d.floodL.material.uniforms.uOpacity.value = 0.19 * floodDim;
+        d.floodR.material.uniforms.uOpacity.value = 0.19 * floodDim;
         d.floodL.material.uniforms.uTime.value = elapsed;
         d.floodR.material.uniforms.uTime.value = elapsed;
         d.flashes.forEach(f => {

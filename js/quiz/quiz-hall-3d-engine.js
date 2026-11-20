@@ -300,6 +300,10 @@
       if (reflMat) reflMat.uniforms.uOpacity.value = v * reflectionAlpha;
     }
 
+    function setBrightness(v) {
+      heroMat.uniforms.uBrightness.value = v;
+    }
+
     function setJumpOffset(jumpY) {
       heroMesh.position.y = (heightM * 0.5 - footPadM) + jumpY;
       const s = Math.max(0.45, 1 - jumpY * 0.45);
@@ -332,7 +336,7 @@
 
     return {
       group, heroMesh, reflMesh, setAction, preloadMoves, whenReady: () => readyPromise,
-      setOpacity, setJumpOffset, updateTexture, dispose,
+      setOpacity, setBrightness, setJumpOffset, updateTexture, dispose,
       getAction: () => currentAction, player
     };
   }
@@ -533,6 +537,223 @@
     return { setShot, snapShot, impulse, setPreset, update, dispose };
   }
 
+  /* ── Dual Crossing Volumetric Spotlight Rig, Blackout & Per-Rank Shockwaves ── */
+  function createSpotlightRig(scene, opts = {}) {
+    const THREE = global.THREE;
+    const renderer = opts.renderer || null;
+    const keyLight = opts.keyLight || null;
+    const ambLight = opts.ambLight || null;
+    const vistaMesh = opts.vistaMesh || null;
+    const extraLights = (opts.extraLights || []).map(l => ({ light: l, base: l.intensity }));
+    const baseKeyInt = opts.baseKeyInt ?? 1.08;
+    const baseHemiInt = opts.baseHemiInt ?? 0.78;
+    const baseExposure = opts.baseExposure ?? 1.04;
+    const baseVistaColor = new THREE.Color(opts.baseVistaHex ?? 0xe8eefc);
+    const darkVistaColor = new THREE.Color(0x0c1326);
+    const curVistaColor = new THREE.Color().copy(baseVistaColor);
+    const accentHex = opts.accentHex ?? 0xffd76b;
+    const vignetteEl = opts.vignetteEl || null;
+    const particles = opts.particles || null;
+
+    const poolCanvas = document.createElement('canvas');
+    poolCanvas.width = 128; poolCanvas.height = 128;
+    const pctx = poolCanvas.getContext('2d');
+    const pg = pctx.createRadialGradient(64, 64, 4, 64, 64, 62);
+    pg.addColorStop(0, 'rgba(255,255,255,0.95)');
+    pg.addColorStop(0.45, 'rgba(255,244,188,0.48)');
+    pg.addColorStop(1, 'rgba(255,220,120,0)');
+    pctx.fillStyle = pg; pctx.fillRect(0, 0, 128, 128);
+    const poolTex = new THREE.CanvasTexture(poolCanvas);
+    const poolGeo = new THREE.PlaneGeometry(3.4, 2.5);
+
+    const makeBeam = (ox, oy, oz) => {
+      const origin = new THREE.Vector3(ox, oy, oz);
+      const cone = createVolumetricCone(accentHex, 14.0, 0.16, 1.75, 0);
+      cone.mesh.position.copy(origin);
+      cone.mesh.visible = false;
+      scene.add(cone.mesh);
+      const poolMat = new THREE.MeshBasicMaterial({ map: poolTex, color: accentHex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+      const pool = new THREE.Mesh(poolGeo, poolMat);
+      pool.rotation.x = -Math.PI / 2; pool.renderOrder = 8; pool.visible = false;
+      scene.add(pool);
+      const point = new THREE.PointLight(accentHex, 0, 10.5);
+      scene.add(point);
+      return { origin, cone, pool, poolMat, point, target: new THREE.Vector3(0, 0.02, 0), opacity: 0, poolOp: 0, lightInt: 0, color: new THREE.Color(accentHex) };
+    };
+    const spotL = makeBeam(-5.8, 8.6, 2.4);
+    const spotR = makeBeam(5.8, 8.6, 2.4);
+
+    const rankShockMat = new THREE.MeshBasicMaterial({ color: accentHex, transparent: true, opacity: 0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
+    const rankShockGeo = new THREE.RingGeometry(0.42, 0.85, 56);
+    const rankShockMesh = new THREE.Mesh(rankShockGeo, rankShockMat);
+    rankShockMesh.rotation.x = -Math.PI / 2; rankShockMesh.position.y = 0.045; rankShockMesh.visible = false;
+    scene.add(rankShockMesh);
+
+    const DOWN = new THREE.Vector3(0, -1, 0);
+    const tmpDir = new THREE.Vector3();
+    const tmpAim = new THREE.Vector3();
+    const lockPos = new THREE.Vector3(-4.35, 0.02, 2.32);
+
+    let mode = 'off', blackoutLevel = 0, targetBlackout = 0, flashLevel = 0, lastRigNow = performance.now();
+    let sweepStartMs = 0, sweepDurMs = 4000, sweepProgress = 0;
+    let followActor = null, followFlashAcc = 0, singleTarget = new THREE.Vector3(0, 0.02, 0);
+    let rankShockStart = null, rankShockScale = 4.6;
+
+    function aimBeam(b, tx, ty, tz, coneOp, poolOp, lightInt, hex, wdt, elapsed) {
+      b.target.set(tx, ty, tz);
+      const beamK = 1 - Math.exp(-10.0 * wdt);
+      b.opacity += (coneOp - b.opacity) * beamK;
+      b.poolOp += (poolOp - b.poolOp) * beamK;
+      b.lightInt += (lightInt - b.lightInt) * beamK;
+      if (hex !== undefined) b.color.setHex(hex);
+
+      const vis = b.opacity > 0.004 || b.poolOp > 0.004;
+      b.cone.mesh.visible = vis;
+      b.pool.visible = vis;
+      b.point.intensity = b.lightInt;
+      if (!vis) return;
+
+      tmpAim.set(tx, Math.max(0.0, ty - 0.14), tz);
+      tmpDir.subVectors(tmpAim, b.origin);
+      const dist = tmpDir.length();
+      if (dist > 0.05) {
+        tmpDir.divideScalar(dist);
+        b.cone.mesh.quaternion.setFromUnitVectors(DOWN, tmpDir);
+        b.cone.mesh.scale.set(1, dist / 14.0, 1);
+      }
+      b.cone.material.uniforms.uColor.value.copy(b.color);
+      b.cone.material.uniforms.uOpacity.value = b.opacity;
+      b.cone.material.uniforms.uTime.value = elapsed;
+
+      const poolY = ty > 1.35 ? 0.036 : Math.max(0.036, ty + 0.018);
+      b.pool.position.set(tx, poolY, tz);
+      b.poolMat.color.copy(b.color);
+      b.poolMat.opacity = b.poolOp;
+      b.point.color.copy(b.color);
+      b.point.position.set(tx, ty + 1.15, tz);
+    }
+
+    function setBlackout(v, immediate = false) {
+      targetBlackout = Math.max(0, Math.min(1, v));
+      if (immediate) blackoutLevel = targetBlackout;
+    }
+    function triggerLightsUpFlash() { flashLevel = 1.0; }
+    function triggerRankShock(x, z, colorHex = 0xfbbf24, maxScale = 4.6) {
+      rankShockMat.color.setHex(colorHex);
+      rankShockMesh.position.set(x, 0.045, z);
+      rankShockMesh.scale.set(1, 1, 1);
+      rankShockMesh.visible = true;
+      rankShockScale = maxScale;
+      rankShockStart = performance.now();
+    }
+
+    function setMode(nextMode, params = {}) {
+      mode = nextMode || 'off';
+      sweepProgress = 0;
+      followActor = params.actor || null;
+      followFlashAcc = 0;
+      if (params.x !== undefined) singleTarget.set(params.x, params.y ?? 0.5, params.z ?? 0.2);
+      if (mode === 'sweep') {
+        sweepDurMs = Math.max(800, params.durationMs || 4000);
+        sweepStartMs = performance.now();
+        const lt = params.lockTarget || [-4.35, 0.02, 2.32];
+        lockPos.set(lt[0], lt[1], lt[2]);
+      }
+    }
+
+    function update(dt, elapsed) {
+      const now = performance.now();
+      const wdt = Math.min(0.45, Math.max(0.001, (now - lastRigNow) / 1000));
+      lastRigNow = now;
+      blackoutLevel += (targetBlackout - blackoutLevel) * (1 - Math.exp(-6.5 * wdt));
+      if (flashLevel > 0) {
+        flashLevel *= Math.exp(-5.5 * wdt);
+        if (flashLevel < 0.005) flashLevel = 0;
+      }
+
+      if (keyLight) keyLight.intensity = baseKeyInt * (1 - blackoutLevel * 0.94) + flashLevel * 0.55;
+      if (ambLight) ambLight.intensity = baseHemiInt * (1 - blackoutLevel * 0.90) + flashLevel * 0.35;
+      extraLights.forEach(e => { e.light.intensity = e.base * (1 - blackoutLevel * 0.86); });
+      if (vistaMesh?.material?.color) {
+        curVistaColor.copy(baseVistaColor).lerp(darkVistaColor, blackoutLevel);
+        vistaMesh.material.color.copy(curVistaColor);
+      }
+      if (renderer) renderer.toneMappingExposure = baseExposure * (1 - blackoutLevel * 0.30) + flashLevel * 0.36;
+      if (vignetteEl) vignetteEl.style.opacity = (blackoutLevel * 0.68).toFixed(3);
+
+      if (mode === 'rank3') {
+        aimBeam(spotL, singleTarget.x, singleTarget.y, singleTarget.z, 0.22, 0.38, 1.4, 0xfdba74, wdt, elapsed);
+        aimBeam(spotR, singleTarget.x, singleTarget.y, singleTarget.z, 0, 0, 0, 0xfdba74, wdt, elapsed);
+      } else if (mode === 'rank2') {
+        aimBeam(spotL, singleTarget.x, singleTarget.y, singleTarget.z, 0, 0, 0, 0x93c5fd, wdt, elapsed);
+        aimBeam(spotR, singleTarget.x, singleTarget.y, singleTarget.z, 0.24, 0.42, 1.6, 0x93c5fd, wdt, elapsed);
+      } else if (mode === 'sweep') {
+        sweepProgress = Math.min(1, Math.max(0, (now - sweepStartMs) / sweepDurMs));
+        const sp = Math.min(1, sweepProgress / 0.72);
+        const phase = sp * Math.PI * 3.1;
+        let lx = Math.cos(phase) * 4.4, lz = 0.75 + Math.sin(phase * 1.4) * 1.85;
+        let rx = -Math.cos(phase + 0.18) * 4.4, rz = 0.75 - Math.sin(phase * 1.4 + 0.25) * 1.85;
+        let ly = 0.02, ry = 0.02;
+        let cOp = 0.40, pOp = 0.76, lInt = 2.6;
+        if (sweepProgress > 0.72) {
+          const conv = (sweepProgress - 0.72) / 0.28;
+          const e = conv * conv * (3 - 2 * conv);
+          const aimY = Math.min(2.2, Math.max(0.02, lockPos.y));
+          lx += (lockPos.x - lx) * e; lz += (lockPos.z - lz) * e; ly += (aimY - ly) * e;
+          rx += (lockPos.x - rx) * e; rz += (lockPos.z - rz) * e; ry += (aimY - ry) * e;
+          cOp += 0.14 * e; pOp += 0.16 * e; lInt += 0.9 * e;
+        }
+        aimBeam(spotL, lx, ly, lz, cOp, pOp, lInt, 0xffe484, wdt, elapsed);
+        aimBeam(spotR, rx, ry, rz, cOp, pOp, lInt, 0xfff2b2, wdt, elapsed);
+      } else if (mode === 'follow' && followActor?.group) {
+        const gp = followActor.group.position;
+        const fx = gp.x, fy = Math.max(0.02, gp.y), fz = gp.z;
+        aimBeam(spotL, fx - 0.08, fy, fz, 0.34, 0.68, 2.5, 0xfff0a6, wdt, elapsed);
+        aimBeam(spotR, fx + 0.08, fy, fz, 0.34, 0.68, 2.5, 0xffe066, wdt, elapsed);
+        if (particles) {
+          followFlashAcc += wdt;
+          if (followFlashAcc >= 0.28) {
+            followFlashAcc = 0;
+            const side = Math.random() > 0.5 ? 1 : -1;
+            particles.spawnFountain(side * (3.6 + Math.random() * 1.9), 0.35 + Math.random() * 1.6, -0.4 + Math.random() * 2.2, 0xffffff, 8);
+          }
+        }
+      } else if (mode === 'celebrate') {
+        const sx = Math.sin(elapsed * 0.75) * 2.6;
+        aimBeam(spotL, sx, 0.2, -0.2, 0.15, 0.22, 1.0, accentHex, wdt, elapsed);
+        aimBeam(spotR, -sx, 0.2, -0.2, 0.15, 0.22, 1.0, 0x93c5fd, wdt, elapsed);
+      } else {
+        aimBeam(spotL, 0, 0.02, 0, 0, 0, 0, accentHex, wdt, elapsed);
+        aimBeam(spotR, 0, 0.02, 0, 0, 0, 0, accentHex, wdt, elapsed);
+      }
+
+      if (rankShockStart) {
+        const sp = (now - rankShockStart) / 760;
+        if (sp < 1) {
+          const sc = 1 + sp * rankShockScale;
+          rankShockMesh.scale.set(sc, sc, 1);
+          rankShockMat.opacity = Math.max(0, (1 - sp) * 0.85);
+        } else {
+          rankShockMesh.visible = false; rankShockMat.opacity = 0; rankShockStart = null;
+        }
+      }
+    }
+
+    function dispose() {
+      [spotL, spotR].forEach(b => {
+        scene.remove(b.cone.mesh); scene.remove(b.pool); scene.remove(b.point);
+        b.cone.mesh.geometry.dispose(); b.cone.material.dispose(); b.poolMat.dispose();
+      });
+      poolGeo.dispose(); poolTex.dispose();
+      scene.remove(rankShockMesh); rankShockGeo.dispose(); rankShockMat.dispose();
+    }
+
+    return {
+      setBlackout, triggerLightsUpFlash, triggerRankShock, setMode, update, dispose,
+      getState: () => ({ mode, blackoutLevel: Number(blackoutLevel.toFixed(2)), sweepProgress: Number(sweepProgress.toFixed(2)) })
+    };
+  }
+
   /* ── Capture Razor-Sharp HD Snapshot Directly From Live 3D WebGL Canvas ── */
   function captureWebGLSnapshot(renderer, scene, camera, title, worldName) {
     if (!renderer || !scene || !camera) return false;
@@ -565,7 +786,7 @@
   const ScoreARHall3DEngine = {
     isWebGLReady, charNum, createStudioEnvMap, createCinematicAudio,
     createVolumetricCone, createHero3DActor, createParticlesSystem,
-    createCameraDirector, captureWebGLSnapshot
+    createCameraDirector, createSpotlightRig, captureWebGLSnapshot
   };
   global.ScoreARHall3DEngine = ScoreARHall3DEngine;
   try { if (typeof globalThis !== 'undefined') globalThis.ScoreARHall3DEngine = ScoreARHall3DEngine; } catch {}

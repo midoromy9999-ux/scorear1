@@ -13,7 +13,7 @@
 
   const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   const ic = (n, sz = 14) => (global.ScoreARUI?.icon) ? global.ScoreARUI.icon(n, { size: sz }) : '';
-  const sfx = n => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n); };
+  const sfx = (n, v) => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n, v); };
 
   /* ── Procedural High-DPI Royal PBR Textures ── */
   function makeRoyalFloorTexture() {
@@ -330,6 +330,7 @@
       <div id="scHallRoot" class="sc-royal3d-root is-cinematic" data-hall-world="royal" data-hall-engine="threejs-3d">
         <div id="scRoyal3DWrap" class="sc-royal3d-canvas-wrap"></div>
         <div class="sc-royal3d-vignette"></div>
+        <div id="scHallBlackoutVignette" style="position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 48%,rgba(2,5,14,0.18) 12%,rgba(2,5,14,0.88) 100%);"></div>
         <div class="sc-royal3d-letterbox top"></div>
         <div class="sc-royal3d-letterbox bot"></div>
 
@@ -363,6 +364,7 @@
           <button type="button" data-cam-preset="champion" class="scorear-gear-btn sc-royal3d-cam-btn" onclick="ScoreARWorldHalls.setCameraPreset('champion')">${ic('crown', 13)} <span>تركيز البطل</span></button>
           <button type="button" data-cam-preset="orbit" class="scorear-gear-btn sc-royal3d-cam-btn" onclick="ScoreARWorldHalls.setCameraPreset('orbit')">${ic('planet', 13)} <span>جولة سينمائية</span></button>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARWorldHalls.launchFirework()" style="border-color:#fbbf24;color:#fef08a;">🎇 <span>ألعاب نارية</span></button>
+          <button type="button" class="scorear-gear-btn" onclick="ScoreARWorldHalls.triggerApplause()" style="border-color:#fbbf24;color:#fef08a;">👏 <span>تصفيق</span></button>
           <button type="button" class="scorear-gear-btn" onclick="document.getElementById('scHallFullRoster').style.display='block'">${ic('list', 13)} <span>الترتيب الكامل (${ranked.length})</span></button>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARWorldHalls.capture3DSnapshot()">${ic('camera', 13)} <span>صورة التتويج HD</span></button>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARPodiumCapture?.downloadAllTop3Certificates?.(ScoreARWorldHalls._getSorted(), 'royal')">${ic('award', 13)} <span>الشهادات</span></button>
@@ -523,16 +525,26 @@
     });
 
     const particles = Engine.createParticlesSystem(scene, [0xfef08a, 0xfbbf24, 0x93c5fd, 0xffffff], 125);
+    const spotRig = Engine.createSpotlightRig(scene, {
+      renderer, keyLight, ambLight, vistaMesh, extraLights: [archBackLight],
+      baseKeyInt: 1.05, baseHemiInt: 0.72, baseExposure: 1.02, baseVistaHex: 0xe6ecfa, accentHex: 0xffd76b,
+      vignetteEl: document.getElementById('scHallBlackoutVignette'), particles
+    });
     global.ScoreARMotionV3?.preloadCharacters?.([...top3, ...audience], ['walkRight', 'walkLeft', 'jump', 'land', 'wave', 'clap', 'win', 'idle']);
 
     // ── Wall-Clock Synchronized Teacher-Controlled 5-Act Choreography ──
     const revealOrder = [3, 2, 1].filter(s => Boolean(heroActors[s]));
     let timers = [], activePaths = [], rafId = null, disposed = false, crowned = false, currentStep = 0;
-    let suspenseDim = 0, medalDropStart = null, shockStart = null, clockLast = performance.now(), startTime = clockLast;
-    let pathRunSeq = 0;
+    let medalDropStart = null, shockStart = null, clockLast = performance.now(), startTime = clockLast;
+    let pathRunSeq = 0, celebrationMusicStarted = false;
 
     const sched = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
     const clearSched = () => { timers.forEach(clearTimeout); timers = []; pathRunSeq++; };
+    function ensureCelebrationMusic() {
+      if (celebrationMusicStarted) return;
+      celebrationMusicStarted = true;
+      global.ScoreARAudio?.crossfadeMusic?.('celebration', 0.32, 650);
+    }
 
     function showPhase(text) {
       const pill = document.getElementById('scHallPhasePill');
@@ -572,7 +584,7 @@
             { from: [2.32, 0.02, 1.72], to: [cfg.x, cfg.topY, cfg.z], durMs: 800, move: 'jump', loop: false, jumpH: 0.62 }
           ]
         : [
-            { from: [-5.1, 0.02, 2.38], to: [0, 0.02, 2.15], durMs: 2450, move: 'walkRight', loop: true, jumpH: 0 },
+            { from: [-4.35, 0.02, 2.32], to: [0, 0.02, 2.15], durMs: 2450, move: 'walkRight', loop: true, jumpH: 0 },
             { from: [0, 0.02, 2.15], to: [0, 0.02, 2.15], durMs: 950, move: 'wave', loop: true, jumpH: 0 },
             { from: [0, 0.02, 2.15], to: [cfg.x, cfg.topY, cfg.z], durMs: 880, move: 'jump', loop: false, jumpH: 0.80 }
           ];
@@ -583,6 +595,7 @@
         if (disposed || crowned || mySeq !== pathRunSeq) return;
         actor.group.visible = true;
         actor.setOpacity(1);
+        actor.setBrightness(1.02);
         activePaths = activePaths.filter(p => p.slot !== slot);
         activePaths.push({ slot, actor, segs, segIdx: 0, segElapsed: 0, lastNow: null });
       });
@@ -590,6 +603,7 @@
 
     function playStep(slot) {
       if (!TIERS[slot]) return;
+      ensureCelebrationMusic();
       document.getElementById('scHallRoot')?.classList.remove('is-cinematic');
       const banner = document.getElementById('scHallOpeningBanner');
       if (banner) { banner.style.opacity = '0'; banner.style.transform = 'translateY(-16px)'; }
@@ -599,30 +613,54 @@
         revealPlaque(3);
         showPhase(`🥉 المركز الثالث · ${top3[2]?.name || ''}`);
         camDir.setShot([-2.15, 2.0, 7.2], [-2.28, 1.38, 0.5], 2.7);
-        sfx('pop'); cinAudio.playChime(440, 0.75);
+        sfx('rank3Reveal', 0.90); cinAudio.playChime(440, 0.75);
+        spotRig.setMode('rank3', { x: TIERS[3].x, y: TIERS[3].topY, z: TIERS[3].z });
         startHeroPath(3);
       } else if (slot === 2) {
         revealPlaque(2);
         showPhase(`🥈 المركز الثاني · ${top3[1]?.name || ''}`);
         camDir.setShot([2.15, 2.05, 7.2], [2.28, 1.48, 0.5], 2.7);
-        sfx('pop'); cinAudio.playChime(523.25, 0.8);
+        sfx('rank2Reveal', 0.92); cinAudio.playChime(523.25, 0.8);
+        spotRig.setMode('rank2', { x: TIERS[2].x, y: TIERS[2].topY, z: TIERS[2].z });
         startHeroPath(2);
       } else if (slot === 1) {
-        suspenseDim = 1;
-        showPhase('👑 لحظة الترقّب... من بطل المركز الأول؟');
-        camDir.setShot([0, 2.05, 8.8], [0, 1.5, 1.2], 2.3);
-        cinAudio.playTimpaniPulse(74, 0.18);
-        sched(() => cinAudio.playTimpaniPulse(84, 0.19), 420);
-        sched(() => cinAudio.playTimpaniPulse(96, 0.21), 840);
+        global.ScoreARAudio?.duckMusic?.(0.05, 500);
+        sfx('drumroll', 0.96);
+        spotRig.setBlackout(1);
+        spotRig.setMode('sweep', { durationMs: 4000, lockTarget: [-4.35, 0.02, 2.32] });
+        [2, 3].forEach(s => {
+          heroActors[s]?.setBrightness(0.32);
+          if (heroActors[s]?.group?.visible) heroActors[s].setAction('idle', true);
+          if (tierCones[s]) tierCones[s].material.uniforms.uOpacity.value = 0.04;
+        });
+        audienceActors.forEach(a => a.setAction('idle', true));
+        braziers.forEach(b => { b.litTarget = 0.28; });
+
+        showPhase('🔦 لحظة الترقّب... من سيحمل لقب البطل الأول؟');
+        camDir.setShot([0, 2.25, 9.5], [0, 1.35, 0.6], 1.1);
         sched(() => {
-          suspenseDim = 0;
-          braziers.forEach((b, i) => sched(() => { b.lit = true; b.litTarget = 2.15; }, i * 120));
+          if (crowned) return;
+          camDir.setShot([0, 2.05, 8.3], [0, 1.4, 1.0], 0.85);
+          showPhase('🥁 الاستعداد للإعلان عن بطل المركز الأول...');
+        }, 2100);
+        sched(() => {
+          if (crowned) return;
+          sfx('spotlightLock', 0.96);
+          sfx('applauseGrand', 0.90);
+          global.ScoreARAudio?.unduckMusic?.(550);
+          spotRig.setBlackout(0.46);
+          spotRig.setMode('follow', { actor: heroActors[1] });
+          [2, 3].forEach(s => {
+            heroActors[s]?.setBrightness(0.78);
+            if (heroActors[s]?.group?.visible) heroActors[s].setAction('clap', true);
+          });
+          audienceActors.forEach((a, i) => a.setAction(i % 2 === 0 ? 'clap' : 'wave', true));
+          braziers.forEach((b, i) => sched(() => { b.lit = true; b.litTarget = 2.15; }, i * 110));
           revealPlaque(1);
           showPhase(`🥇 بطل المركز الأول · ${top3[0]?.name || ''}`);
-          camDir.setShot([0, 2.08, 7.6], [0, 1.65, 1.1], 2.4);
-          sfx('whoosh');
+          camDir.setShot([0, 2.08, 7.8], [0, 1.6, 1.2], 2.4);
           startHeroPath(1);
-        }, 1300);
+        }, 4000);
       }
     }
 
@@ -630,8 +668,12 @@
       clearSched();
       activePaths = [];
       crowned = true;
-      suspenseDim = 0;
       currentStep = revealOrder.length;
+      ensureCelebrationMusic();
+      global.ScoreARAudio?.unduckMusic?.(250);
+      if (!withFx) global.ScoreARAudio?.stopAllSfx?.();
+      spotRig.setBlackout(0, !withFx);
+      spotRig.setMode(withFx && !isReduced ? 'celebrate' : 'off');
       document.getElementById('scHallRoot')?.classList.remove('is-cinematic');
       const banner = document.getElementById('scHallOpeningBanner');
       if (banner) { banner.style.opacity = '0'; banner.style.display = 'none'; }
@@ -648,6 +690,7 @@
         if (!actor || !cfg) return;
         actor.group.visible = true;
         actor.setOpacity(1);
+        actor.setBrightness(1.05);
         actor.setJumpOffset(0);
         actor.group.position.set(cfg.x, cfg.topY, cfg.z);
         actor.setAction(slot === 1 ? 'win' : 'clap', true);
@@ -665,12 +708,19 @@
         medalDropStart = performance.now();
         shockStart = performance.now();
         camDir.impulse(0.12);
-        sfx('fanfare');
+        sfx('victoryFanfare', 0.94);
+        sfx('applauseGrand', 0.78);
         cinAudio.playFanfareChord();
         launchFirework(-2.4, 4.6, -1.2);
-        sched(() => launchFirework(2.4, 4.8, -1.0), 300);
-        sched(() => launchFirework(0, 5.1, -1.4), 620);
-        if (global.confetti) global.confetti({ particleCount: 95, spread: 125, origin: { y: 0.44 }, colors: ['#fef08a', '#fbbf24', '#ffffff', '#60a5fa'] });
+        sched(() => launchFirework(2.4, 4.8, -1.0), 280);
+        sched(() => launchFirework(0, 5.1, -1.4), 580);
+        sched(() => launchFirework(-1.4, 4.7, -0.9), 950);
+        sched(() => launchFirework(1.4, 4.9, -1.1), 1380);
+        if (global.confetti) {
+          global.confetti({ particleCount: 95, spread: 125, origin: { x: 0.5, y: 0.44 }, colors: ['#fef08a', '#fbbf24', '#ffffff', '#60a5fa'] });
+          sched(() => global.confetti?.({ particleCount: 55, spread: 95, angle: 60, origin: { x: 0.18, y: 0.58 }, colors: ['#fef08a', '#fbbf24', '#ffffff'] }), 240);
+          sched(() => global.confetti?.({ particleCount: 55, spread: 95, angle: 120, origin: { x: 0.82, y: 0.58 }, colors: ['#fef08a', '#60a5fa', '#ffffff'] }), 480);
+        }
       }
 
       camDir.setShot([0, 2.55, 9.45], [0, 2.02, 0], 2.2);
@@ -688,15 +738,18 @@
         return;
       }
       clearSched();
+      ensureCelebrationMusic();
       const sb = document.getElementById('scHallStartBtn');
       if (sb) { sb.disabled = true; sb.innerHTML = '⏳ <span>جارٍ الاحتفال...</span>'; }
       const remaining = revealOrder.slice(currentStep);
       if (!remaining.length) { crownNow(true); return; }
+      let offset = 40;
       remaining.forEach((slot, idx) => {
+        if (idx > 0) offset += (remaining[idx - 1] === 3 ? 5400 : 5800);
         sched(() => {
           currentStep = revealOrder.indexOf(slot) + 1;
           playStep(slot);
-        }, idx === 0 ? 40 : idx * 5200);
+        }, offset);
       });
     }
 
@@ -733,24 +786,56 @@
           } else {
             p.actor.setJumpOffset(0);
             p.actor.setAction('land', false);
-            particles.spawnFountain(p.actor.group.position.x, p.actor.group.position.y + 0.05, p.actor.group.position.z, TIERS[p.slot].coneHex, 24);
+            particles.spawnFountain(p.actor.group.position.x, p.actor.group.position.y + 0.05, p.actor.group.position.z, TIERS[p.slot].coneHex, p.slot === 1 ? 54 : (p.slot === 2 ? 48 : 36));
             if (tierCones[p.slot]) tierCones[p.slot].material.uniforms.uOpacity.value = p.slot === 1 ? 0.26 : 0.15;
             if (tierGlowRings[p.slot]) tierGlowRings[p.slot].opacity = 0.82;
             const doneSlot = p.slot;
             if (doneSlot === 1) {
+              spotRig.setBlackout(0);
+              spotRig.triggerLightsUpFlash();
+              [1, 2, 3].forEach(s => {
+                heroActors[s]?.setBrightness(1.05);
+                if (tierCones[s]) tierCones[s].material.uniforms.uOpacity.value = s === 1 ? 0.26 : 0.15;
+              });
+              shockStart = performance.now();
+              camDir.impulse(0.14);
+              sfx('victoryFanfare', 0.96);
+              cinAudio.playFanfareChord();
               sched(() => { if (!crowned) p.actor.setAction('win', true); }, 420);
               sched(() => { if (!crowned) crownNow(true); }, 1770);
             } else {
+              const is2 = doneSlot === 2;
+              sfx(is2 ? 'applauseStrong' : 'applauseWarm', is2 ? 0.92 : 0.88);
+              cinAudio.playChime(is2 ? 659.25 : 523.25, 0.85, 0.09);
+              spotRig.triggerRankShock(TIERS[doneSlot].x, TIERS[doneSlot].z, is2 ? 0x93c5fd : 0xfdba74, is2 ? 5.4 : 4.4);
+              if (is2) launchFirework(2.6, 4.5, -1.0);
+              if (global.confetti && !isReduced) {
+                global.confetti({
+                  particleCount: is2 ? 62 : 42,
+                  spread: is2 ? 84 : 72,
+                  origin: { x: is2 ? 0.75 : 0.25, y: is2 ? 0.58 : 0.62 },
+                  colors: is2 ? ['#e2e8f0', '#93c5fd', '#fef08a', '#ffffff'] : ['#fdba74', '#fb923c', '#fef08a', '#ffffff']
+                });
+              }
+              audienceActors.forEach((a, idx) => a.setAction(idx % 2 === 0 ? 'clap' : 'wave', true));
+              if (is2 && heroActors[3]?.group?.visible) heroActors[3].setAction('wave', true);
               sched(() => { if (!crowned) p.actor.setAction('wave', true); }, 420);
-              sched(() => { if (!crowned) p.actor.setAction('clap', true); }, 1570);
+              sched(() => {
+                if (!crowned) p.actor.setAction('clap', true);
+                if (is2 && !crowned && heroActors[3]?.group?.visible) heroActors[3].setAction('clap', true);
+              }, 1570);
+              sched(() => {
+                if (!crowned && spotRig.getState().mode !== 'sweep' && spotRig.getState().mode !== 'follow') {
+                  audienceActors.forEach(a => a.setAction('idle', true));
+                }
+              }, 3200);
             }
             activePaths.splice(i, 1);
           }
         }
       }
 
-      keyLight.intensity += ((suspenseDim ? 0.24 : 1.05) - keyLight.intensity) * Math.min(1, dt * 4.5);
-      ambLight.intensity += ((suspenseDim ? 0.20 : 0.72) - ambLight.intensity) * Math.min(1, dt * 4.5);
+      spotRig.update(dt, elapsed);
 
       braziers.forEach((b, idx) => {
         b.fireMat.uniforms.uTime.value = elapsed;
@@ -807,7 +892,8 @@
     if (isReduced || !top3.length) {
       crownNow(false);
     } else {
-      // Wide establishing shot + warm softly lit braziers; wait strictly for teacher's start/step click!
+      // Wide establishing shot + warm softly lit braziers + calm hall ambience; wait for teacher!
+      global.ScoreARAudio?.playMusic?.('royal', 0.18);
       camDir.setShot([0, 2.75, 10.2], [0, 1.95, 0], 1.7);
       sfx('whoosh');
       braziers.forEach((b, idx) => sched(() => { b.lit = true; b.litTarget = 1.65; cinAudio.playChime(392 + idx * 55, 0.55, 0.04); }, 180 + idx * 150));
@@ -819,14 +905,25 @@
       if (disposed) return;
       disposed = true;
       clearSched();
+      global.ScoreARAudio?.stopAllSfx?.();
+      global.ScoreARAudio?.unduckMusic?.(100);
       if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
       global.removeEventListener('resize', onResize);
-      camDir.dispose(); cinAudio.dispose(); particles.dispose();
+      camDir.dispose(); cinAudio.dispose(); spotRig.dispose(); particles.dispose();
       Object.values(heroActors).forEach(a => a.dispose());
       audienceActors.forEach(a => a.dispose());
       envRT.dispose();
       disposables.forEach(d => { try { d.dispose?.(); } catch {} });
       renderer.dispose();
+    }
+
+    function triggerApplause() {
+      sfx('applauseGrand', 0.88);
+      launchFirework((Math.random() - 0.5) * 4.8, 4.3 + Math.random() * 1.1, -0.9);
+      audienceActors.forEach((a, i) => a.setAction(i % 2 === 0 ? 'clap' : 'wave', true));
+      if (global.confetti && !isReduced) {
+        global.confetti({ particleCount: 55, spread: 95, origin: { y: 0.52 }, colors: ['#fef08a', '#fbbf24', '#ffffff'] });
+      }
     }
 
     return {
@@ -844,10 +941,15 @@
         document.querySelectorAll('.sc-royal3d-cam-btn').forEach(b => b.classList.toggle('is-active', b.getAttribute('data-cam-preset') === preset));
       },
       launchFirework: () => launchFirework(),
+      triggerApplause,
       triggerAudienceReaction: () => launchFirework((Math.random() - 0.5) * 5.0, 4.3 + Math.random() * 1.2, -0.8),
       capture3DSnapshot: () => Engine.captureWebGLSnapshot(renderer, scene, camera, quizTitle || 'تتويج أبطال القصر الملكي', 'القصر الملكي · ScoreAR'),
       getDebugState: () => ({
         engine: 'threejs-3d', world: 'royal', crowned, currentStep,
+        spotMode: spotRig.getState().mode,
+        blackoutLevel: spotRig.getState().blackoutLevel,
+        suspenseDurationMs: 4000,
+        activeMusicTrack: global.ScoreARAudio?.getCurrentTrack?.() || null,
         heroes: Object.fromEntries(Object.entries(heroActors).map(([k, a]) => [k, { action: a.getAction(), visible: a.group.visible, x: Number(a.group.position.x.toFixed(2)), y: Number(a.group.position.y.toFixed(2)), z: Number(a.group.position.z.toFixed(2)) }])),
         audienceCount: audienceActors.length, medalVisible: medal.group.visible
       }),

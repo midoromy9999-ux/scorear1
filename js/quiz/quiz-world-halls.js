@@ -68,12 +68,17 @@
 
   let timers = [], fxRafId = null, pathRafs = new Set();
   let activeRoom = null, activeStage = null, activeOnClose = null, active3DCtrl = null;
-  let activeSorted = [], activeRanked = [], slotSprites = new Map(), currentStep = 0, isSettled = false;
+  let activeSorted = [], activeRanked = [], slotSprites = new Map(), currentStep = 0, isSettled = false, celebrationMusic2dStarted = false;
 
   const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   const ic = (n, sz = 14) => (global.ScoreARUI?.icon) ? global.ScoreARUI.icon(n, { size: sz }) : '';
-  const sfx = n => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n); };
+  const sfx = (n, v) => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n, v); };
   const charCode = raw => 'char_' + String(Math.max(1, Math.min(20, parseInt(String(raw || '1').replace(/\D/g, '') || '1', 10)))).padStart(2, '0');
+  function ensureCelebration2dMusic() {
+    if (celebrationMusic2dStarted) return;
+    celebrationMusic2dStarted = true;
+    global.ScoreARAudio?.crossfadeMusic?.('celebration', 0.32, 650);
+  }
 
   function resolveQuizTitle(room) {
     if (global.ScoreARQuizHostView?.resolveRealQuizTitle) return global.ScoreARQuizHostView.resolveRealQuizTitle(room, '');
@@ -94,6 +99,9 @@
     timers.forEach(id => clearTimeout(id));
     timers = [];
     cancelPaths();
+    global.ScoreARAudio?.stopAllSfx?.();
+    global.ScoreARAudio?.unduckMusic?.(100);
+    celebrationMusic2dStarted = false;
     if (fxRafId) { cancelAnimationFrame(fxRafId); fxRafId = null; }
     slotSprites.forEach(inst => { try { inst?.destroy?.(); } catch {} });
     slotSprites.clear();
@@ -264,7 +272,6 @@
     col.classList.add('is-revealed');
     col.style.opacity = '0';
     const inst = ensureSlotSprite(slotNum, player, segs[0].move, segs[0].loop);
-    sfx(slotNum === 1 ? cfg.sfx : 'pop');
 
     const readyP = inst?.whenReady?.() || inst?.ready || Promise.resolve();
     Promise.race([readyP, new Promise(r => schedule(r, 1200))]).then(() => {
@@ -300,9 +307,25 @@
             col.style.opacity = '1';
             col.style.transform = 'translate3d(0, 0, 0) scale(1)';
             if (slotNum === 1) {
+              const dim2d = document.getElementById('scHallDim2D');
+              const spL = document.getElementById('scHallSpot2DL'), spR = document.getElementById('scHallSpot2DR');
+              if (dim2d) dim2d.style.opacity = '0';
+              if (spL) spL.style.display = 'none';
+              if (spR) spR.style.display = 'none';
+              sfx('victoryFanfare', 0.95);
               ensureSlotSprite(slotNum, player, 'win', true);
               schedule(() => { if (!isSettled) crownNow(activeRanked.slice(0, 3), cfg, true); }, 1400);
             } else {
+              const is2 = slotNum === 2;
+              sfx(is2 ? 'applauseStrong' : 'applauseWarm', is2 ? 0.92 : 0.88);
+              if (global.confetti && !global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+                global.confetti({
+                  particleCount: is2 ? 60 : 40,
+                  spread: is2 ? 84 : 72,
+                  origin: { x: is2 ? 0.72 : 0.28, y: 0.6 },
+                  colors: is2 ? ['#e2e8f0', '#93c5fd', '#fef08a'] : ['#fdba74', '#fb923c', '#fef08a']
+                });
+              }
               ensureSlotSprite(slotNum, player, 'wave', true);
               schedule(() => { if (!isSettled) ensureSlotSprite(slotNum, player, 'clap', true); }, 1150);
             }
@@ -323,6 +346,7 @@
     if (!p) return;
     const col = document.getElementById(`scHallCol_${slotNum}`);
     if (!col) return;
+    ensureCelebration2dMusic();
     if (immediate) {
       col.classList.add('is-revealed');
       col.style.opacity = '1';
@@ -330,6 +354,25 @@
       ensureSlotSprite(slotNum, p, slotNum === 1 ? 'win' : 'clap', true);
       return;
     }
+    if (slotNum === 1) {
+      const dim2d = document.getElementById('scHallDim2D');
+      const spL = document.getElementById('scHallSpot2DL'), spR = document.getElementById('scHallSpot2DR');
+      global.ScoreARAudio?.duckMusic?.(0.05, 500);
+      sfx('drumroll', 0.96);
+      if (dim2d) dim2d.style.opacity = '1';
+      if (spL) { spL.style.display = 'block'; spL.style.animation = 'scCrossSpotL2D 4s cubic-bezier(0.4,0,0.2,1) forwards'; }
+      if (spR) { spR.style.display = 'block'; spR.style.animation = 'scCrossSpotR2D 4s cubic-bezier(0.4,0,0.2,1) forwards'; }
+      schedule(() => {
+        if (isSettled) return;
+        sfx('spotlightLock', 0.96);
+        sfx('applauseGrand', 0.90);
+        global.ScoreARAudio?.unduckMusic?.(550);
+        if (dim2d) dim2d.style.opacity = '0.36';
+        runSlotPath(1, p, cfg);
+      }, 4000);
+      return;
+    }
+    sfx(slotNum === 2 ? 'rank2Reveal' : 'rank3Reveal', 0.90);
     runSlotPath(slotNum, p, cfg);
   }
 
@@ -339,6 +382,15 @@
     cancelPaths();
     isSettled = true;
     currentStep = 4;
+    ensureCelebration2dMusic();
+    global.ScoreARAudio?.unduckMusic?.(250);
+    if (!withConfetti) global.ScoreARAudio?.stopAllSfx?.();
+
+    const dim2d = document.getElementById('scHallDim2D');
+    const spL = document.getElementById('scHallSpot2DL'), spR = document.getElementById('scHallSpot2DR');
+    if (dim2d) dim2d.style.opacity = '0';
+    if (spL) spL.style.display = 'none';
+    if (spR) spR.style.display = 'none';
 
     const root = document.getElementById('scHallRoot');
     if (!root) return;
@@ -372,8 +424,12 @@
     const skipBtn = document.getElementById('scHallSkipBtn');
     if (skipBtn) skipBtn.style.display = 'none';
 
-    if (withConfetti && global.confetti && !global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
-      global.confetti({ particleCount: 140, spread: 135, origin: { y: 0.52 }, colors: cfg.particles });
+    if (withConfetti && !global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+      sfx('victoryFanfare', 0.94);
+      sfx('applauseGrand', 0.78);
+      if (global.confetti) {
+        global.confetti({ particleCount: 140, spread: 135, origin: { y: 0.52 }, colors: cfg.particles });
+      }
     }
   }
 
@@ -445,6 +501,26 @@
         @keyframes scEmblemRise { 0%{opacity:0;transform:translate(-50%,40px) scale(0.55)} 70%{opacity:1;transform:translate(-50%,-6px) scale(1.06)} 100%{opacity:1;transform:translate(-50%,0) scale(1)} }
         @keyframes scEmblemFloat { 0%,100%{transform:translate(-50%,0)} 50%{transform:translate(-50%,-5px)} }
         @keyframes scLanternPulse { 0%{opacity:0.25;transform:scale(0.88)} 100%{opacity:1;transform:scale(1.06)} }
+        @keyframes scCrossSpotL2D {
+          0%{transform:translateX(-50%) rotate(-42deg);opacity:0}
+          10%{transform:translateX(-50%) rotate(-38deg);opacity:0.95}
+          34%{transform:translateX(-50%) rotate(-6deg);opacity:0.95}
+          56%{transform:translateX(-50%) rotate(-44deg);opacity:0.95}
+          76%{transform:translateX(-50%) rotate(-12deg);opacity:0.98}
+          100%{transform:translateX(-50%) rotate(-24deg);opacity:1}
+        }
+        @keyframes scCrossSpotR2D {
+          0%{transform:translateX(-50%) rotate(42deg);opacity:0}
+          10%{transform:translateX(-50%) rotate(38deg);opacity:0.95}
+          34%{transform:translateX(-50%) rotate(6deg);opacity:0.95}
+          56%{transform:translateX(-50%) rotate(44deg);opacity:0.95}
+          76%{transform:translateX(-50%) rotate(18deg);opacity:0.98}
+          100%{transform:translateX(-50%) rotate(28deg);opacity:1}
+        }
+        .sc-hall-dim-2d { position:absolute;inset:0;background:rgba(2,5,14,0.88);opacity:0;pointer-events:none;transition:opacity 0.55s ease;z-index:20; }
+        .sc-hall-spot-2d { display:none;position:absolute;top:-40px;width:210px;height:128%;transform-origin:top center;clip-path:polygon(44% 0%,56% 0%,100% 100%,0% 100%);background:linear-gradient(180deg,rgba(255,244,178,0.86) 0%,rgba(251,191,36,0.28) 65%,rgba(251,191,36,0) 100%);filter:blur(6px);mix-blend-mode:screen;pointer-events:none;z-index:21; }
+        .sc-hall-spot-2d.left { left:18%; }
+        .sc-hall-spot-2d.right { left:82%; }
         .sc-hall-root { position:relative;width:100%;height:100%;max-height:100%;display:flex;flex-direction:column;overflow:hidden;background:${cfg.bg};direction:rtl;font-family:Cairo,Tajawal,sans-serif; }
         .sc-hall-bg-wrap { position:absolute;inset:0;z-index:0;overflow:hidden; }
         .sc-hall-bg-img { width:100%;height:100%;object-fit:cover;object-position:center 58%;display:block;animation:scHallBgZoom 2.4s cubic-bezier(0.22,1,0.36,1) forwards;filter:brightness(0.88) saturate(1.08); }
@@ -497,6 +573,9 @@
           <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,9,22,0.52) 0%,rgba(5,9,22,0.08) 38%,rgba(5,9,22,0.22) 72%,rgba(5,9,22,0.78) 100%);"></div>
         </div>
         <canvas id="scHallFxCanvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;"></canvas>
+        <div id="scHallDim2D" class="sc-hall-dim-2d"></div>
+        <div id="scHallSpot2DL" class="sc-hall-spot-2d left"></div>
+        <div id="scHallSpot2DR" class="sc-hall-spot-2d right"></div>
         <div class="sc-hall-letterbox top"></div>
         <div class="sc-hall-letterbox bot"></div>
 
@@ -550,6 +629,7 @@
         </div>
 
         <footer id="scHallActions" class="scorear-control-bar" style="position:relative;z-index:35;display:none;align-items:center;justify-content:center;gap:10px;padding:8px 18px;flex-wrap:wrap;flex-shrink:0;">
+          <button type="button" class="scorear-gear-btn" onclick="ScoreARWorldHalls.triggerApplause()" style="border-color:${cfg.accent};color:#fef08a;">👏 <span>تصفيق</span></button>
           <button type="button" class="scorear-gear-btn" onclick="document.getElementById('scHallFullRoster').style.display='block'">${ic('list', 14)} <span>الترتيب الكامل (${sorted.length})</span></button>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARPodiumCapture?.capturePodiumSnapshot?.(document.getElementById('scHallRoot'), ScoreARWorldHalls._getRoom(), ScoreARWorldHalls._getSorted())">${ic('camera', 14)} <span>صورة التتويج</span></button>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARPodiumCapture?.downloadAllTop3Certificates?.(ScoreARWorldHalls._getSorted(), '${esc(worldId)}')">${ic('award', 14)} <span>الشهادات</span></button>
@@ -567,6 +647,7 @@
 
     if (!isReduced) startHallFxCanvas(document.getElementById('scHallFxCanvas'), worldId, cfg);
     if (isReduced || !top3.length) { crownNow(top3, cfg, false); return; }
+    global.ScoreARAudio?.playMusic?.(worldId, 0.18);
 
     schedule(() => {
       const pathEl = document.getElementById('scHallPathGlow');
@@ -590,6 +671,7 @@
     if (!revealOrder.length) { crownNow(top3, cfg, false); return; }
     timers.forEach(id => clearTimeout(id));
     timers = [];
+    ensureCelebration2dMusic();
     const sb = document.getElementById('scHallStartBtn');
     if (sb) { sb.disabled = true; sb.innerHTML = '⏳ <span>جارٍ الاحتفال...</span>'; }
     document.getElementById('scHallRoot')?.classList.remove('is-opening');
@@ -597,11 +679,13 @@
     if (b) b.style.opacity = '0';
     const remaining = revealOrder.slice(currentStep);
     if (!remaining.length) { crownNow(top3, cfg, true); return; }
+    let offset = 40;
     remaining.forEach((slotNum, idx) => {
+      if (idx > 0) offset += (remaining[idx - 1] === 3 ? 5400 : 5800);
       schedule(() => {
         currentStep = revealOrder.indexOf(slotNum) + 1;
         revealSlot(slotNum, top3, cfg, false);
-      }, idx === 0 ? 40 : idx * 5200);
+      }, offset);
     });
   }
 
@@ -638,6 +722,13 @@
   }
   function setCameraPreset(preset) { active3DCtrl?.setCameraPreset?.(preset); }
   function launchFirework() { active3DCtrl?.launchFirework?.(); }
+  function triggerApplause() {
+    if (active3DCtrl?.triggerApplause) { active3DCtrl.triggerApplause(); return; }
+    sfx('applauseGrand', 0.88);
+    if (global.confetti && !global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+      global.confetti({ particleCount: 55, spread: 95, origin: { y: 0.52 } });
+    }
+  }
   function triggerAudienceReaction(emoji, name) { active3DCtrl?.triggerAudienceReaction?.(emoji, name); }
   function capture3DSnapshot() {
     if (active3DCtrl?.capture3DSnapshot?.()) return;
@@ -658,7 +749,7 @@
 
   global.ScoreARWorldHalls = {
     HALL_CONFIGS, renderHallCeremony, startCinematicShow, advanceStep, skipToFinal, replayHall, exitHall, toggleMute, cleanup, isActive,
-    setCameraPreset, launchFirework, triggerAudienceReaction, capture3DSnapshot,
+    setCameraPreset, launchFirework, triggerApplause, triggerAudienceReaction, capture3DSnapshot,
     _get3DState: () => active3DCtrl?.getDebugState?.() || null,
     _getRoom: () => activeRoom, _getSorted: () => activeSorted
   };

@@ -12,7 +12,7 @@
 
   const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   const ic = (n, sz = 14) => (global.ScoreARUI?.icon) ? global.ScoreARUI.icon(n, { size: sz }) : '';
-  const sfx = n => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n); };
+  const sfx = (n, v) => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n, v); };
 
   function mountWorld3DStage(stage, currentRoom, ranked, onClose, quizTitle, worldSpec) {
     const Engine = global.ScoreARHall3DEngine;
@@ -51,6 +51,7 @@
       <div id="scHallRoot" class="sc-w3d-root is-cinematic" data-hall-world="${esc(worldSpec.id)}" data-hall-engine="threejs-3d">
         <div id="scWorld3DWrap" class="sc-w3d-wrap"></div>
         <div class="sc-w3d-vig"></div>
+        <div id="scHallBlackoutVignette" style="position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 48%,rgba(2,5,14,0.18) 12%,rgba(2,5,14,0.88) 100%);"></div>
         <div class="sc-w3d-bar top"></div>
         <div class="sc-w3d-bar bot"></div>
 
@@ -84,6 +85,7 @@
           <button type="button" data-cam-preset="champion" class="scorear-gear-btn sc-w3d-cam-btn" onclick="ScoreARWorldHalls.setCameraPreset('champion')">${ic('crown', 13)} <span>تركيز البطل</span></button>
           <button type="button" data-cam-preset="orbit" class="scorear-gear-btn sc-w3d-cam-btn" onclick="ScoreARWorldHalls.setCameraPreset('orbit')">${ic('planet', 13)} <span>جولة سينمائية</span></button>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARWorldHalls.launchFirework()" style="border-color:${accent};color:#fef08a;">🎇 <span>ألعاب نارية</span></button>
+          <button type="button" class="scorear-gear-btn" onclick="ScoreARWorldHalls.triggerApplause()" style="border-color:${accent};color:#fef08a;">👏 <span>تصفيق</span></button>
           <button type="button" class="scorear-gear-btn" onclick="document.getElementById('scHallFullRoster').style.display='block'">${ic('list', 13)} <span>الترتيب الكامل (${ranked.length})</span></button>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARWorldHalls.capture3DSnapshot()">${ic('camera', 13)} <span>صورة التتويج HD</span></button>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARPodiumCapture?.downloadAllTop3Certificates?.(ScoreARWorldHalls._getSorted(), '${esc(worldSpec.id)}')">${ic('award', 13)} <span>الشهادات</span></button>
@@ -148,6 +150,16 @@
     scene.add(vistaMesh);
 
     const particles = Engine.createParticlesSystem(scene, worldSpec.particleColors || [0xfef08a, 0xfbbf24, 0xffffff], 130);
+    const spotRig = Engine.createSpotlightRig(scene, {
+      renderer, keyLight, ambLight, vistaMesh,
+      baseKeyInt: worldSpec.keyInt ?? 1.08,
+      baseHemiInt: worldSpec.hemiInt ?? 0.78,
+      baseExposure: worldSpec.exposure ?? 1.04,
+      baseVistaHex: worldSpec.vistaTint ?? 0xe8eefc,
+      accentHex: worldSpec.shockHex ?? 0xffd76b,
+      vignetteEl: document.getElementById('scHallBlackoutVignette'),
+      particles
+    });
 
     // Expanding Coronation Shockwave Ring
     const shockMat = track(new THREE.MeshBasicMaterial({ color: worldSpec.shockHex ?? 0xfef08a, transparent: true, opacity: 0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -183,9 +195,14 @@
     });
 
     let timers = [], activePaths = [], rafId = null, disposed = false, crowned = false, currentStep = 0;
-    let suspenseDim = 0, shockStart = null, clockLast = performance.now(), startTime = clockLast, pathRunSeq = 0;
+    let shockStart = null, clockLast = performance.now(), startTime = clockLast, pathRunSeq = 0, celebrationMusicStarted = false;
     const sched = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
     const clearSched = () => { timers.forEach(clearTimeout); timers = []; pathRunSeq++; };
+    function ensureCelebrationMusic() {
+      if (celebrationMusicStarted) return;
+      celebrationMusicStarted = true;
+      global.ScoreARAudio?.crossfadeMusic?.('celebration', 0.32, 650);
+    }
 
     const worldPreloadMoves = (worldSpec.id === 'cosmic' || worldSpec.id === 'magic')
       ? ['fly', 'land', 'wave', 'clap', 'win', 'idle']
@@ -223,10 +240,10 @@
     }
 
     const ctx = {
-      THREE, Engine, scene, camera, camDir, cinAudio, particles,
+      THREE, Engine, scene, camera, camDir, cinAudio, particles, spotRig,
       top3, ranked, heroActors, audienceActors, track, sched, sfx,
-      launchFirework, isReduced, quizTitle,
-      setSuspense: v => { suspenseDim = v; },
+      launchFirework, isReduced, quizTitle, blackoutLevel: 0,
+      setSuspense: v => { spotRig.setBlackout(v ? 1 : 0); },
       triggerShockwave: () => { shockStart = performance.now(); }
     };
 
@@ -238,6 +255,19 @@
       2: { x: 2.32, topY: 0.72, z: 0.28 },
       3: { x: -2.32, topY: 0.54, z: 0.28 }
     };
+    const tierGlowRings = {};
+    [1, 2, 3].forEach(slot => {
+      const t = tierTargets[slot];
+      if (!t || !heroActors[slot]) return;
+      const tr = t.r || (t.w ? t.w * 0.52 : 1.05);
+      const col = slot === 1 ? (worldSpec.shockHex ?? 0xfbbf24) : (slot === 2 ? 0x93c5fd : 0xfdba74);
+      const mat = track(new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, blending: THREE.AdditiveBlending }));
+      const ring = new THREE.Mesh(track(new THREE.RingGeometry(tr * 0.94, tr * 1.15, 44)), mat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(t.x, t.topY + 0.016, t.z);
+      scene.add(ring);
+      tierGlowRings[slot] = mat;
+    });
     const revealOrder = [3, 2, 1].filter(s => Boolean(heroActors[s]));
 
     function defaultGroundPath(slot, target) {
@@ -254,7 +284,7 @@
         ];
       }
       return [
-        { from: [-5.1, 0.02, 2.38], to: [0, 0.02, 2.15], durMs: 2450, move: 'walkRight', loop: true, jumpH: 0 },
+        { from: [-4.35, 0.02, 2.32], to: [0, 0.02, 2.15], durMs: 2450, move: 'walkRight', loop: true, jumpH: 0 },
         { from: [0, 0.02, 2.15], to: [0, 0.02, 2.15], durMs: 950, move: 'wave', loop: true, jumpH: 0 },
         { from: [0, 0.02, 2.15], to: [target.x, target.topY, target.z], durMs: 880, move: 'jump', loop: false, jumpH: 0.80 }
       ];
@@ -272,6 +302,7 @@
         if (disposed || crowned || mySeq !== pathRunSeq) return;
         actor.group.visible = true;
         actor.setOpacity(1);
+        actor.setBrightness(1.02);
         activePaths = activePaths.filter(p => p.slot !== slot);
         activePaths.push({ slot, actor, segs, segIdx: 0, segElapsed: 0, lastNow: null });
       });
@@ -280,38 +311,64 @@
     function playStep(slot) {
       const target = tierTargets[slot];
       if (!target) return;
+      ensureCelebrationMusic();
       document.getElementById('scHallRoot')?.classList.remove('is-cinematic');
       const banner = document.getElementById('scHallOpeningBanner');
       if (banner) { banner.style.opacity = '0'; banner.style.transform = 'translateY(-16px)'; }
       updateStepBtn();
-      worldData.revealPlaque?.(slot);
+      if (slot !== 1) worldData.revealPlaque?.(slot);
       worldSpec.onStep?.(slot, ctx);
 
       if (slot === 3) {
         showPhase(`🥉 المركز الثالث · ${top3[2]?.name || ''}`);
         camDir.setShot([-2.15, 2.0, 7.2], [target.x, 1.42, Math.max(target.z, 0.5)], 2.7);
-        sfx('pop'); cinAudio.playChime(440, 0.75);
+        sfx('rank3Reveal', 0.90); cinAudio.playChime(440, 0.75);
+        spotRig.setMode('rank3', { x: target.x, y: target.topY, z: target.z });
         startHeroPath(3);
       } else if (slot === 2) {
         showPhase(`🥈 المركز الثاني · ${top3[1]?.name || ''}`);
         camDir.setShot([2.15, 2.05, 7.2], [target.x, 1.50, Math.max(target.z, 0.5)], 2.7);
-        sfx('pop'); cinAudio.playChime(523.25, 0.8);
+        sfx('rank2Reveal', 0.92); cinAudio.playChime(523.25, 0.8);
+        spotRig.setMode('rank2', { x: target.x, y: target.topY, z: target.z });
         startHeroPath(2);
       } else if (slot === 1) {
-        suspenseDim = 1;
-        showPhase('👑 لحظة الترقّب... من بطل المركز الأول؟');
-        camDir.setShot([0, 2.05, 8.8], [0, 1.5, 1.2], 2.3);
-        cinAudio.playTimpaniPulse(74, 0.18);
-        sched(() => cinAudio.playTimpaniPulse(84, 0.19), 420);
-        sched(() => cinAudio.playTimpaniPulse(96, 0.21), 840);
+        const segs1 = worldSpec.getHeroPath ? worldSpec.getHeroPath(1, target) : defaultGroundPath(1, target);
+        const entryStart = segs1[0]?.from || [-4.35, 0.02, 2.32];
+        global.ScoreARAudio?.duckMusic?.(0.05, 500);
+        sfx('drumroll', 0.96);
+        spotRig.setBlackout(1);
+        spotRig.setMode('sweep', { durationMs: 4000, lockTarget: entryStart });
+        [2, 3].forEach(s => {
+          heroActors[s]?.setBrightness(0.32);
+          if (heroActors[s]?.group?.visible) heroActors[s].setAction('idle', true);
+          if (tierGlowRings[s]) tierGlowRings[s].opacity = 0.25;
+        });
+        audienceActors.forEach(a => a.setAction('idle', true));
+
+        showPhase('🔦 لحظة الترقّب... من سيحمل لقب البطل الأول؟');
+        camDir.setShot([0, 2.25, 9.5], [0, 1.35, 0.6], 1.1);
         sched(() => {
-          suspenseDim = 0;
+          if (crowned) return;
+          camDir.setShot([0, 2.05, 8.3], [0, 1.4, 1.0], 0.85);
+          showPhase('🥁 الاستعداد للإعلان عن بطل المركز الأول...');
+        }, 2100);
+        sched(() => {
+          if (crowned) return;
+          sfx('spotlightLock', 0.96);
+          sfx('applauseGrand', 0.90);
+          global.ScoreARAudio?.unduckMusic?.(550);
+          spotRig.setBlackout(0.46);
+          spotRig.setMode('follow', { actor: heroActors[1] });
+          [2, 3].forEach(s => {
+            heroActors[s]?.setBrightness(0.78);
+            if (heroActors[s]?.group?.visible) heroActors[s].setAction('clap', true);
+          });
+          audienceActors.forEach((a, i) => a.setAction(i % 2 === 0 ? 'clap' : 'wave', true));
           worldData.revealPlaque?.(1);
           showPhase(`🥇 بطل المركز الأول · ${top3[0]?.name || ''}`);
-          camDir.setShot([0, 2.08, 7.6], [0, 1.65, 1.1], 2.4);
-          sfx('whoosh');
+          camDir.setShot([0, 2.08, 7.8], [0, 1.65, 1.2], 2.4);
           startHeroPath(1);
-        }, 1300);
+        }, 4000);
       }
     }
 
@@ -319,8 +376,12 @@
       clearSched();
       activePaths = [];
       crowned = true;
-      suspenseDim = 0;
       currentStep = revealOrder.length;
+      ensureCelebrationMusic();
+      global.ScoreARAudio?.unduckMusic?.(250);
+      if (!withFx) global.ScoreARAudio?.stopAllSfx?.();
+      spotRig.setBlackout(0, !withFx);
+      spotRig.setMode(withFx && !isReduced ? 'celebrate' : 'off');
       document.getElementById('scHallRoot')?.classList.remove('is-cinematic');
       const banner = document.getElementById('scHallOpeningBanner');
       if (banner) { banner.style.opacity = '0'; banner.style.display = 'none'; }
@@ -336,9 +397,11 @@
         if (!actor || !t) return;
         actor.group.visible = true;
         actor.setOpacity(1);
+        actor.setBrightness(1.05);
         actor.setJumpOffset(0);
         actor.group.position.set(t.x, t.topY, t.z);
         actor.setAction(slot === 1 ? 'win' : 'clap', true);
+        if (tierGlowRings[slot]) tierGlowRings[slot].opacity = 0.82;
       });
       audienceActors.forEach((a, i) => a.setAction(i % 2 === 0 ? 'clap' : 'wave', true));
 
@@ -347,12 +410,20 @@
       if (withFx && !isReduced) {
         shockStart = performance.now();
         camDir.impulse(0.12);
-        sfx('fanfare');
+        sfx('victoryFanfare', 0.94);
+        sfx('applauseGrand', 0.78);
         cinAudio.playFanfareChord();
         launchFirework(-2.4, 4.6, -1.1);
-        sched(() => launchFirework(2.4, 4.8, -1.0), 300);
-        sched(() => launchFirework(0, 5.1, -1.3), 620);
-        if (global.confetti) global.confetti({ particleCount: 95, spread: 125, origin: { y: 0.44 }, colors: worldSpec.confettiColors || ['#fef08a', '#fbbf24', '#38bdf8', '#ffffff'] });
+        sched(() => launchFirework(2.4, 4.8, -1.0), 280);
+        sched(() => launchFirework(0, 5.1, -1.3), 580);
+        sched(() => launchFirework(-1.4, 4.7, -0.9), 950);
+        sched(() => launchFirework(1.4, 4.9, -1.1), 1380);
+        if (global.confetti) {
+          const cfCols = worldSpec.confettiColors || ['#fef08a', '#fbbf24', '#38bdf8', '#ffffff'];
+          global.confetti({ particleCount: 95, spread: 125, origin: { x: 0.5, y: 0.44 }, colors: cfCols });
+          sched(() => global.confetti?.({ particleCount: 55, spread: 95, angle: 60, origin: { x: 0.18, y: 0.58 }, colors: cfCols }), 240);
+          sched(() => global.confetti?.({ particleCount: 55, spread: 95, angle: 120, origin: { x: 0.82, y: 0.58 }, colors: cfCols }), 480);
+        }
       }
 
       const widePos = worldSpec.wideCamPos || [0, 2.58, 9.5];
@@ -372,15 +443,18 @@
         return;
       }
       clearSched();
+      ensureCelebrationMusic();
       const sb = document.getElementById('scHallStartBtn');
       if (sb) { sb.disabled = true; sb.innerHTML = '⏳ <span>جارٍ الاحتفال...</span>'; }
       const remaining = revealOrder.slice(currentStep);
       if (!remaining.length) { crownNow(true); return; }
+      let offset = 40;
       remaining.forEach((slot, idx) => {
+        if (idx > 0) offset += (remaining[idx - 1] === 3 ? 5400 : 5800);
         sched(() => {
           currentStep = revealOrder.indexOf(slot) + 1;
           playStep(slot);
-        }, idx === 0 ? 40 : idx * 5200);
+        }, offset);
       });
     }
 
@@ -416,23 +490,58 @@
           } else {
             p.actor.setJumpOffset(0);
             p.actor.setAction('land', false);
-            particles.spawnFountain(p.actor.group.position.x, p.actor.group.position.y + 0.05, p.actor.group.position.z, worldSpec.shockHex ?? 0xfbbf24, 24);
+            if (tierGlowRings[p.slot]) tierGlowRings[p.slot].opacity = 0.82;
+            particles.spawnFountain(p.actor.group.position.x, p.actor.group.position.y + 0.05, p.actor.group.position.z, worldSpec.shockHex ?? 0xfbbf24, p.slot === 1 ? 54 : (p.slot === 2 ? 48 : 36));
             worldSpec.onLand?.(p.slot, ctx);
             const doneSlot = p.slot;
             if (doneSlot === 1) {
+              spotRig.setBlackout(0);
+              spotRig.triggerLightsUpFlash();
+              [1, 2, 3].forEach(s => {
+                heroActors[s]?.setBrightness(1.05);
+                if (tierGlowRings[s]) tierGlowRings[s].opacity = 0.82;
+              });
+              shockStart = performance.now();
+              camDir.impulse(0.14);
+              sfx('victoryFanfare', 0.96);
+              cinAudio.playFanfareChord();
               sched(() => { if (!crowned) p.actor.setAction('win', true); }, 420);
               sched(() => { if (!crowned) crownNow(true); }, 1770);
             } else {
+              const is2 = doneSlot === 2;
+              const tPos = tierTargets[doneSlot] || { x: p.actor.group.position.x, z: p.actor.group.position.z };
+              sfx(is2 ? 'applauseStrong' : 'applauseWarm', is2 ? 0.92 : 0.88);
+              cinAudio.playChime(is2 ? 659.25 : 523.25, 0.85, 0.09);
+              spotRig.triggerRankShock(tPos.x, tPos.z, is2 ? 0x93c5fd : 0xfdba74, is2 ? 5.4 : 4.4);
+              if (is2) launchFirework(2.6, 4.5, -1.0);
+              if (global.confetti && !isReduced) {
+                global.confetti({
+                  particleCount: is2 ? 62 : 42,
+                  spread: is2 ? 84 : 72,
+                  origin: { x: is2 ? 0.75 : 0.25, y: is2 ? 0.58 : 0.62 },
+                  colors: is2 ? ['#e2e8f0', '#93c5fd', '#fef08a', '#ffffff'] : ['#fdba74', '#fb923c', '#fef08a', '#ffffff']
+                });
+              }
+              audienceActors.forEach((a, idx) => a.setAction(idx % 2 === 0 ? 'clap' : 'wave', true));
+              if (is2 && heroActors[3]?.group?.visible) heroActors[3].setAction('wave', true);
               sched(() => { if (!crowned) p.actor.setAction('wave', true); }, 420);
-              sched(() => { if (!crowned) p.actor.setAction('clap', true); }, 1570);
+              sched(() => {
+                if (!crowned) p.actor.setAction('clap', true);
+                if (is2 && !crowned && heroActors[3]?.group?.visible) heroActors[3].setAction('clap', true);
+              }, 1570);
+              sched(() => {
+                if (!crowned && spotRig.getState().mode !== 'sweep' && spotRig.getState().mode !== 'follow') {
+                  audienceActors.forEach(a => a.setAction('idle', true));
+                }
+              }, 3200);
             }
             activePaths.splice(i, 1);
           }
         }
       }
 
-      keyLight.intensity += ((suspenseDim ? 0.25 : (worldSpec.keyInt ?? 1.08)) - keyLight.intensity) * Math.min(1, dt * 4.5);
-      ambLight.intensity += ((suspenseDim ? 0.22 : (worldSpec.hemiInt ?? 0.78)) - ambLight.intensity) * Math.min(1, dt * 4.5);
+      spotRig.update(dt, elapsed);
+      ctx.blackoutLevel = spotRig.getState().blackoutLevel;
 
       if (shockStart) {
         const sp = (now - shockStart) / 900;
@@ -464,7 +573,8 @@
     if (isReduced || !top3.length) {
       crownNow(false);
     } else {
-      // Wide establishing shot — wait strictly for teacher's Start or Step click!
+      // Wide establishing shot + calm world ambience — wait strictly for teacher's Start or Step click!
+      global.ScoreARAudio?.playMusic?.(worldSpec.id || 'magic', 0.18);
       camDir.setShot(worldSpec.wideCamPos || [0, 2.75, 10.2], worldSpec.wideCamLook || [0, 1.95, 0], 1.7);
       sfx('whoosh');
     }
@@ -475,14 +585,25 @@
       if (disposed) return;
       disposed = true;
       clearSched();
+      global.ScoreARAudio?.stopAllSfx?.();
+      global.ScoreARAudio?.unduckMusic?.(100);
       if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
       global.removeEventListener('resize', onResize);
-      camDir.dispose(); cinAudio.dispose(); particles.dispose();
+      camDir.dispose(); cinAudio.dispose(); spotRig.dispose(); particles.dispose();
       Object.values(heroActors).forEach(a => a.dispose());
       audienceActors.forEach(a => a.dispose());
       envRT.dispose();
       disposables.forEach(d => { try { d.dispose?.(); } catch {} });
       renderer.dispose();
+    }
+
+    function triggerApplause() {
+      sfx('applauseGrand', 0.88);
+      launchFirework((Math.random() - 0.5) * 5.0, 4.3 + Math.random() * 1.1, -0.9);
+      audienceActors.forEach((a, i) => a.setAction(i % 2 === 0 ? 'clap' : 'wave', true));
+      if (global.confetti && !isReduced) {
+        global.confetti({ particleCount: 55, spread: 95, origin: { y: 0.52 }, colors: worldSpec.confettiColors || ['#fef08a', '#fbbf24', '#ffffff'] });
+      }
     }
 
     return {
@@ -500,10 +621,15 @@
         document.querySelectorAll('.sc-w3d-cam-btn').forEach(b => b.classList.toggle('is-active', b.getAttribute('data-cam-preset') === preset));
       },
       launchFirework: () => launchFirework(),
+      triggerApplause,
       triggerAudienceReaction: () => launchFirework((Math.random() - 0.5) * 5.2, 4.3 + Math.random() * 1.2, -0.8),
       capture3DSnapshot: () => Engine.captureWebGLSnapshot(renderer, scene, camera, quizTitle || worldSpec.name, `${worldSpec.name} · ScoreAR`),
       getDebugState: () => ({
         engine: 'threejs-3d', world: worldSpec.id, crowned, currentStep,
+        spotMode: spotRig.getState().mode,
+        blackoutLevel: spotRig.getState().blackoutLevel,
+        suspenseDurationMs: 4000,
+        activeMusicTrack: global.ScoreARAudio?.getCurrentTrack?.() || null,
         heroes: Object.fromEntries(Object.entries(heroActors).map(([k, a]) => [k, { action: a.getAction(), visible: a.group.visible, x: Number(a.group.position.x.toFixed(2)), y: Number(a.group.position.y.toFixed(2)), z: Number(a.group.position.z.toFixed(2)) }])),
         audienceCount: audienceActors.length
       }),
