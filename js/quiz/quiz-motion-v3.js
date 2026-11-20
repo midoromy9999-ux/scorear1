@@ -147,6 +147,23 @@
     activeSet.forEach(inst => { try { inst._syncPause(paused); } catch {} });
   }
 
+  function getMotionAssetBase() {
+    return new URL('assets/motion-v3/', (typeof document !== 'undefined' && document.baseURI) || 'http://localhost/').href;
+  }
+
+  function preloadCharacters(playersOrIds = [], moves) {
+    if (!global.ScorearSpritePlayer?.preload) return Promise.resolve([]);
+    const list = Array.isArray(playersOrIds) ? playersOrIds : [playersOrIds];
+    const ids = list.map(item => {
+      if (item && typeof item === 'object') {
+        return parseCharNum(item.avatarId || item.characterId || item.avatar || item.player?.avatarId || item.player?.characterId || 1);
+      }
+      return parseCharNum(item);
+    });
+    const uniqueIds = Array.from(new Set(ids));
+    return global.ScorearSpritePlayer.preload(uniqueIds, moves, getMotionAssetBase());
+  }
+
   function mount(containerEl, idOrCode, initialMove = 'idle', opts = {}) {
     const el = typeof containerEl === 'string' ? document.querySelector(containerEl) : containerEl;
     if (!el) return null;
@@ -181,10 +198,18 @@
     canvas.style.cssText = 'width:100%;height:100%;display:block;pointer-events:none;object-fit:contain;will-change:transform;';
     el.appendChild(canvas);
 
-    const base = new URL('assets/motion-v3/', (typeof document !== 'undefined' && document.baseURI) || 'http://localhost/').href;
-    const player = global.ScorearSpritePlayer.attach(canvas, { characterId: charId, assetBase: base });
-    let destroyed = false, currentMove = move, currentLoop = opts.loop, lastEvKey = null;
+    const base = getMotionAssetBase();
+    const wantInitialLoop = opts.loop !== undefined ? Boolean(opts.loop) : LOOP_BY_DEFAULT.has(move);
+    const attachMotion = (isPausedDom() || move === 'jump') ? 'idle' : move;
+    const player = global.ScorearSpritePlayer.attach(canvas, {
+      characterId: charId,
+      assetBase: base,
+      initialMotion: attachMotion,
+      loop: wantInitialLoop
+    });
+    let destroyed = false, currentMove = move, currentLoop = wantInitialLoop, lastEvKey = null;
     let jumpT1 = null, jumpT2 = null, jumpRepeatT = null;
+    let actionReady = player.ready;
 
     function clearJumpTimers() {
       clearTimeout(jumpT1); clearTimeout(jumpT2); clearTimeout(jumpRepeatT);
@@ -218,8 +243,8 @@
       return true;
     }
 
-    async function setAction(nextMove, playOpts = {}) {
-      if (destroyed) return false;
+    function setAction(nextMove, playOpts = {}) {
+      if (destroyed) return Promise.resolve(false);
       const mapped = mapMotion(nextMove);
       const wantLoop = playOpts.loop !== undefined ? Boolean(playOpts.loop)
         : (opts.loop !== undefined ? Boolean(opts.loop) : LOOP_BY_DEFAULT.has(mapped));
@@ -227,21 +252,28 @@
       currentLoop = wantLoop;
       el.setAttribute('data-cur-pose', mapped);
       clearJumpTimers();
-      await player.ready;
-      if (destroyed) return false;
-      if (isPausedDom()) return player.showFrame(mapped, 0);
-      if (mapped === 'jump') return runJumpSequence(wantLoop);
-      return player.play(mapped, { loop: wantLoop });
+      const p = (async () => {
+        await player.ready;
+        if (destroyed) return false;
+        if (isPausedDom()) return player.showFrame(mapped, 0);
+        if (mapped === 'jump') return runJumpSequence(wantLoop);
+        return player.play(mapped, { loop: wantLoop });
+      })();
+      actionReady = p;
+      return p;
     }
 
-    player.ready.then(() => {
-      if (destroyed) return;
-      if (isPausedDom()) player.showFrame(move, 0);
-      else if (move !== 'idle') setAction(move, { loop: opts.loop });
-    });
+    if (isPausedDom()) {
+      actionReady = player.ready.then(() => (!destroyed ? player.showFrame(move, 0) : false));
+    } else if (move === 'jump') {
+      actionReady = player.ready.then(() => (!destroyed ? runJumpSequence(wantInitialLoop) : false));
+    }
 
     const api = {
-      ready: player.ready, player, canvas,
+      ready: player.ready,
+      actionReady,
+      whenReady: () => actionReady,
+      player, canvas,
       setAction, play: setAction,
       getCurrentMove: () => currentMove,
       dispatch: async (evName, dedupeKey = null) => {
@@ -311,7 +343,7 @@
   if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', installEngineBridge);
 
   global.ScoreARMotionV3 = {
-    mount, mapMotion, charCode, parseCharNum,
+    mount, preloadCharacters, mapMotion, charCode, parseCharNum,
     getTeacherPreferredStyle, getCelebrationStyle, stampRoomCelebrationStyle, setCelebrationStyle,
     injectModeModalCelebrationPicker, installEngineBridge,
     getInstance: el => instances.get(el) || null

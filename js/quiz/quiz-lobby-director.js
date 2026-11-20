@@ -23,7 +23,7 @@
   let fxCanvas = null;
   let fxCtx = null;
   let dustMotes = [];
-  let currentGlobalPose = 'walk';
+  let currentGlobalPose = 'entrance';
   let currentSlotCount = 0;
   let stageObserver = null;
 
@@ -97,33 +97,56 @@
     actor.ty = lane.y;
   }
 
-  function createActor(id, idx, isNew, maxX) {
+  function createActor(id, idx, totalCount, arena, batchIdx) {
     const laneIdx = idx % LANES.length;
     const lane = LANES[laneIdx];
     const now = performance.now ? performance.now() : Date.now();
-    const enterFromRight = idx % 2 === 0;
-    const startX = isNew ? (enterFromRight ? Math.min(165, maxX + 55) : -Math.min(165, maxX + 55)) : ((idx % 2 === 0 ? 1 : -1) * Math.min(28, maxX * 0.35));
-    const actor = {
+    const arenaW = arena?.clientWidth || 1100;
+    const entryOffset = Math.min(230, Math.max(165, arenaW * 0.21));
+    const fromLeft = totalCount <= 1 ? true : (idx < Math.ceil(totalCount / 2));
+    const startX = fromLeft ? -entryOffset : entryOffset;
+    const movePose = fromLeft ? 'walkRight' : 'walkLeft';
+    const enterAt = now + (batchIdx || 0) * 240;
+    return {
       id: String(id), idx, laneIdx,
       x: startX, y: lane.y,
-      tx: isNew ? 0 : startX, ty: lane.y,
-      speed: 60 + (idx % 3) * 6,
-      facing: startX > 0 ? -1 : 1,
-      movePose: startX > 0 ? 'walkLeft' : 'walkRight',
-      state: isNew ? 'enter' : 'idle',
-      stateUntil: now + (isNew ? 3200 : 800 + (idx % 4) * 550),
-      dustTimer: 0, lastPoseApplied: null, greetText: isNew ? '👋' : null
+      tx: 0, ty: lane.y,
+      speed: 110,
+      facing: fromLeft ? 1 : -1,
+      movePose,
+      state: 'enter',
+      enterAt,
+      stateUntil: enterAt + 5000,
+      nextWaveAt: enterAt + 9500 + (idx % 4) * 1400,
+      readyDeadline: enterAt + 1600,
+      spriteReady: false,
+      readyHooked: false,
+      boundEl: null,
+      dustTimer: 0,
+      lastPoseApplied: null,
+      lastLoopApplied: null,
+      greetText: '👋'
     };
-    if (!isNew) pickNextWaypoint(actor, maxX);
-    return actor;
   }
 
-  function applyActorDom(actor, slotEl, heroCharEl, poseToApply) {
+  function hookSpriteReady(actor, heroCharEl) {
+    if (!actor || actor.spriteReady || actor.readyHooked || !heroCharEl) return;
+    actor.readyHooked = true;
+    const inst = global.ScoreARMotionEngine?.getInstance?.(heroCharEl);
+    const p = inst?.whenReady?.() || inst?.ready;
+    if (p && typeof p.then === 'function') {
+      p.then(() => { actor.spriteReady = true; }).catch(() => { actor.spriteReady = true; });
+    } else {
+      actor.spriteReady = true;
+    }
+  }
+
+  function applyActorDom(actor, slotEl, heroCharEl, poseToApply, bobY = 0, forceLoop = undefined) {
     if (!slotEl) return;
     const sc = scaleForY(actor.y);
     slotEl.style.willChange = 'transform';
     slotEl.style.zIndex = String(12 + Math.round(actor.y + 26));
-    slotEl.style.transform = `translate3d(${actor.x.toFixed(1)}px, ${actor.y.toFixed(1)}px, 0) scale(${sc.toFixed(3)})`;
+    slotEl.style.transform = `translate3d(${actor.x.toFixed(1)}px, ${(actor.y + bobY).toFixed(1)}px, 0) scale(${sc.toFixed(3)})`;
     slotEl.style.transformOrigin = 'bottom center';
 
     if (heroCharEl) {
@@ -136,13 +159,14 @@
         heroCharEl.style.transform = `scaleX(${actor.facing})`;
       }
 
-      if (actor.lastPoseApplied !== resolvedPose && global.ScoreARMotionEngine?.getInstance) {
+      const shouldLoop = forceLoop !== undefined ? Boolean(forceLoop) : (resolvedPose !== 'jump' && resolvedPose !== 'land');
+      if ((actor.lastPoseApplied !== resolvedPose || actor.lastLoopApplied !== shouldLoop) && global.ScoreARMotionEngine?.getInstance) {
         const inst = global.ScoreARMotionEngine.getInstance(heroCharEl);
         if (inst && typeof inst.setAction === 'function') {
-          const shouldLoop = resolvedPose !== 'jump' && resolvedPose !== 'wave' && resolvedPose !== 'land';
           inst.setAction(resolvedPose, { loop: shouldLoop });
         }
         actor.lastPoseApplied = resolvedPose;
+        actor.lastLoopApplied = shouldLoop;
       }
     }
   }
@@ -154,7 +178,7 @@
       return;
     }
     if (!lastTs) lastTs = ts;
-    const dtSec = Math.min(0.05, Math.max(0.001, (ts - lastTs) / 1000));
+    const dtSec = Math.min(0.25, Math.max(0.001, (ts - lastTs) / 1000));
     lastTs = ts;
 
     const arenaW = activeArena.clientWidth || 960;
@@ -174,44 +198,119 @@
       const pid = slotEl.getAttribute('data-player-id') || ('slot_' + idx);
       let actor = actors.get(pid);
       if (!actor) {
-        actor = createActor(pid, idx, false, maxWander);
+        actor = createActor(pid, idx, slots.length, activeArena, 0);
         actors.set(pid, actor);
       }
       actor.idx = idx;
       const heroCharEl = slotEl.querySelector('.host-lobby-hero-char');
+      if (heroCharEl && actor.boundEl !== heroCharEl) {
+        actor.boundEl = heroCharEl;
+        actor.lastPoseApplied = null;
+        actor.lastLoopApplied = null;
+        actor.readyHooked = false;
+      }
+      hookSpriteReady(actor, heroCharEl);
+      if (!actor.spriteReady && ts >= actor.readyDeadline) actor.spriteReady = true;
 
-      // Explicit global teacher pose lock (idle / jump / clap / win / celebrate)
-      if (disabled || currentGlobalPose !== 'walk') {
+      // Explicit teacher pose lock ('idle', 'wave', 'jump', 'clap', 'win', 'celebrate') or reduced-motion
+      if (disabled || (currentGlobalPose !== 'entrance' && currentGlobalPose !== 'walk')) {
         const pose = disabled ? 'idle' : currentGlobalPose;
         const laneY = LANES[actor.laneIdx % LANES.length].y;
         actor.x *= Math.exp(-10 * dtSec);
         if (Math.abs(actor.x) < 0.6) actor.x = 0;
         actor.y += (laneY - actor.y) * Math.min(1, dtSec * 8);
-        setGreetingBubble(slotEl, null);
-        applyActorDom(actor, slotEl, heroCharEl, pose);
+        slotEl.style.opacity = '1';
+        setGreetingBubble(slotEl, (!disabled && pose === 'wave') ? '👋' : null);
+        applyActorDom(actor, slotEl, heroCharEl, pose, 0, pose === 'wave' ? true : undefined);
         return;
       }
 
       let desiredPose = 'idle';
+      let bobY = 0;
+      let forceLoop = undefined;
+      const laneY = LANES[actor.laneIdx % LANES.length].y;
 
       if (actor.state === 'reactJump') {
-        // Explicit student 🦘 reaction ONLY — crisp grounded jump -> land -> return to walk
         desiredPose = (global.ScorearSpritePlayer && global.ScoreARMotionV3) ? 'jump' : 'celebrate';
+        forceLoop = false;
+        slotEl.style.opacity = '1';
         if (ts > actor.stateUntil) {
-          actor.state = 'idle';
+          actor.state = currentGlobalPose === 'walk' ? 'idle' : 'stand';
           actor.stateUntil = ts + 900;
           setGreetingBubble(slotEl, null);
         }
+      } else if (actor.state === 'enter') {
+        if (!actor.spriteReady || ts < actor.enterAt) {
+          slotEl.style.opacity = '0';
+          desiredPose = actor.movePose;
+          forceLoop = true;
+          applyActorDom(actor, slotEl, heroCharEl, desiredPose, 0, forceLoop);
+          return;
+        }
+        slotEl.style.opacity = String(Math.min(1, (ts - actor.enterAt) / 220));
+        const dx = 0 - actor.x;
+        const dy = laneY - actor.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist <= 2.5) {
+          actor.x = 0;
+          actor.y = laneY;
+          actor.state = 'wave';
+          actor.greetText = '👋';
+          actor.stateUntil = ts + 2200;
+          actor.lastPoseApplied = null;
+          desiredPose = (global.ScorearSpritePlayer && global.ScoreARMotionV3) ? 'wave' : 'idle';
+          forceLoop = true;
+          setGreetingBubble(slotEl, '👋');
+        } else {
+          const step = Math.min(dist, actor.speed * dtSec);
+          actor.x += (dx / dist) * step;
+          actor.y += (dy / dist) * step;
+          actor.facing = dx >= 0 ? 1 : -1;
+          actor.movePose = dx >= 0 ? 'walkRight' : 'walkLeft';
+          desiredPose = actor.movePose;
+          forceLoop = true;
+          bobY = -Math.abs(Math.sin((ts / 280) * Math.PI)) * 3;
+          setGreetingBubble(slotEl, null);
+          actor.dustTimer += dtSec;
+          if (actor.dustTimer > 0.42 && fxCtx) {
+            actor.dustTimer = 0;
+            const cx = slotEl.offsetLeft + (slotEl.offsetWidth * 0.5) + actor.x;
+            const cy = slotEl.offsetTop + slotEl.offsetHeight - 8 + actor.y;
+            spawnFootDust(cx, cy, dx / dist);
+          }
+        }
       } else if (actor.state === 'wave') {
+        slotEl.style.opacity = '1';
+        actor.x *= Math.exp(-10 * dtSec);
+        if (Math.abs(actor.x) < 0.6) actor.x = 0;
+        actor.y += (laneY - actor.y) * Math.min(1, dtSec * 8);
         desiredPose = (global.ScorearSpritePlayer && global.ScoreARMotionV3) ? 'wave' : 'idle';
+        forceLoop = true;
         setGreetingBubble(slotEl, actor.greetText || '👋');
         if (ts > actor.stateUntil) {
-          actor.state = 'idle';
-          actor.stateUntil = ts + 1400 + Math.random() * 1400;
+          actor.state = currentGlobalPose === 'walk' ? 'idle' : 'stand';
           actor.greetText = null;
           setGreetingBubble(slotEl, null);
+          actor.stateUntil = ts + 1400 + Math.random() * 1200;
+          actor.nextWaveAt = ts + 5500 + (actor.idx % 4) * 1400 + Math.random() * 2500;
+          actor.lastPoseApplied = null;
+        }
+      } else if (currentGlobalPose === 'entrance' || actor.state === 'stand') {
+        slotEl.style.opacity = '1';
+        actor.state = 'stand';
+        actor.x *= Math.exp(-10 * dtSec);
+        if (Math.abs(actor.x) < 0.6) actor.x = 0;
+        actor.y += (laneY - actor.y) * Math.min(1, dtSec * 8);
+        desiredPose = 'idle';
+        setGreetingBubble(slotEl, null);
+        if (ts >= actor.nextWaveAt) {
+          actor.state = 'wave';
+          actor.greetText = '👋';
+          actor.stateUntil = ts + 1800;
+          actor.lastPoseApplied = null;
         }
       } else if (actor.state === 'idle') {
+        slotEl.style.opacity = '1';
         desiredPose = 'idle';
         setGreetingBubble(slotEl, null);
         if (ts > actor.stateUntil) {
@@ -219,7 +318,12 @@
           actor.state = 'walk';
         }
       } else {
-        // Waypoint walking ('enter' or 'walk') with real 4-direction V3 sprites
+        // Explicit 'walk' mode along floor lanes
+        if (!actor.spriteReady) {
+          applyActorDom(actor, slotEl, heroCharEl, actor.movePose, 0, true);
+          return;
+        }
+        slotEl.style.opacity = '1';
         const dx = actor.tx - actor.x;
         const dy = actor.ty - actor.y;
         const dist = Math.hypot(dx, dy);
@@ -227,22 +331,20 @@
         if (dist <= 3.5) {
           actor.x = actor.tx;
           actor.y = actor.ty;
-          const wasEntering = actor.state === 'enter';
-          if (wasEntering || Math.random() < 0.36) {
+          if (Math.random() < 0.36) {
             actor.state = 'wave';
             actor.greetText = '👋';
-            actor.stateUntil = ts + 1250;
+            actor.stateUntil = ts + 1500;
           } else {
             actor.state = 'idle';
             actor.stateUntil = ts + 2200 + Math.random() * 1600;
           }
           desiredPose = actor.state === 'wave' ? 'wave' : 'idle';
+          forceLoop = actor.state === 'wave';
         } else {
-          const step = Math.min(dist, actor.speed * dtSec);
-          const vx = (dx / dist) * step;
-          const vy = (dy / dist) * step;
-          actor.x += vx;
-          actor.y += vy;
+          const step = Math.min(dist, 96 * dtSec);
+          actor.x += (dx / dist) * step;
+          actor.y += (dy / dist) * step;
           if (Math.abs(dx) >= Math.abs(dy) * 1.15) {
             actor.facing = dx > 0 ? 1 : -1;
             actor.movePose = dx > 0 ? 'walkRight' : 'walkLeft';
@@ -250,6 +352,8 @@
             actor.movePose = dy > 0 ? 'walkForward' : 'walkBackward';
           }
           desiredPose = actor.movePose;
+          forceLoop = true;
+          bobY = -Math.abs(Math.sin((ts / 280) * Math.PI)) * 2.5;
           actor.dustTimer += dtSec;
           if (actor.dustTimer > 0.55 && fxCtx) {
             actor.dustTimer = 0;
@@ -260,7 +364,7 @@
         }
       }
 
-      applyActorDom(actor, slotEl, heroCharEl, desiredPose);
+      applyActorDom(actor, slotEl, heroCharEl, desiredPose, bobY, forceLoop);
     });
 
     if (fxCtx) {
@@ -281,38 +385,45 @@
     rafId = requestAnimationFrame(stepDirector);
   }
 
-  function syncArena(arena, players = [], pose = 'walk') {
+  function syncArena(arena, players = [], pose) {
     if (!arena) return;
     activeArena = arena;
-    currentGlobalPose = pose || 'walk';
+    currentGlobalPose = pose || currentGlobalPose || 'entrance';
     currentSlotCount = Array.isArray(players) ? players.length : 0;
     if (!currentSlotCount) { stop(); return; }
 
+    global.ScoreARMotionV3?.preloadCharacters?.(players, ['walkRight', 'walkLeft', 'wave', 'idle']);
     ensureDustCanvas(arena);
     const now = performance.now ? performance.now() : Date.now();
-    const maxX = getMaxWanderX(arena, currentSlotCount);
     const activeIdSet = new Set();
     let hasNewArrival = false;
+    let newBatchIdx = 0;
+    const hadExisting = actors.size > 0;
 
     players.forEach((p, idx) => {
       const pid = String(p.id || ('slot_' + idx));
       activeIdSet.add(pid);
-      const isNew = seenIds.size > 0 && !seenIds.has(pid);
-      if (isNew) hasNewArrival = true;
-      if (!actors.has(pid)) actors.set(pid, createActor(pid, idx, isNew, maxX));
-      else actors.get(pid).idx = idx;
+      const isNewActor = !actors.has(pid);
+      if (isNewActor) {
+        if (hadExisting && !seenIds.has(pid)) hasNewArrival = true;
+        actors.set(pid, createActor(pid, idx, players.length, arena, newBatchIdx++));
+      } else {
+        const existing = actors.get(pid);
+        existing.idx = idx;
+      }
       seenIds.add(pid);
     });
 
     Array.from(actors.keys()).forEach(k => { if (!activeIdSet.has(k)) actors.delete(k); });
 
-    // Existing heroes politely wave to welcome the newcomer — ZERO random jumping!
+    // Existing standing heroes politely wave to welcome newly joining heroes!
     if (hasNewArrival) {
       actors.forEach(a => {
         if (a.state !== 'enter') {
           a.state = 'wave';
           a.greetText = '👋';
-          a.stateUntil = now + 1350;
+          a.stateUntil = now + 1900;
+          a.lastPoseApplied = null;
         }
       });
     }
@@ -326,15 +437,30 @@
   }
 
   function setMode(pose) {
-    currentGlobalPose = pose || 'walk';
+    currentGlobalPose = pose || 'entrance';
     const now = performance.now ? performance.now() : Date.now();
     const maxX = getMaxWanderX(activeArena, currentSlotCount || 1);
-    actors.forEach(a => {
+    actors.forEach((a, _, map) => {
       a.lastPoseApplied = null;
+      a.lastLoopApplied = null;
       if (currentGlobalPose === 'walk') {
         pickNextWaypoint(a, maxX);
         a.state = 'walk';
         a.stateUntil = now + 2600;
+      } else if (currentGlobalPose === 'entrance') {
+        const arenaW = activeArena?.clientWidth || 1100;
+        const entryOffset = Math.min(230, Math.max(165, arenaW * 0.21));
+        const fromLeft = map.size <= 1 ? true : (a.idx < Math.ceil(map.size / 2));
+        a.x = fromLeft ? -entryOffset : entryOffset;
+        a.tx = 0;
+        a.movePose = fromLeft ? 'walkRight' : 'walkLeft';
+        a.facing = fromLeft ? 1 : -1;
+        a.enterAt = now + (a.idx % 6) * 200;
+        a.state = 'enter';
+      } else if (currentGlobalPose === 'wave') {
+        a.state = 'wave';
+        a.greetText = '👋';
+        a.stateUntil = now + 60000;
       }
     });
   }

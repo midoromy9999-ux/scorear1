@@ -36,6 +36,21 @@
     });
   }
 
+  function makeMysteryPlaqueTex(bg1, bg2, borderHex, titleCol, slot) {
+    return makeCanvasTex(768, 256, (g, w, h) => {
+      const bg = g.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, bg1); bg.addColorStop(1, bg2);
+      g.fillStyle = bg; g.fillRect(0, 0, w, h);
+      g.strokeStyle = borderHex; g.lineWidth = 10; g.strokeRect(8, 8, w - 16, h - 16);
+      g.strokeStyle = 'rgba(255,255,255,0.22)'; g.lineWidth = 2.5; g.strokeRect(22, 22, w - 44, h - 44);
+      g.direction = 'rtl'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = titleCol; g.font = '900 44px Cairo, Tajawal, sans-serif';
+      g.fillText(slot === 1 ? '❓ البطل الأول' : (slot === 2 ? '❓ المركز الثاني' : '❓ المركز الثالث'), w / 2, 96);
+      g.fillStyle = '#e2e8f0'; g.font = '800 30px Cairo, Tajawal, sans-serif';
+      g.fillText('في انتظار لحظة التكريم...', w / 2, 182);
+    });
+  }
+
   /* ═══════════════════════════════════════════════════════════════════════
    *  WORLD 3: TREASURE ISLAND (جزيرة الكنز 3D)
    * ═══════════════════════════════════════════════════════════════════════ */
@@ -85,6 +100,7 @@
           2: { x: 2.38, z: 0.24, r: 1.02, h: 0.56, topY: 0.74, accent: '#fde68a' },
           3: { x: -2.38, z: 0.24, r: 0.96, h: 0.38, topY: 0.56, accent: '#fdba74' }
         };
+        const plaques = {};
         [1, 2, 3].forEach(slot => {
           const pl = top3[slot - 1];
           if (!pl) return;
@@ -96,10 +112,13 @@
             const band = new THREE.Mesh(track(new THREE.TorusGeometry(t.r + 0.03, 0.034, 10, 8)), brassMat);
             band.rotation.x = Math.PI / 2; band.rotation.z = Math.PI / 8; band.position.y = ry; grp.add(band);
           });
+          const mTex = track(makeMysteryPlaqueTex('#3b1c08', '#1d0d04', t.accent, t.accent, slot));
           const pTex = track(makePlaqueTex('#3b1c08', '#1d0d04', t.accent, t.accent, '#fffbeb', '#fde047',
             slot === 1 ? '🥇 قبطان الكنز #1' : (slot === 2 ? '🥈 المركز الثاني' : `🥉 المركز #${pl._rank}`), pl.name, pl.score));
-          const plaque = new THREE.Mesh(track(new THREE.CylinderGeometry(t.r + 0.05, t.r + 0.07, Math.max(0.36, t.h * 0.72), 24, 1, true, -0.62, 1.24)), track(new THREE.MeshBasicMaterial({ map: pTex })));
+          const pMat = track(new THREE.MeshBasicMaterial({ map: mTex }));
+          const plaque = new THREE.Mesh(track(new THREE.CylinderGeometry(t.r + 0.05, t.r + 0.07, Math.max(0.36, t.h * 0.72), 24, 1, true, -0.62, 1.24)), pMat);
           plaque.position.y = t.h * 0.5; grp.add(plaque);
+          plaques[slot] = { mat: pMat, revealedTex: pTex };
           scene.add(grp);
         });
 
@@ -151,25 +170,29 @@
         const chestBeam = Engine.createVolumetricCone(0xffd76b, 6.2, 0.42, 1.55, 0);
         chestBeam.mesh.position.set(0, 6.4, 0); scene.add(chestBeam.mesh);
 
-        return { tiers, lidPivots, chestLights, chestBeam, coins, compass, cRing, chestOpen: false, lidAngle: 0, compScale: 0 };
+        return {
+          tiers, lidPivots, chestLights, chestBeam, coins, compass, cRing, chestOpen: false, lidAngle: 0, compScale: 0,
+          revealPlaque: s => { const p = plaques[s]; if (p && p.mat && p.revealedTex) { p.mat.map = p.revealedTex; p.mat.needsUpdate = true; } }
+        };
       },
 
       getHeroPath(slot, t) {
         if (slot === 3) {
           return [
-            { from: [-5.1, 0.02, 1.9], to: [t.x, 0.02, 1.75], durMs: 920, move: 'runRight', jumpH: 0 },
-            { from: [t.x, 0.02, 1.75], to: [t.x, t.topY, t.z], durMs: 540, move: 'jump', jumpH: 0.56 }
+            { from: [-5.2, 0.02, 1.95], to: [t.x, 0.02, 1.75], durMs: 2050, move: 'runRight', loop: true, jumpH: 0 },
+            { from: [t.x, 0.02, 1.75], to: [t.x, t.topY, t.z], durMs: 780, move: 'jump', loop: false, jumpH: 0.58 }
           ];
         }
         if (slot === 2) {
           return [
-            { from: [5.1, 0.02, 1.9], to: [t.x, 0.02, 1.75], durMs: 920, move: 'runLeft', jumpH: 0 },
-            { from: [t.x, 0.02, 1.75], to: [t.x, t.topY, t.z], durMs: 540, move: 'jump', jumpH: 0.58 }
+            { from: [5.2, 0.02, 1.95], to: [t.x, 0.02, 1.75], durMs: 2050, move: 'runLeft', loop: true, jumpH: 0 },
+            { from: [t.x, 0.02, 1.75], to: [t.x, t.topY, t.z], durMs: 780, move: 'jump', loop: false, jumpH: 0.62 }
           ];
         }
         return [
-          { from: [0, 0.02, -4.5], to: [0, 0.02, -1.68], durMs: 1200, move: 'walkForward', jumpH: 0 },
-          { from: [0, 0.02, -1.68], to: [0, t.topY, t.z], durMs: 600, move: 'jump', jumpH: 0.72 }
+          { from: [-5.2, 0.02, 2.38], to: [0, 0.02, 2.15], durMs: 2300, move: 'walkRight', loop: true, jumpH: 0 },
+          { from: [0, 0.02, 2.15], to: [0, 0.02, 2.15], durMs: 900, move: 'wave', loop: true, jumpH: 0 },
+          { from: [0, 0.02, 2.15], to: [0, t.topY, t.z], durMs: 880, move: 'jump', loop: false, jumpH: 0.78 }
         ];
       },
 
@@ -292,6 +315,7 @@
           2: { x: 2.34, z: 0.26, r: 1.02, h: 0.56, topY: 0.74, accent: '#34d399' },
           3: { x: -2.34, z: 0.26, r: 0.96, h: 0.38, topY: 0.56, accent: '#fbbf24' }
         };
+        const plaques = {};
         [1, 2, 3].forEach(slot => {
           const pl = top3[slot - 1];
           if (!pl) return;
@@ -301,10 +325,13 @@
           body.position.y = t.h * 0.5; grp.add(body);
           const rim = new THREE.Mesh(track(new THREE.TorusGeometry(t.r + 0.02, 0.036, 12, 44)), brassMat);
           rim.rotation.x = Math.PI / 2; rim.position.y = t.h; grp.add(rim);
+          const mTex = track(makeMysteryPlaqueTex('#063628', '#041f18', t.accent, t.accent, slot));
           const pTex = track(makePlaqueTex('#063628', '#041f18', t.accent, t.accent, '#ffffff', '#fef08a',
             slot === 1 ? '🥇 بطل الواحة #1' : (slot === 2 ? '🥈 المركز الثاني' : `🥉 المركز #${pl._rank}`), pl.name, pl.score));
-          const pMesh = new THREE.Mesh(track(new THREE.CylinderGeometry(t.r + 0.04, t.r + 0.05, Math.max(0.34, t.h * 0.72), 24, 1, true, -0.66, 1.32)), track(new THREE.MeshBasicMaterial({ map: pTex })));
+          const pMat = track(new THREE.MeshBasicMaterial({ map: mTex }));
+          const pMesh = new THREE.Mesh(track(new THREE.CylinderGeometry(t.r + 0.04, t.r + 0.05, Math.max(0.34, t.h * 0.72), 24, 1, true, -0.66, 1.32)), pMat);
           pMesh.position.y = t.h * 0.5; grp.add(pMesh);
+          plaques[slot] = { mat: pMat, revealedTex: pTex };
           scene.add(grp);
         });
 
@@ -354,7 +381,10 @@
         grandLantern.add(new THREE.PointLight(0xffcb47, 2.5, 9));
         grandLantern.position.set(0, 2.0, 0); grandLantern.visible = false; scene.add(grandLantern);
 
-        return { tiers, waterMat, skyLanterns, grandLantern, lAura, riseProg: 0 };
+        return {
+          tiers, waterMat, skyLanterns, grandLantern, lAura, riseProg: 0,
+          revealPlaque: s => { const p = plaques[s]; if (p && p.mat && p.revealedTex) { p.mat.map = p.revealedTex; p.mat.needsUpdate = true; } }
+        };
       },
 
       onCrown(ctx, withFx) {
@@ -440,6 +470,7 @@
           2: { x: 2.34, z: 0.26, r: 1.02, h: 0.56, topY: 0.72, accent: '#c084fc' },
           3: { x: -2.34, z: 0.26, r: 0.96, h: 0.38, topY: 0.54, accent: '#38bdf8' }
         };
+        const plaques = {};
         [1, 2, 3].forEach(slot => {
           const pl = top3[slot - 1];
           if (!pl) return;
@@ -449,10 +480,13 @@
           body.position.y = t.h * 0.5; grp.add(body);
           const trim = new THREE.Mesh(track(new THREE.TorusGeometry(t.r + 0.03, 0.036, 12, 40)), goldMat);
           trim.rotation.x = Math.PI / 2; trim.position.y = t.h; grp.add(trim);
+          const mTex = track(makeMysteryPlaqueTex('#2b0d59', '#160633', t.accent, t.accent, slot));
           const pTex = track(makePlaqueTex('#2b0d59', '#160633', t.accent, t.accent, '#ffffff', '#fde047',
             slot === 1 ? '🥇 بطل السحر #1' : (slot === 2 ? '🥈 المركز الثاني' : `🥉 المركز #${pl._rank}`), pl.name, pl.score));
-          const pMesh = new THREE.Mesh(track(new THREE.CylinderGeometry(t.r + 0.04, t.r + 0.05, Math.max(0.34, t.h * 0.72), 24, 1, true, -0.66, 1.32)), track(new THREE.MeshBasicMaterial({ map: pTex })));
+          const pMat = track(new THREE.MeshBasicMaterial({ map: mTex }));
+          const pMesh = new THREE.Mesh(track(new THREE.CylinderGeometry(t.r + 0.04, t.r + 0.05, Math.max(0.34, t.h * 0.72), 24, 1, true, -0.66, 1.32)), pMat);
           pMesh.position.y = t.h * 0.5; grp.add(pMesh);
+          plaques[slot] = { mat: pMat, revealedTex: pTex };
           scene.add(grp);
         });
 
@@ -484,14 +518,22 @@
         crown.add(new THREE.PointLight(0xe879f9, 2.4, 9));
         crown.position.set(0, 3.52, 0); crown.visible = false; scene.add(crown);
 
-        return { tiers, runeA, runeB, shards, crown, halo, forgeProg: -1 };
+        return {
+          tiers, runeA, runeB, shards, crown, halo, forgeProg: -1,
+          revealPlaque: s => { const p = plaques[s]; if (p && p.mat && p.revealedTex) { p.mat.map = p.revealedTex; p.mat.needsUpdate = true; } }
+        };
       },
 
       getHeroPath(slot, t) {
-        const sx = slot === 3 ? -4.1 : (slot === 2 ? 4.1 : 0);
-        const sz = slot === 1 ? -2.8 : -1.5;
+        if (slot === 3) {
+          return [{ from: [-4.4, 5.2, 0.7], to: [t.x, t.topY, t.z], durMs: 2350, move: 'fly', loop: true, arcY: 0.55, jumpH: 0 }];
+        }
+        if (slot === 2) {
+          return [{ from: [4.4, 5.2, 0.7], to: [t.x, t.topY, t.z], durMs: 2350, move: 'fly', loop: true, arcY: 0.55, jumpH: 0 }];
+        }
         return [
-          { from: [sx, 5.1, sz], to: [t.x, t.topY, t.z], durMs: 1320, move: 'fly', arcY: 0.5, jumpH: 0 }
+          { from: [-3.8, 5.6, 1.8], to: [0, 2.5, 1.45], durMs: 1750, move: 'fly', loop: true, arcY: 0.45, jumpH: 0 },
+          { from: [0, 2.5, 1.45], to: [0, t.topY, t.z], durMs: 1250, move: 'fly', loop: true, arcY: 0.25, jumpH: 0 }
         ];
       },
 

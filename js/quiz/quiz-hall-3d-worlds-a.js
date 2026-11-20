@@ -99,6 +99,7 @@
           3: { x: -2.48, z: 0.22, w: 1.95, d: 1.68, h: 0.52, topY: 0.52, accent: '#fb923c', hex: 0xfb923c }
         };
         const hydraulicBlocks = {};
+        const plaques = {};
         [1, 2, 3].forEach(slot => {
           const pl = top3[slot - 1];
           if (!pl) return;
@@ -113,7 +114,16 @@
           const ledStrip = new THREE.Mesh(track(new THREE.BoxGeometry(t.w + 0.12, 0.05, t.d + 0.12)), track(new THREE.MeshBasicMaterial({ color: t.hex })));
           ledStrip.position.y = t.h - 0.08; grp.add(ledStrip);
 
-          // Glowing LED Digital Scoreboard Front Panel!
+          // Glowing LED Digital Scoreboard Front Panel (mystery until revealed!)
+          const mysteryTex = track(makeCanvasTex(768, 256, (g, w, h) => {
+            g.fillStyle = '#061028'; g.fillRect(0, 0, w, h);
+            g.strokeStyle = t.accent; g.lineWidth = 10; g.strokeRect(8, 8, w - 16, h - 16);
+            g.direction = 'rtl'; g.textAlign = 'center'; g.textBaseline = 'middle';
+            g.fillStyle = t.accent; g.font = '900 44px Cairo, sans-serif';
+            g.fillText(slot === 1 ? '❓ البطل الأول' : (slot === 2 ? '❓ المركز الثاني' : '❓ المركز الثالث'), w / 2, 96);
+            g.fillStyle = '#cbd5e1'; g.font = '800 32px Cairo, sans-serif';
+            g.fillText('في انتظار لحظة التكريم...', w / 2, 182);
+          }));
           const ledTex = track(makeCanvasTex(768, 256, (g, w, h) => {
             g.fillStyle = '#061028'; g.fillRect(0, 0, w, h);
             g.strokeStyle = t.accent; g.lineWidth = 10; g.strokeRect(8, 8, w - 16, h - 16);
@@ -125,8 +135,10 @@
             g.fillStyle = '#fef08a'; g.font = '900 38px Montserrat, Cairo, sans-serif';
             g.fillText(`${pl.score || 0} نقطة`, w / 2, 206);
           }));
-          const front = new THREE.Mesh(track(new THREE.PlaneGeometry(t.w * 0.9, Math.max(0.36, t.h * 0.72))), track(new THREE.MeshBasicMaterial({ map: ledTex })));
+          const frontMat = track(new THREE.MeshBasicMaterial({ map: mysteryTex }));
+          const front = new THREE.Mesh(track(new THREE.PlaneGeometry(t.w * 0.9, Math.max(0.36, t.h * 0.72))), frontMat);
           front.position.set(0, t.h * 0.46, t.d * 0.5 + 0.02); grp.add(front);
+          plaques[slot] = { mat: frontMat, revealedTex: ledTex };
 
           scene.add(grp);
           hydraulicBlocks[slot] = { grp, targetY: 0, h: t.h, risen: false };
@@ -169,25 +181,29 @@
           return { mat, phase: Math.random() * 60, rate: 2.5 + Math.random() * 4.5 };
         });
 
-        return { tiers, hydraulicBlocks, cup, cupHalo, floodL, floodR, flashes, cupRise: 0 };
+        return {
+          tiers, hydraulicBlocks, cup, cupHalo, floodL, floodR, flashes, cupRise: 0,
+          revealPlaque: s => { const p = plaques[s]; if (p && p.mat && p.revealedTex) { p.mat.map = p.revealedTex; p.mat.needsUpdate = true; } }
+        };
       },
 
       getHeroPath(slot, t) {
         if (slot === 3) {
           return [
-            { from: [-5.5, 0.02, 2.1], to: [t.x, 0.02, 1.72], durMs: 920, move: 'runRight', curveZ: 0.45, jumpH: 0 },
-            { from: [t.x, 0.02, 1.72], to: [t.x, t.topY, t.z], durMs: 540, move: 'jump', jumpH: 0.56 }
+            { from: [-5.6, 0.02, 2.25], to: [t.x, 0.02, 1.78], durMs: 2050, move: 'runRight', loop: true, curveZ: 0.45, jumpH: 0 },
+            { from: [t.x, 0.02, 1.78], to: [t.x, t.topY, t.z], durMs: 780, move: 'jump', loop: false, jumpH: 0.58 }
           ];
         }
         if (slot === 2) {
           return [
-            { from: [5.5, 0.02, 2.1], to: [t.x, 0.02, 1.72], durMs: 920, move: 'runLeft', curveZ: 0.45, jumpH: 0 },
-            { from: [t.x, 0.02, 1.72], to: [t.x, t.topY, t.z], durMs: 540, move: 'jump', jumpH: 0.58 }
+            { from: [5.6, 0.02, 2.25], to: [t.x, 0.02, 1.78], durMs: 2050, move: 'runLeft', loop: true, curveZ: 0.45, jumpH: 0 },
+            { from: [t.x, 0.02, 1.78], to: [t.x, t.topY, t.z], durMs: 780, move: 'jump', loop: false, jumpH: 0.62 }
           ];
         }
         return [
-          { from: [-5.4, 0.02, -2.0], to: [0, 0.02, -1.75], durMs: 1120, move: 'runRight', curveZ: -0.5, jumpH: 0 },
-          { from: [0, 0.02, -1.75], to: [0, t.topY, 0], durMs: 600, move: 'jump', jumpH: 0.72 }
+          { from: [-5.6, 0.02, 2.48], to: [0, 0.02, 2.15], durMs: 2250, move: 'runRight', loop: true, curveZ: 0.42, jumpH: 0 },
+          { from: [0, 0.02, 2.15], to: [0, 0.02, 2.15], durMs: 900, move: 'wave', loop: true, jumpH: 0 },
+          { from: [0, 0.02, 2.15], to: [0, t.topY, t.z], durMs: 880, move: 'jump', loop: false, jumpH: 0.78 }
         ];
       },
 
@@ -291,7 +307,7 @@
           2: { x: 2.45, z: 0.30, r: 1.08, topY: 0.74, accent: '#38bdf8', hex: 0x38bdf8 },
           3: { x: -2.45, z: 0.30, r: 1.02, topY: 0.56, accent: '#67e8f9', hex: 0x67e8f9 }
         };
-        const pads = [];
+        const pads = [], plaques = {};
         [1, 2, 3].forEach(slot => {
           const pl = top3[slot - 1];
           if (!pl) return;
@@ -308,7 +324,17 @@
           const thrust = new THREE.Mesh(track(new THREE.ConeGeometry(t.r * 0.58, t.topY * 0.85, 6, 1, true)), track(new THREE.MeshBasicMaterial({ color: t.hex, transparent: true, opacity: 0.35, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false })));
           thrust.position.y = -t.topY * 0.52; grp.add(thrust);
 
-          // Floating Translucent Cyan Hologram Data Screen in front of the Hex Pad!
+          // Floating Translucent Cyan Hologram Data Screen (mystery until revealed!)
+          const mysteryHoloTex = track(makeCanvasTex(768, 256, (g, w, h) => {
+            g.clearRect(0, 0, w, h);
+            g.fillStyle = 'rgba(4,24,52,0.72)'; g.fillRect(10, 10, w - 20, h - 20);
+            g.strokeStyle = '#22d3ee'; g.lineWidth = 6; g.strokeRect(10, 10, w - 20, h - 20);
+            g.direction = 'rtl'; g.textAlign = 'center'; g.textBaseline = 'middle';
+            g.fillStyle = t.accent; g.font = '900 42px Cairo, sans-serif';
+            g.fillText(slot === 1 ? '❓ بطل المدار #1' : (slot === 2 ? '❓ المدار #2' : '❓ المدار #3'), w / 2, 96);
+            g.fillStyle = '#bae6fd'; g.font = '800 32px Cairo, sans-serif';
+            g.fillText('في انتظار الإرساء...', w / 2, 182);
+          }));
           const holoTex = track(makeCanvasTex(768, 256, (g, w, h) => {
             g.clearRect(0, 0, w, h);
             g.fillStyle = 'rgba(4,24,52,0.72)'; g.fillRect(10, 10, w - 20, h - 20);
@@ -327,8 +353,10 @@
             g.fillStyle = '#67e8f9'; g.font = '900 38px Montserrat, Cairo, sans-serif';
             g.fillText(`${pl.score || 0} نقطة`, w / 2, 206);
           }));
-          const holo = new THREE.Mesh(track(new THREE.PlaneGeometry(t.r * 1.62, 0.56)), track(new THREE.MeshBasicMaterial({ map: holoTex, transparent: true, side: THREE.DoubleSide })));
+          const holoMat = track(new THREE.MeshBasicMaterial({ map: mysteryHoloTex, transparent: true, side: THREE.DoubleSide }));
+          const holo = new THREE.Mesh(track(new THREE.PlaneGeometry(t.r * 1.62, 0.56)), holoMat);
           holo.position.set(0, -0.34, t.r * 0.92); grp.add(holo);
+          plaques[slot] = { mat: holoMat, revealedTex: holoTex };
 
           scene.add(grp);
           pads.push({ grp, baseY: t.topY, phase: slot * 1.7 });
@@ -360,14 +388,22 @@
         const warpBeam = Engine.createVolumetricCone(0x22d3ee, 7.6, 0.35, 1.85, 0);
         warpBeam.mesh.position.set(0, 7.4, 0); scene.add(warpBeam.mesh);
 
-        return { tiers, dockRings, pads, orb, planet, ringA, ringB, moonPivot, warpBeam, orbScale: 0 };
+        return {
+          tiers, dockRings, pads, orb, planet, ringA, ringB, moonPivot, warpBeam, orbScale: 0,
+          revealPlaque: s => { const p = plaques[s]; if (p && p.mat && p.revealedTex) { p.mat.map = p.revealedTex; p.mat.needsUpdate = true; } }
+        };
       },
 
       getHeroPath(slot, t) {
-        const sx = slot === 3 ? -3.6 : (slot === 2 ? 3.6 : 0);
-        const sz = slot === 1 ? -2.2 : -1.2;
+        if (slot === 3) {
+          return [{ from: [-4.4, 5.2, 0.7], to: [t.x, t.topY, t.z], durMs: 2350, move: 'fly', loop: true, arcY: 0.55, jumpH: 0 }];
+        }
+        if (slot === 2) {
+          return [{ from: [4.4, 5.2, 0.7], to: [t.x, t.topY, t.z], durMs: 2350, move: 'fly', loop: true, arcY: 0.55, jumpH: 0 }];
+        }
         return [
-          { from: [sx, 5.2, sz], to: [t.x, t.topY, t.z], durMs: 1300, move: 'fly', arcY: 0.45, jumpH: 0 }
+          { from: [-3.8, 5.6, 1.8], to: [0, 2.5, 1.45], durMs: 1750, move: 'fly', loop: true, arcY: 0.45, jumpH: 0 },
+          { from: [0, 2.5, 1.45], to: [0, t.topY, t.z], durMs: 1250, move: 'fly', loop: true, arcY: 0.25, jumpH: 0 }
         ];
       },
 

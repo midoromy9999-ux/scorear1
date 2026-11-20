@@ -25,7 +25,31 @@
     return cache.get(url);
   }
 
-  function attach(canvas, { characterId = 1, assetBase = defaultBase } = {}) {
+  function preload(
+    characterIds = [],
+    moveNames = ['walkRight', 'walkLeft', 'runRight', 'runLeft', 'fly', 'jump', 'land', 'wave', 'clap', 'win', 'idle'],
+    assetBase = defaultBase
+  ) {
+    const base = new URL(assetBase, defaultBase);
+    const urls = new Set();
+    const list = Array.isArray(characterIds) ? characterIds : [characterIds];
+    for (const raw of list) {
+      const idNum = Math.max(1, Math.min(20, parseInt(String(raw || '1').replace(/\D/g, '') || '1', 10) || 1));
+      const ch = data.characters['char_' + String(idNum).padStart(2, '0')];
+      if (!ch) continue;
+      for (const mvName of moveNames) {
+        const mv = ch.motions?.[mvName];
+        if (!mv?.frames) continue;
+        for (const fr of mv.frames) {
+          const file = data.images?.[fr.image]?.file;
+          if (file) urls.add(file);
+        }
+      }
+    }
+    return Promise.allSettled(Array.from(urls).map(file => load(file, base)));
+  }
+
+  function attach(canvas, { characterId = 1, assetBase = defaultBase, initialMotion = 'idle', loop } = {}) {
     const base = new URL(assetBase, defaultBase);
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Canvas 2D is unavailable.');
@@ -125,17 +149,18 @@
       }
     }
 
-    function setCharacter(id) {
+    function setCharacter(id, motionName = 'idle', motionLoop) {
       if (destroyed) return Promise.resolve(false);
       const next = data.characters['char_' + String(id).padStart(2, '0')];
       if (!next) throw new RangeError('Unknown character: ' + id);
       character = next;
       canvas.setAttribute('aria-label', next.name);
       context.clearRect(0, 0, canvas.width, canvas.height);
-      return play('idle');
+      const targetMotion = Object.hasOwn(next.motions, motionName) ? motionName : 'idle';
+      return play(targetMotion, motionLoop !== undefined ? { loop: motionLoop } : undefined);
     }
 
-    const ready = setCharacter(characterId);
+    const ready = setCharacter(characterId, initialMotion, loop);
     return Object.freeze({
       ready,
       setCharacter,
@@ -150,6 +175,6 @@
       get character() { return character.name; }
     });
   }
-  global.ScorearSpritePlayer = Object.freeze({ attach, characters: publicCharacters, motions: names });
+  global.ScorearSpritePlayer = Object.freeze({ attach, preload, characters: publicCharacters, motions: names });
 })(window);
 

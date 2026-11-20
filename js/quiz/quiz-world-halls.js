@@ -195,35 +195,36 @@
    */
   function getSlotWaypoints(slotNum, pathStyle) {
     if (pathStyle === 'aerial') {
-      const sx = slotNum === 2 ? 150 : (slotNum === 3 ? -150 : 0);
-      const sy = slotNum === 1 ? -145 : -120;
+      const sx = slotNum === 2 ? 150 : (slotNum === 3 ? -150 : -110);
+      const sy = slotNum === 1 ? -150 : -120;
       return [
-        { from: [sx, sy, 0.62], to: [0, 0, 1.0], dur: 1120, move: 'fly', arcY: -26, loop: true },
-        { from: [0, 0, 1.0], to: [0, 0, 1.0], dur: 360, move: 'land', loop: false }
+        { from: [sx, sy, 0.62], to: [0, 0, 1.0], dur: 2150, move: 'fly', arcY: -26, loop: true },
+        { from: [0, 0, 1.0], to: [0, 0, 1.0], dur: 400, move: 'land', loop: false }
       ];
     }
     if (pathStyle === 'cosmic' && slotNum === 1) {
       return [
-        { from: [-95, -138, 0.64], to: [0, 0, 1.0], dur: 1180, move: 'fly', arcY: -22, loop: true },
-        { from: [0, 0, 1.0], to: [0, 0, 1.0], dur: 360, move: 'land', loop: false }
+        { from: [-105, -142, 0.64], to: [0, 0, 1.0], dur: 2250, move: 'fly', arcY: -22, loop: true },
+        { from: [0, 0, 1.0], to: [0, 0, 1.0], dur: 400, move: 'land', loop: false }
       ];
     }
     if (pathStyle === 'track') {
       if (slotNum === 3) {
         return [
-          { from: [-225, 34, 0.88], to: [-14, 22, 0.96], dur: 940, move: 'runRight', arcY: 14, loop: true },
-          { from: [-14, 22, 0.96], to: [0, 0, 1.0], dur: 520, move: 'jump', loop: false }
+          { from: [-225, 34, 0.88], to: [-14, 22, 0.96], dur: 2100, move: 'runRight', arcY: 14, loop: true },
+          { from: [-14, 22, 0.96], to: [0, 0, 1.0], dur: 780, move: 'jump', loop: false }
         ];
       }
       if (slotNum === 2) {
         return [
-          { from: [225, 34, 0.88], to: [14, 24, 0.96], dur: 940, move: 'runLeft', arcY: 14, loop: true },
-          { from: [14, 24, 0.96], to: [0, 0, 1.0], dur: 520, move: 'jump', loop: false }
+          { from: [225, 34, 0.88], to: [14, 24, 0.96], dur: 2100, move: 'runLeft', arcY: 14, loop: true },
+          { from: [14, 24, 0.96], to: [0, 0, 1.0], dur: 780, move: 'jump', loop: false }
         ];
       }
       return [
-        { from: [-210, 42, 0.84], to: [0, 28, 0.96], dur: 1020, move: 'runRight', arcY: 16, loop: true },
-        { from: [0, 28, 0.96], to: [0, 0, 1.0], dur: 540, move: 'jump', loop: false }
+        { from: [-220, 42, 0.88], to: [0, 28, 0.97], dur: 2250, move: 'runRight', arcY: 16, loop: true },
+        { from: [0, 28, 0.97], to: [0, 28, 0.97], dur: 900, move: 'wave', loop: true },
+        { from: [0, 28, 0.97], to: [0, 0, 1.0], dur: 820, move: 'jump', loop: false }
       ];
     }
     if (pathStyle === 'dock' && slotNum !== 1) {
@@ -231,28 +232,27 @@
       const sx = fromLeft ? -220 : 220;
       const edgeX = fromLeft ? -18 : 18;
       return [
-        { from: [sx, 26, 0.90], to: [fromLeft ? -72 : 72, 24, 0.94], dur: 660, move: fromLeft ? 'runRight' : 'runLeft', loop: true },
-        { from: [fromLeft ? -72 : 72, 24, 0.94], to: [edgeX, 22, 0.97], dur: 360, move: fromLeft ? 'walkRight' : 'walkLeft', loop: true },
-        { from: [edgeX, 22, 0.97], to: [0, 0, 1.0], dur: 520, move: 'jump', loop: false }
+        { from: [sx, 26, 0.90], to: [fromLeft ? -72 : 72, 24, 0.94], dur: 1450, move: fromLeft ? 'runRight' : 'runLeft', loop: true },
+        { from: [fromLeft ? -72 : 72, 24, 0.94], to: [edgeX, 22, 0.97], dur: 750, move: fromLeft ? 'walkRight' : 'walkLeft', loop: true },
+        { from: [edgeX, 22, 0.97], to: [0, 0, 1.0], dur: 780, move: 'jump', loop: false }
       ];
     }
-    // Corridor / terrace / cosmic side lanes
     if (slotNum === 3) {
       return [
-        { from: [-210, 24, 0.89], to: [-12, 20, 0.96], dur: 980, move: 'walkRight', loop: true },
-        { from: [-12, 20, 0.96], to: [0, 0, 1.0], dur: 520, move: 'jump', loop: false }
+        { from: [-210, 24, 0.89], to: [-12, 20, 0.96], dur: 2100, move: 'walkRight', loop: true },
+        { from: [-12, 20, 0.96], to: [0, 0, 1.0], dur: 780, move: 'jump', loop: false }
       ];
     }
     if (slotNum === 2) {
       return [
-        { from: [210, 26, 0.89], to: [12, 22, 0.96], dur: 980, move: 'walkLeft', loop: true },
-        { from: [12, 22, 0.96], to: [0, 0, 1.0], dur: 520, move: 'jump', loop: false }
+        { from: [210, 26, 0.89], to: [12, 22, 0.96], dur: 2100, move: 'walkLeft', loop: true },
+        { from: [12, 22, 0.96], to: [0, 0, 1.0], dur: 780, move: 'jump', loop: false }
       ];
     }
-    // Slot #1 Center: emerges forward through arch/promenade/dock with depth scaling -> single step-up
     return [
-      { from: [0, -34, 0.58], to: [0, 30, 0.96], dur: 1120, move: 'walkForward', loop: true },
-      { from: [0, 30, 0.96], to: [0, 0, 1.0], dur: 540, move: 'jump', loop: false }
+      { from: [-180, 32, 0.94], to: [0, 26, 0.98], dur: 2250, move: 'walkRight', loop: true },
+      { from: [0, 26, 0.98], to: [0, 26, 0.98], dur: 900, move: 'wave', loop: true },
+      { from: [0, 26, 0.98], to: [0, 0, 1.0], dur: 800, move: 'jump', loop: false }
     ];
   }
 
@@ -261,47 +261,61 @@
     if (!col || !player) return;
     const segs = getSlotWaypoints(slotNum, cfg.pathStyle);
     let segIdx = 0;
-    let segStart = performance.now();
     col.classList.add('is-revealed');
     col.style.opacity = '0';
-    ensureSlotSprite(slotNum, player, segs[0].move, segs[0].loop);
+    const inst = ensureSlotSprite(slotNum, player, segs[0].move, segs[0].loop);
     sfx(slotNum === 1 ? cfg.sfx : 'pop');
 
-    let myRaf = null;
-    function step(now) {
-      if (isSettled || !col.isConnected) {
-        if (myRaf) pathRafs.delete(myRaf);
-        return;
-      }
-      const seg = segs[segIdx];
-      const t = Math.min(1, (now - segStart) / seg.dur);
-      const ease = seg.move === 'jump' ? (1 - Math.pow(1 - t, 2)) : t;
-      const x = seg.from[0] + (seg.to[0] - seg.from[0]) * ease;
-      const y = seg.from[1] + (seg.to[1] - seg.from[1]) * ease + (seg.arcY ? Math.sin(t * Math.PI) * seg.arcY : 0);
-      const sc = seg.from[2] + (seg.to[2] - seg.from[2]) * ease;
-
-      col.style.opacity = segIdx === 0 ? String(Math.min(1, t * 4)) : '1';
-      col.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) scale(${sc.toFixed(3)})`;
-
-      if (t >= 1) {
-        segIdx++;
-        if (segIdx < segs.length) {
-          segStart = now;
-          const next = segs[segIdx];
-          ensureSlotSprite(slotNum, player, next.move, next.loop);
-        } else {
-          col.style.opacity = '1';
-          col.style.transform = 'translate3d(0, 0, 0) scale(1)';
-          ensureSlotSprite(slotNum, player, 'idle', true);
+    const readyP = inst?.whenReady?.() || inst?.ready || Promise.resolve();
+    Promise.race([readyP, new Promise(r => schedule(r, 1200))]).then(() => {
+      if (isSettled || !col.isConnected) return;
+      let lastNow = null;
+      let segElapsed = 0;
+      let myRaf = null;
+      function step(now) {
+        if (isSettled || !col.isConnected) {
           if (myRaf) pathRafs.delete(myRaf);
           return;
         }
+        if (lastNow === null) lastNow = now;
+        segElapsed += Math.min(350, Math.max(0, now - lastNow));
+        lastNow = now;
+        const seg = segs[segIdx];
+        const t = Math.min(1, segElapsed / seg.dur);
+        const ease = seg.move === 'jump' ? (1 - Math.pow(1 - t, 2)) : t;
+        const x = seg.from[0] + (seg.to[0] - seg.from[0]) * ease;
+        const y = seg.from[1] + (seg.to[1] - seg.from[1]) * ease + (seg.arcY ? Math.sin(t * Math.PI) * seg.arcY : 0);
+        const sc = seg.from[2] + (seg.to[2] - seg.from[2]) * ease;
+
+        col.style.opacity = segIdx === 0 ? String(Math.min(1, t * 4)) : '1';
+        col.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) scale(${sc.toFixed(3)})`;
+
+        if (t >= 1) {
+          segIdx++;
+          if (segIdx < segs.length) {
+            segElapsed = 0;
+            const next = segs[segIdx];
+            ensureSlotSprite(slotNum, player, next.move, next.loop);
+          } else {
+            col.style.opacity = '1';
+            col.style.transform = 'translate3d(0, 0, 0) scale(1)';
+            if (slotNum === 1) {
+              ensureSlotSprite(slotNum, player, 'win', true);
+              schedule(() => { if (!isSettled) crownNow(activeRanked.slice(0, 3), cfg, true); }, 1400);
+            } else {
+              ensureSlotSprite(slotNum, player, 'wave', true);
+              schedule(() => { if (!isSettled) ensureSlotSprite(slotNum, player, 'clap', true); }, 1150);
+            }
+            if (myRaf) pathRafs.delete(myRaf);
+            return;
+          }
+        }
+        myRaf = requestAnimationFrame(step);
+        pathRafs.add(myRaf);
       }
       myRaf = requestAnimationFrame(step);
       pathRafs.add(myRaf);
-    }
-    myRaf = requestAnimationFrame(step);
-    pathRafs.add(myRaf);
+    });
   }
 
   function revealSlot(slotNum, top3, cfg, immediate = false) {
@@ -349,6 +363,10 @@
       ensureSlotSprite(slotNum, p, idx === 0 ? 'win' : 'clap', true);
     });
 
+    const dirBar = document.getElementById('scHallDirectorBar');
+    if (dirBar) dirBar.style.display = 'none';
+    const startBtn = document.getElementById('scHallStartBtn');
+    if (startBtn) startBtn.disabled = false;
     const exp = document.getElementById('scHallActions');
     if (exp) exp.style.display = 'flex';
     const skipBtn = document.getElementById('scHallSkipBtn');
@@ -384,6 +402,17 @@
     const isReduced = Boolean(global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
     const isMuted = Boolean(global.ScoreARAudio?.isMuted?.());
     const quizTitle = resolveQuizTitle(currentRoom);
+
+    const revealOrder2d = [3, 2, 1].filter(r => Boolean(top3[r - 1]));
+    const firstStep2dLbl = revealOrder2d[0] === 3 ? '🥉 كشف المركز الثالث'
+      : (revealOrder2d[0] === 2 ? '🥈 كشف المركز الثاني' : '👑 دخول المركز الأول!');
+
+    const preload2dMoves = (cfg.pathStyle === 'aerial' || cfg.pathStyle === 'cosmic')
+      ? ['fly', 'land', 'wave', 'clap', 'win', 'idle']
+      : ((cfg.pathStyle === 'track' || cfg.pathStyle === 'dock')
+        ? ['runRight', 'runLeft', 'walkRight', 'walkLeft', 'jump', 'land', 'wave', 'clap', 'win', 'idle']
+        : ['walkRight', 'walkLeft', 'jump', 'land', 'wave', 'clap', 'win', 'idle']);
+    global.ScoreARMotionV3?.preloadCharacters?.(top3, preload2dMoves);
 
     // Full 6-World 3D WebGL Celebration Hall Engine (auto-falls back to 2D if WebGL unavailable)
     if (global.ScoreARHall3DEngine?.isWebGLReady?.()) {
@@ -515,6 +544,11 @@
           </div>` : `<div style="position:relative;z-index:18;margin-bottom:8%;background:rgba(8,14,32,0.92);border:1.5px solid ${cfg.accent};border-radius:20px;padding:24px 36px;text-align:center;color:#e2e8f0;font-weight:800;">لا توجد نتائج مسجلة لعرضها في هذه القاعة</div>`}
         </main>
 
+        <div id="scHallDirectorBar" style="position:relative;z-index:35;display:${top3.length ? 'flex' : 'none'};align-items:center;justify-content:center;gap:10px;padding:10px 18px;flex-wrap:wrap;flex-shrink:0;">
+          <button type="button" id="scHallStartBtn" class="btn launch-primary" onclick="ScoreARWorldHalls.startCinematicShow()" style="background:linear-gradient(135deg,${cfg.accent},#d97706);color:#090d16;border:1.5px solid #fef08a;padding:9px 22px;border-radius:999px;font-size:14px;font-weight:900;cursor:pointer;">🎬 <span>ابدأ الاحتفال</span></button>
+          <button type="button" id="scHallStepBtn" class="scorear-gear-btn" onclick="ScoreARWorldHalls.advanceStep()" style="border-color:${cfg.accent};color:#fef08a;padding:8px 18px;border-radius:999px;font-size:13px;font-weight:900;">${firstStep2dLbl}</button>
+        </div>
+
         <footer id="scHallActions" class="scorear-control-bar" style="position:relative;z-index:35;display:none;align-items:center;justify-content:center;gap:10px;padding:8px 18px;flex-wrap:wrap;flex-shrink:0;">
           <button type="button" class="scorear-gear-btn" onclick="document.getElementById('scHallFullRoster').style.display='block'">${ic('list', 14)} <span>الترتيب الكامل (${sorted.length})</span></button>
           <button type="button" class="scorear-gear-btn" onclick="ScoreARPodiumCapture?.capturePodiumSnapshot?.(document.getElementById('scHallRoot'), ScoreARWorldHalls._getRoom(), ScoreARWorldHalls._getSorted())">${ic('camera', 14)} <span>صورة التتويج</span></button>
@@ -539,23 +573,36 @@
       if (pathEl) pathEl.style.opacity = '1';
       sfx('whoosh');
     }, 240);
+  }
 
-    schedule(() => {
-      document.getElementById('scHallRoot')?.classList.remove('is-opening');
-      const b = document.getElementById('scHallOpeningBanner');
-      if (b) b.style.opacity = '0';
-    }, 1550);
-
+  function startCinematicShow() {
+    if (active3DCtrl?.startCinematicShow) { active3DCtrl.startCinematicShow(); return; }
+    if (!activeRoom || !isActive()) return;
+    const worldId = (activeRoom.world && activeRoom.world.id) ? activeRoom.world.id : (activeRoom.worldId || 'royal');
+    const cfg = HALL_CONFIGS[worldId] || HALL_CONFIGS.royal;
+    const top3 = activeRanked.slice(0, 3);
+    if (isSettled) {
+      replayHall();
+      schedule(() => startCinematicShow(), 60);
+      return;
+    }
     const revealOrder = [3, 2, 1].filter(r => Boolean(top3[r - 1]));
-    revealOrder.forEach((slotNum, stepIdx) => {
+    if (!revealOrder.length) { crownNow(top3, cfg, false); return; }
+    timers.forEach(id => clearTimeout(id));
+    timers = [];
+    const sb = document.getElementById('scHallStartBtn');
+    if (sb) { sb.disabled = true; sb.innerHTML = '⏳ <span>جارٍ الاحتفال...</span>'; }
+    document.getElementById('scHallRoot')?.classList.remove('is-opening');
+    const b = document.getElementById('scHallOpeningBanner');
+    if (b) b.style.opacity = '0';
+    const remaining = revealOrder.slice(currentStep);
+    if (!remaining.length) { crownNow(top3, cfg, true); return; }
+    remaining.forEach((slotNum, idx) => {
       schedule(() => {
-        currentStep = stepIdx + 1;
+        currentStep = revealOrder.indexOf(slotNum) + 1;
         revealSlot(slotNum, top3, cfg, false);
-      }, 1700 + stepIdx * 1650);
+      }, idx === 0 ? 40 : idx * 5200);
     });
-
-    const crownMs = 1700 + revealOrder.length * 1650 + 350;
-    schedule(() => crownNow(top3, cfg, true), crownMs);
   }
 
   function advanceStep() {
@@ -573,6 +620,9 @@
     if (currentStep < revealOrder.length) {
       const slotNum = revealOrder[currentStep];
       currentStep++;
+      const stepBtn = document.getElementById('scHallStepBtn');
+      const next = revealOrder[currentStep];
+      if (stepBtn) stepBtn.textContent = next === 3 ? '🥉 كشف المركز الثالث' : (next === 2 ? '🥈 كشف المركز الثاني' : (next === 1 ? '👑 دخول المركز الأول!' : '🏆 التتويج النهائي'));
       revealSlot(slotNum, top3, cfg, false);
     } else {
       crownNow(top3, cfg, true);
@@ -607,7 +657,7 @@
   }
 
   global.ScoreARWorldHalls = {
-    HALL_CONFIGS, renderHallCeremony, advanceStep, skipToFinal, replayHall, exitHall, toggleMute, cleanup, isActive,
+    HALL_CONFIGS, renderHallCeremony, startCinematicShow, advanceStep, skipToFinal, replayHall, exitHall, toggleMute, cleanup, isActive,
     setCameraPreset, launchFirework, triggerAudienceReaction, capture3DSnapshot,
     _get3DState: () => active3DCtrl?.getDebugState?.() || null,
     _getRoom: () => activeRoom, _getSorted: () => activeSorted

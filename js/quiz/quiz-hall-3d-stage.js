@@ -26,6 +26,10 @@
     const accent = worldSpec.accent || '#fbbf24';
     const bgCss = worldSpec.bgCss || '#060c1f';
 
+    const revealOrderInit = [3, 2, 1].filter(s => Boolean(top3[s - 1]));
+    const firstStepLbl = revealOrderInit[0] === 3 ? '🥉 كشف المركز الثالث'
+      : (revealOrderInit[0] === 2 ? '🥈 كشف المركز الثاني' : '👑 دخول المركز الأول!');
+
     stage.innerHTML = `
       <style>
         .sc-w3d-root { position:relative;width:100%;height:100%;overflow:hidden;background:${bgCss};direction:rtl;font-family:Cairo,Tajawal,sans-serif;display:flex;flex-direction:column; }
@@ -36,11 +40,13 @@
         .sc-w3d-root.is-cinematic .sc-w3d-bar { height:32px; }
         .sc-w3d-vig { position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 52%,rgba(3,6,18,0.52) 100%); }
         .sc-w3d-banner { position:absolute;top:15%;left:0;right:0;margin:0 auto;z-index:16;text-align:center;pointer-events:none;transition:opacity 0.65s ease,transform 0.65s ease;width:min(760px,90%); }
+        .sc-w3d-phase-pill { position:absolute;top:58px;left:50%;transform:translateX(-50%);z-index:28;display:none;align-items:center;gap:8px;padding:6px 20px;border-radius:999px;background:rgba(7,14,36,0.88);backdrop-filter:blur(12px);border:1.5px solid ${accent};color:#fef08a;font-size:14px;font-weight:900;box-shadow:0 10px 28px rgba(0,0,0,0.65);pointer-events:none;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis; }
+        .sc-w3d-director-bar { position:relative;z-index:32;margin-top:auto;display:${top3.length ? 'flex' : 'none'};align-items:center;justify-content:center;gap:10px;padding:10px 16px;flex-wrap:wrap;background:linear-gradient(0deg,rgba(4,8,22,0.90),rgba(4,8,22,0)); }
         .sc-w3d-top { position:relative;z-index:30;display:flex;align-items:center;justify-content:space-between;padding:8px 16px;gap:8px;flex-wrap:wrap;background:linear-gradient(180deg,rgba(4,8,22,0.78),rgba(4,8,22,0)); }
         .sc-w3d-bot { position:relative;z-index:30;margin-top:auto;display:none;align-items:center;justify-content:center;gap:7px;padding:8px 14px;flex-wrap:wrap;background:linear-gradient(0deg,rgba(4,8,22,0.88),rgba(4,8,22,0)); }
         .sc-w3d-pill { display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:999px;background:rgba(8,14,34,0.82);backdrop-filter:blur(10px);border:1px solid ${accent};color:${accent};font-size:12.5px;font-weight:900;box-shadow:0 6px 20px rgba(0,0,0,0.45);max-width:56vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
         .sc-w3d-cam-btn.is-active { background:linear-gradient(135deg,${accent},#d97706) !important;color:#090d16 !important;border-color:#ffffff !important; }
-        @media (max-width:640px) { .sc-w3d-top{padding:5px 8px;gap:4px;} .sc-w3d-pill{font-size:10.5px;padding:3px 9px;max-width:46vw;} .sc-w3d-top button,.sc-w3d-bot button{padding:4px 8px !important;font-size:10px !important;} }
+        @media (max-width:640px) { .sc-w3d-top{padding:5px 8px;gap:4px;} .sc-w3d-pill{font-size:10.5px;padding:3px 9px;max-width:46vw;} .sc-w3d-top button,.sc-w3d-bot button,.sc-w3d-director-bar button{padding:6px 12px !important;font-size:11px !important;} }
       </style>
       <div id="scHallRoot" class="sc-w3d-root is-cinematic" data-hall-world="${esc(worldSpec.id)}" data-hall-engine="threejs-3d">
         <div id="scWorld3DWrap" class="sc-w3d-wrap"></div>
@@ -60,10 +66,17 @@
           </div>
         </header>
 
+        <div id="scHallPhasePill" class="sc-w3d-phase-pill"></div>
+
         <div id="scHallOpeningBanner" class="sc-w3d-banner">
           <div style="display:inline-block;padding:4px 18px;border-radius:999px;border:1px solid ${accent};background:rgba(7,12,28,0.82);color:${accent};font-size:13px;font-weight:900;margin-bottom:8px;">${esc(worldSpec.crestLabel || worldSpec.name)}</div>
           <h2 style="margin:0;font-size:clamp(24px,3.8vw,42px);font-weight:900;color:#ffffff;text-shadow:0 6px 28px rgba(0,0,0,0.92);">${esc(quizTitle || worldSpec.name)}</h2>
-          <p style="margin:6px 0 0;font-size:14px;font-weight:800;color:#e2e8f0;text-shadow:0 3px 12px rgba(0,0,0,0.9);">${esc(worldSpec.openingSub || '')}</p>
+          <p style="margin:6px 0 0;font-size:14px;font-weight:800;color:#e2e8f0;text-shadow:0 3px 12px rgba(0,0,0,0.9);">القاعة جاهزة — اضغط «ابدأ الاحتفال» أو اكشف المراكز خطوة بخطوة</p>
+        </div>
+
+        <div id="scHallDirectorBar" class="sc-w3d-director-bar">
+          <button type="button" id="scHallStartBtn" class="btn launch-primary" onclick="ScoreARWorldHalls.startCinematicShow()" style="background:linear-gradient(135deg,${accent},#d97706);color:#090d16;border:1.5px solid #fef08a;padding:9px 22px;border-radius:999px;font-size:14px;font-weight:900;box-shadow:0 8px 26px rgba(0,0,0,0.45);cursor:pointer;">🎬 <span>ابدأ الاحتفال</span></button>
+          <button type="button" id="scHallStepBtn" class="scorear-gear-btn" onclick="ScoreARWorldHalls.advanceStep()" style="border-color:${accent};color:#fef08a;padding:8px 18px;border-radius:999px;font-size:13px;font-weight:900;">${firstStepLbl}</button>
         </div>
 
         <footer id="scHallActions" class="sc-w3d-bot">
@@ -170,9 +183,33 @@
     });
 
     let timers = [], activePaths = [], rafId = null, disposed = false, crowned = false, currentStep = 0;
-    let suspenseDim = 0, shockStart = null, clockLast = performance.now(), startTime = clockLast;
+    let suspenseDim = 0, shockStart = null, clockLast = performance.now(), startTime = clockLast, pathRunSeq = 0;
     const sched = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
-    const clearSched = () => { timers.forEach(clearTimeout); timers = []; };
+    const clearSched = () => { timers.forEach(clearTimeout); timers = []; pathRunSeq++; };
+
+    const worldPreloadMoves = (worldSpec.id === 'cosmic' || worldSpec.id === 'magic')
+      ? ['fly', 'land', 'wave', 'clap', 'win', 'idle']
+      : ((worldSpec.id === 'stadium' || worldSpec.id === 'treasure')
+        ? ['runRight', 'runLeft', 'walkRight', 'jump', 'land', 'wave', 'clap', 'win', 'idle']
+        : ['walkRight', 'walkLeft', 'jump', 'land', 'wave', 'clap', 'win', 'idle']);
+    global.ScoreARMotionV3?.preloadCharacters?.([...top3, ...audience], worldPreloadMoves);
+
+    function showPhase(text) {
+      const pill = document.getElementById('scHallPhasePill');
+      if (!pill) return;
+      if (!text) { pill.style.display = 'none'; return; }
+      pill.textContent = text;
+      pill.style.display = 'inline-flex';
+    }
+
+    function updateStepBtn() {
+      const sb = document.getElementById('scHallStepBtn');
+      if (!sb) return;
+      const next = revealOrder[currentStep];
+      sb.textContent = next === 3 ? '🥉 كشف المركز الثالث'
+        : (next === 2 ? '🥈 كشف المركز الثاني'
+        : (next === 1 ? '👑 دخول المركز الأول!' : '🏆 التتويج النهائي'));
+    }
 
     function launchFirework(x, y, z) {
       particles.spawnFirework(
@@ -203,19 +240,41 @@
     };
     const revealOrder = [3, 2, 1].filter(s => Boolean(heroActors[s]));
 
+    function defaultGroundPath(slot, target) {
+      if (slot === 3) {
+        return [
+          { from: [-5.1, 0.02, 1.92], to: [target.x, 0.02, 1.72], durMs: 2250, move: 'walkRight', loop: true, jumpH: 0 },
+          { from: [target.x, 0.02, 1.72], to: [target.x, target.topY, target.z], durMs: 800, move: 'jump', loop: false, jumpH: 0.58 }
+        ];
+      }
+      if (slot === 2) {
+        return [
+          { from: [5.1, 0.02, 1.92], to: [target.x, 0.02, 1.72], durMs: 2250, move: 'walkLeft', loop: true, jumpH: 0 },
+          { from: [target.x, 0.02, 1.72], to: [target.x, target.topY, target.z], durMs: 800, move: 'jump', loop: false, jumpH: 0.62 }
+        ];
+      }
+      return [
+        { from: [-5.1, 0.02, 2.38], to: [0, 0.02, 2.15], durMs: 2450, move: 'walkRight', loop: true, jumpH: 0 },
+        { from: [0, 0.02, 2.15], to: [0, 0.02, 2.15], durMs: 950, move: 'wave', loop: true, jumpH: 0 },
+        { from: [0, 0.02, 2.15], to: [target.x, target.topY, target.z], durMs: 880, move: 'jump', loop: false, jumpH: 0.80 }
+      ];
+    }
+
     function startHeroPath(slot) {
       const actor = heroActors[slot], target = tierTargets[slot];
       if (!actor || !target) return;
-      actor.group.visible = true;
-      actor.setOpacity(1);
-      const segs = worldSpec.getHeroPath ? worldSpec.getHeroPath(slot, target) : [
-        { from: [slot === 3 ? -4.9 : (slot === 2 ? 4.9 : 0), 0.02, slot === 1 ? -4.4 : 1.75], to: [target.x, 0.02, slot === 1 ? -1.65 : 1.72], durMs: 1100, move: slot === 3 ? 'walkRight' : (slot === 2 ? 'walkLeft' : 'walkForward'), jumpH: 0 },
-        { from: [target.x, 0.02, slot === 1 ? -1.65 : 1.72], to: [target.x, target.topY, target.z], durMs: 560, move: 'jump', jumpH: 0.58 }
-      ];
+      const mySeq = pathRunSeq;
+      const segs = worldSpec.getHeroPath ? worldSpec.getHeroPath(slot, target) : defaultGroundPath(slot, target);
       actor.group.position.set(segs[0].from[0], segs[0].from[1], segs[0].from[2]);
-      actor.setAction(segs[0].move, segs[0].move !== 'jump' && segs[0].move !== 'land');
-      activePaths = activePaths.filter(p => p.slot !== slot);
-      activePaths.push({ slot, actor, segs, segIdx: 0, segStart: performance.now() });
+      const initLoop = segs[0].loop !== undefined ? segs[0].loop : (segs[0].move !== 'jump' && segs[0].move !== 'land');
+      const readyP = actor.setAction(segs[0].move, initLoop);
+      Promise.race([readyP, new Promise(r => sched(r, 1200))]).then(() => {
+        if (disposed || crowned || mySeq !== pathRunSeq) return;
+        actor.group.visible = true;
+        actor.setOpacity(1);
+        activePaths = activePaths.filter(p => p.slot !== slot);
+        activePaths.push({ slot, actor, segs, segIdx: 0, segElapsed: 0, lastNow: null });
+      });
     }
 
     function playStep(slot) {
@@ -224,27 +283,35 @@
       document.getElementById('scHallRoot')?.classList.remove('is-cinematic');
       const banner = document.getElementById('scHallOpeningBanner');
       if (banner) { banner.style.opacity = '0'; banner.style.transform = 'translateY(-16px)'; }
+      updateStepBtn();
+      worldData.revealPlaque?.(slot);
       worldSpec.onStep?.(slot, ctx);
 
       if (slot === 3) {
-        camDir.setShot([-2.15, 2.0, 6.8], [target.x, 1.42, target.z], 2.9);
+        showPhase(`🥉 المركز الثالث · ${top3[2]?.name || ''}`);
+        camDir.setShot([-2.15, 2.0, 7.2], [target.x, 1.42, Math.max(target.z, 0.5)], 2.7);
         sfx('pop'); cinAudio.playChime(440, 0.75);
         startHeroPath(3);
       } else if (slot === 2) {
-        camDir.setShot([2.15, 2.05, 6.8], [target.x, 1.50, target.z], 2.9);
+        showPhase(`🥈 المركز الثاني · ${top3[1]?.name || ''}`);
+        camDir.setShot([2.15, 2.05, 7.2], [target.x, 1.50, Math.max(target.z, 0.5)], 2.7);
         sfx('pop'); cinAudio.playChime(523.25, 0.8);
         startHeroPath(2);
       } else if (slot === 1) {
         suspenseDim = 1;
-        camDir.setShot([0, 1.9, 7.7], [0, 2.05, -1.2], 2.3);
+        showPhase('👑 لحظة الترقّب... من بطل المركز الأول؟');
+        camDir.setShot([0, 2.05, 8.8], [0, 1.5, 1.2], 2.3);
         cinAudio.playTimpaniPulse(74, 0.18);
-        sched(() => cinAudio.playTimpaniPulse(88, 0.20), 400);
+        sched(() => cinAudio.playTimpaniPulse(84, 0.19), 420);
+        sched(() => cinAudio.playTimpaniPulse(96, 0.21), 840);
         sched(() => {
           suspenseDim = 0;
-          camDir.setShot([0, 2.08, 6.6], [0, 2.15, 0], 2.5);
+          worldData.revealPlaque?.(1);
+          showPhase(`🥇 بطل المركز الأول · ${top3[0]?.name || ''}`);
+          camDir.setShot([0, 2.08, 7.6], [0, 1.65, 1.1], 2.4);
           sfx('whoosh');
           startHeroPath(1);
-        }, 800);
+        }, 1300);
       }
     }
 
@@ -257,8 +324,14 @@
       document.getElementById('scHallRoot')?.classList.remove('is-cinematic');
       const banner = document.getElementById('scHallOpeningBanner');
       if (banner) { banner.style.opacity = '0'; banner.style.display = 'none'; }
+      showPhase('');
+      const dirBar = document.getElementById('scHallDirectorBar');
+      if (dirBar) dirBar.style.display = 'none';
+      const startBtn = document.getElementById('scHallStartBtn');
+      if (startBtn) startBtn.disabled = false;
 
       [1, 2, 3].forEach(slot => {
+        worldData.revealPlaque?.(slot);
         const actor = heroActors[slot], t = tierTargets[slot];
         if (!actor || !t) return;
         actor.group.visible = true;
@@ -291,6 +364,26 @@
       if (skipBtn) skipBtn.style.display = 'none';
     }
 
+    function startCinematicShow() {
+      if (isReduced || !top3.length) { crownNow(false); return; }
+      if (crowned) {
+        global.ScoreARWorldHalls?.replayHall?.();
+        sched(() => global.ScoreARWorldHalls?.startCinematicShow?.(), 60);
+        return;
+      }
+      clearSched();
+      const sb = document.getElementById('scHallStartBtn');
+      if (sb) { sb.disabled = true; sb.innerHTML = '⏳ <span>جارٍ الاحتفال...</span>'; }
+      const remaining = revealOrder.slice(currentStep);
+      if (!remaining.length) { crownNow(true); return; }
+      remaining.forEach((slot, idx) => {
+        sched(() => {
+          currentStep = revealOrder.indexOf(slot) + 1;
+          playStep(slot);
+        }, idx === 0 ? 40 : idx * 5200);
+      });
+    }
+
     function animate(now) {
       if (disposed || !wrap.isConnected) { dispose(); return; }
       const dt = Math.min(0.05, Math.max(0.001, (now - clockLast) / 1000));
@@ -300,7 +393,10 @@
       for (let i = activePaths.length - 1; i >= 0; i--) {
         const p = activePaths[i];
         const seg = p.segs[p.segIdx];
-        const clamped = Math.min(1, (now - p.segStart) / seg.durMs);
+        if (p.lastNow === null) p.lastNow = now;
+        p.segElapsed += Math.min(350, Math.max(0, now - p.lastNow));
+        p.lastNow = now;
+        const clamped = Math.min(1, p.segElapsed / seg.durMs);
         const ease = seg.jumpH > 0 || seg.arcY ? (1 - Math.pow(1 - clamped, 2)) : clamped;
         const x = seg.from[0] + (seg.to[0] - seg.from[0]) * ease + (seg.curveX ? Math.sin(clamped * Math.PI) * seg.curveX : 0);
         const y = seg.from[1] + (seg.to[1] - seg.from[1]) * ease + (seg.arcY ? Math.sin(clamped * Math.PI) * seg.arcY : 0);
@@ -311,18 +407,26 @@
         if (clamped >= 1) {
           p.segIdx++;
           if (p.segIdx < p.segs.length) {
-            p.segStart = now;
+            p.segElapsed = 0;
             const nx = p.segs[p.segIdx];
-            p.actor.setAction(nx.move, nx.move !== 'jump' && nx.move !== 'land');
+            p.actor.setAction(nx.move, nx.loop !== undefined ? nx.loop : (nx.move !== 'jump' && nx.move !== 'land'));
+            if (p.slot === 1 && p.segIdx === p.segs.length - 1) {
+              camDir.setShot([0, 2.25, 6.1], [0, 2.05, 0], 2.6);
+            }
           } else {
             p.actor.setJumpOffset(0);
             p.actor.setAction('land', false);
             particles.spawnFountain(p.actor.group.position.x, p.actor.group.position.y + 0.05, p.actor.group.position.z, worldSpec.shockHex ?? 0xfbbf24, 24);
             worldSpec.onLand?.(p.slot, ctx);
             const doneSlot = p.slot;
-            sched(() => { if (!crowned) p.actor.setAction(doneSlot === 1 ? 'win' : 'clap', true); }, 340);
+            if (doneSlot === 1) {
+              sched(() => { if (!crowned) p.actor.setAction('win', true); }, 420);
+              sched(() => { if (!crowned) crownNow(true); }, 1770);
+            } else {
+              sched(() => { if (!crowned) p.actor.setAction('wave', true); }, 420);
+              sched(() => { if (!crowned) p.actor.setAction('clap', true); }, 1570);
+            }
             activePaths.splice(i, 1);
-            if (doneSlot === 1 && !crowned) sched(() => crownNow(true), 380);
           }
         }
       }
@@ -360,13 +464,9 @@
     if (isReduced || !top3.length) {
       crownNow(false);
     } else {
-      camDir.setShot(worldSpec.wideCamPos || [0, 2.58, 9.5], worldSpec.wideCamLook || [0, 2.0, 0], 1.7);
+      // Wide establishing shot — wait strictly for teacher's Start or Step click!
+      camDir.setShot(worldSpec.wideCamPos || [0, 2.75, 10.2], worldSpec.wideCamLook || [0, 1.95, 0], 1.7);
       sfx('whoosh');
-      let cursorMs = 1750;
-      revealOrder.forEach((slot, idx) => {
-        sched(() => { currentStep = idx + 1; playStep(slot); }, cursorMs);
-        cursorMs += (slot === 1 ? 3350 : 2200);
-      });
     }
 
     rafId = requestAnimationFrame(animate);
@@ -386,9 +486,12 @@
     }
 
     return {
+      startCinematicShow,
       skipToFinal: () => crownNow(false),
       advanceStep: () => {
         clearSched();
+        const sb = document.getElementById('scHallStartBtn');
+        if (sb && !crowned) { sb.disabled = false; sb.innerHTML = '🎬 <span>ابدأ الاحتفال</span>'; }
         if (currentStep < revealOrder.length) { const s = revealOrder[currentStep++]; playStep(s); }
         else crownNow(true);
       },
@@ -400,8 +503,8 @@
       triggerAudienceReaction: () => launchFirework((Math.random() - 0.5) * 5.2, 4.3 + Math.random() * 1.2, -0.8),
       capture3DSnapshot: () => Engine.captureWebGLSnapshot(renderer, scene, camera, quizTitle || worldSpec.name, `${worldSpec.name} · ScoreAR`),
       getDebugState: () => ({
-        engine: 'threejs-3d', world: worldSpec.id, crowned,
-        heroes: Object.fromEntries(Object.entries(heroActors).map(([k, a]) => [k, { action: a.getAction(), visible: a.group.visible, y: Number(a.group.position.y.toFixed(2)) }])),
+        engine: 'threejs-3d', world: worldSpec.id, crowned, currentStep,
+        heroes: Object.fromEntries(Object.entries(heroActors).map(([k, a]) => [k, { action: a.getAction(), visible: a.group.visible, x: Number(a.group.position.x.toFixed(2)), y: Number(a.group.position.y.toFixed(2)), z: Number(a.group.position.z.toFixed(2)) }])),
         audienceCount: audienceActors.length
       }),
       dispose

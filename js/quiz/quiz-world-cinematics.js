@@ -48,7 +48,7 @@
     }
   };
 
-  let timers = [], fxRafId = null, pathRafId = null, sprites = [], finished = false;
+  let timers = [], fxRafId = null, pathRafId = null, sprites = [], finished = false, paradeToken = 0;
   const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   const ic = (n, sz = 14) => (global.ScoreARUI?.icon) ? global.ScoreARUI.icon(n, { size: sz }) : '';
   const sfx = n => { if (global.ScoreARAudio?.playSfx) global.ScoreARAudio.playSfx(n); };
@@ -69,6 +69,7 @@
   }
 
   function stopEntranceFilm() {
+    paradeToken += 1;
     timers.forEach(t => clearTimeout(t));
     timers = [];
     if (fxRafId) { cancelAnimationFrame(fxRafId); fxRafId = null; }
@@ -137,13 +138,14 @@
   }
 
   /**
-   * Grounded 60FPS Waypoint Path Parade (ZERO random jumping!)
-   * Heroes enter along natural world paths (walk/run along floor or fly curved descent),
-   * settle calmly at formation spots, greet with ONE synchronized wave, then hold idle.
+   * Grounded 60FPS Waypoint Path Parade (ZERO random jumping, ZERO idle sliding!)
+   * Preloads & awaits V3 locomotion atlases before moving, then marches at stride-matched
+   * constant velocity, settles calmly, performs ONE synchronized wave greeting, then holds idle.
    */
   function mountPathParade(containerEl, currentRoom, worldId, opts = {}) {
     if (!containerEl) return [];
     if (pathRafId) { cancelAnimationFrame(pathRafId); pathRafId = null; }
+    const myToken = ++paradeToken;
     const wid = worldId || currentRoom?.world?.id || currentRoom?.worldId || 'royal';
     const cfg = WORLD_FILMS[wid] || WORLD_FILMS.royal;
     const cast = pickCast(currentRoom);
@@ -152,6 +154,11 @@
     const spriteH = compact ? 136 : 172;
     const stageW = Math.max(360, containerEl.clientWidth || 920);
     const reduced = Boolean(global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+
+    const neededMoves = cfg.marchMove === 'fly'
+      ? ['fly', 'land', 'wave', 'idle']
+      : (cfg.marchMove === 'run' ? ['runRight', 'runLeft', 'wave', 'idle'] : ['walkRight', 'walkLeft', 'wave', 'idle']);
+    global.ScoreARMotionV3?.preloadCharacters?.(cast, neededMoves);
 
     containerEl.innerHTML = `
       <div class="sc-parade-floor" style="position:relative;width:100%;height:100%;min-height:${compact ? 176 : 225}px;overflow:hidden;direction:ltr;">
@@ -168,6 +175,8 @@
 
     const n = cast.length;
     const span = Math.min(stageW * 0.72, (n - 1) * (compact ? 132 : 162));
+    const speedPx = cfg.marchMove === 'run' ? (compact ? 156 : 182) : (compact ? 104 : 122);
+
     const actors = cast.map((p, idx) => {
       const ratio = n === 1 ? 0 : (idx / (n - 1)) - 0.5;
       const targetX = ratio * span;
@@ -176,10 +185,18 @@
       const targetScale = 1 - depthNorm * 0.08;
       const fromLeft = ratio < 0 || (ratio === 0 && idx % 2 === 0);
       const isFly = cfg.marchMove === 'fly';
-      const startX = isFly ? targetX + (fromLeft ? -95 : 95) : (fromLeft ? -(stageW * 0.48 + idx * 34) : (stageW * 0.48 + (n - idx) * 34));
+      const travelDist = cfg.marchMove === 'run'
+        ? (compact ? (260 + (idx % 3) * 36) : (320 + (idx % 3) * 44))
+        : (compact ? (210 + (idx % 3) * 32) : (260 + (idx % 3) * 38));
+      const edgeLimit = stageW * 0.54 + 60;
+      const rawStartX = fromLeft ? (targetX - travelDist) : (targetX + travelDist);
+      const startX = isFly
+        ? targetX + (fromLeft ? -95 : 95)
+        : Math.max(-edgeLimit, Math.min(edgeLimit, rawStartX));
       const startY = isFly ? -130 - (idx % 2) * 22 : targetY;
       const moveAction = isFly ? 'fly'
         : (cfg.marchMove === 'run' ? (startX < targetX ? 'runRight' : 'runLeft') : (startX < targetX ? 'walkRight' : 'walkLeft'));
+      const duration = isFly ? 1950 : Math.max(700, Math.round((Math.abs(targetX - startX) / speedPx) * 1000));
 
       const box = containerEl.querySelector(`#scParadeSprite_${idx}`);
       const inst = (global.ScoreARMotionV3?.mount && box)
@@ -191,8 +208,8 @@
         el: containerEl.querySelector(`#scParadeActor_${idx}`),
         inst, idx, isFly,
         startX, startY, targetX, targetY, targetScale,
-        delay: idx * 140,
-        duration: isFly ? 1350 : Math.max(1050, Math.min(1850, (Math.abs(targetX - startX) / cfg.speed) * 1000)),
+        delay: idx * 200,
+        duration,
         settled: false, waved: false
       };
     });
@@ -204,71 +221,87 @@
         a.el.style.zIndex = String(20 + Math.round(a.targetY + 20));
         a.el.style.transform = `translate3d(calc(-50% + ${a.targetX.toFixed(1)}px), ${a.targetY.toFixed(1)}px, 0) scale(${a.targetScale.toFixed(3)})`;
       });
+      if (typeof opts.onArrived === 'function') opts.onArrived();
       return actors;
     }
 
-    const t0 = performance.now();
-    let allSettledAt = null;
-    function tick(now) {
-      if (!containerEl.isConnected) { pathRafId = null; return; }
-      const elapsed = now - t0;
-      let everyoneArrived = true;
+    const readyList = actors.map(a => a.inst?.whenReady?.() || a.inst?.ready || Promise.resolve());
+    Promise.race([
+      Promise.allSettled(readyList),
+      new Promise(r => schedule(r, 2000))
+    ]).then(() => {
+      if (myToken !== paradeToken || !containerEl.isConnected) return;
 
-      for (const a of actors) {
-        if (!a.el) continue;
-        const localT = elapsed - a.delay;
-        if (localT <= 0) {
-          everyoneArrived = false;
-          a.el.style.opacity = '0';
-          continue;
-        }
-        const p = Math.min(1, localT / a.duration);
-        // Smooth ease-out for arrival without sliding
-        const ease = a.isFly ? (1 - Math.pow(1 - p, 3)) : (p < 0.85 ? p / 0.85 * 0.92 : 0.92 + (1 - Math.pow(1 - (p - 0.85) / 0.15, 2)) * 0.08);
-        const cx = a.startX + (a.targetX - a.startX) * ease;
-        const cy = a.isFly
-          ? (a.startY + (a.targetY - a.startY) * ease - Math.sin(p * Math.PI) * 18)
-          : a.targetY;
-        const sc = a.isFly ? (0.72 + (a.targetScale - 0.72) * ease) : a.targetScale;
+      let lastNow = null, elapsed = 0, allSettledAt = null;
+      function tick(now) {
+        if (myToken !== paradeToken || !containerEl.isConnected) { pathRafId = null; return; }
+        if (lastNow === null) lastNow = now;
+        elapsed += Math.min(160, Math.max(0, now - lastNow));
+        lastNow = now;
+        let everyoneArrived = true;
 
-        a.el.style.opacity = String(Math.min(1, localT / 260));
-        a.el.style.zIndex = String(20 + Math.round(cy + 24));
-        a.el.style.transform = `translate3d(calc(-50% + ${cx.toFixed(1)}px), ${cy.toFixed(1)}px, 0) scale(${sc.toFixed(3)})`;
+        for (const a of actors) {
+          if (!a.el) continue;
+          const localT = elapsed - a.delay;
+          if (localT <= 0) {
+            everyoneArrived = false;
+            a.el.style.opacity = '0';
+            continue;
+          }
+          const p = Math.min(1, localT / a.duration);
+          // Stride-matched linear velocity for ground walk/run with gentle final 10% braking
+          const ease = a.isFly
+            ? (1 - Math.pow(1 - p, 3))
+            : (p < 0.90 ? (p / 0.90) * 0.94 : 0.94 + (1 - Math.pow(1 - (p - 0.90) / 0.10, 2)) * 0.06);
+          const cx = a.startX + (a.targetX - a.startX) * ease;
+          const bobY = (!a.isFly && p < 1) ? (-Math.abs(Math.sin((localT / 280) * Math.PI)) * 3.5) : 0;
+          const cy = a.isFly
+            ? (a.startY + (a.targetY - a.startY) * ease - Math.sin(p * Math.PI) * 18)
+            : (a.targetY + bobY);
+          const sc = a.isFly ? (0.72 + (a.targetScale - 0.72) * ease) : a.targetScale;
 
-        if (p < 1) {
-          everyoneArrived = false;
-        } else if (!a.settled) {
-          a.settled = true;
-          if (a.inst) {
-            if (a.isFly) {
-              a.inst.setAction('land', { loop: false });
-              schedule(() => a.inst?.setAction?.('idle', { loop: true }), 360);
-            } else {
-              a.inst.setAction('idle', { loop: true });
+          a.el.style.opacity = String(Math.min(1, localT / 220));
+          a.el.style.zIndex = String(20 + Math.round(cy + 24));
+          a.el.style.transform = `translate3d(calc(-50% + ${cx.toFixed(1)}px), ${cy.toFixed(1)}px, 0) scale(${sc.toFixed(3)})`;
+
+          if (p < 1) {
+            everyoneArrived = false;
+          } else if (!a.settled) {
+            a.settled = true;
+            a.el.setAttribute('data-arrived', '1');
+            if (a.inst) {
+              if (a.isFly) {
+                a.inst.setAction('land', { loop: false });
+                schedule(() => { if (myToken === paradeToken) a.inst?.setAction?.('idle', { loop: true }); }, 360);
+              } else {
+                a.inst.setAction('idle', { loop: true });
+              }
             }
           }
         }
-      }
 
-      if (everyoneArrived) {
-        if (!allSettledAt) {
-          allSettledAt = now;
-          // One calm synchronized wave greeting — ZERO random jumping!
-          schedule(() => {
-            sfx('pop');
-            actors.forEach(a => a.inst?.setAction?.('wave', { loop: false }));
-            if (typeof opts.onArrived === 'function') opts.onArrived();
-          }, 420);
-          schedule(() => {
-            actors.forEach(a => a.inst?.setAction?.('idle', { loop: true }));
-          }, 1500);
+        if (everyoneArrived) {
+          if (!allSettledAt) {
+            allSettledAt = now;
+            schedule(() => {
+              if (myToken !== paradeToken) return;
+              sfx('pop');
+              actors.forEach(a => a.inst?.setAction?.('wave', { loop: true }));
+            }, 350);
+            schedule(() => {
+              if (myToken !== paradeToken) return;
+              actors.forEach(a => a.inst?.setAction?.('idle', { loop: true }));
+              if (typeof opts.onArrived === 'function') opts.onArrived();
+            }, 1850);
+          }
+          pathRafId = null;
+          return;
         }
-        pathRafId = null;
-        return;
+        pathRafId = requestAnimationFrame(tick);
       }
       pathRafId = requestAnimationFrame(tick);
-    }
-    pathRafId = requestAnimationFrame(tick);
+    });
+
     return actors;
   }
 
@@ -349,6 +382,28 @@
         </div>
       </div>`;
 
+    let countdownStarted = false;
+    function startCountdown() {
+      if (countdownStarted || finished) return;
+      countdownStarted = true;
+      const tc = document.getElementById('scFilmTitleCard');
+      if (tc) { tc.style.opacity = '0'; tc.style.transform = 'translateY(-16px)'; }
+      const cd = document.getElementById('scFilmCountdown');
+      if (cd) cd.style.display = 'flex';
+      sfx('tick');
+      schedule(() => {
+        const num = document.getElementById('scFilmCountNum');
+        if (num) { num.textContent = '2'; num.style.animation = 'none'; void num.offsetWidth; num.style.animation = 'scCountPop 0.5s ease'; }
+        sfx('tick');
+      }, 850);
+      schedule(() => {
+        const num = document.getElementById('scFilmCountNum');
+        if (num) { num.textContent = '1'; num.style.animation = 'none'; void num.offsetWidth; num.style.animation = 'scCountPop 0.5s ease'; }
+        sfx('tick');
+      }, 1700);
+      schedule(() => finishNow(), 2550);
+    }
+
     startParticles(document.getElementById('scEntranceFxCanvas'), cfg.particleColors, wid);
     sfx('reveal');
     mountPathParade(document.getElementById('scFilmParadeStage'), currentRoom, wid, {
@@ -356,27 +411,11 @@
       onArrived: () => {
         const cap = document.getElementById('scFilmSubCaption');
         if (cap) cap.textContent = 'الأبطال جاهزون في مواقعهم — تبدأ المنافسة الآن!';
+        schedule(startCountdown, 1400);
       }
     });
-
-    schedule(() => {
-      const tc = document.getElementById('scFilmTitleCard');
-      if (tc) { tc.style.opacity = '0'; tc.style.transform = 'translateY(-16px)'; }
-      const cd = document.getElementById('scFilmCountdown');
-      if (cd) cd.style.display = 'flex';
-      sfx('tick');
-    }, 4300);
-    schedule(() => {
-      const num = document.getElementById('scFilmCountNum');
-      if (num) { num.textContent = '2'; num.style.animation = 'none'; void num.offsetWidth; num.style.animation = 'scCountPop 0.5s ease'; }
-      sfx('tick');
-    }, 5150);
-    schedule(() => {
-      const num = document.getElementById('scFilmCountNum');
-      if (num) { num.textContent = '1'; num.style.animation = 'none'; void num.offsetWidth; num.style.animation = 'scCountPop 0.5s ease'; }
-      sfx('tick');
-    }, 6000);
-    schedule(() => finishNow(), 6850);
+    // Fallback safety timer if sprite preload takes long so entrance never hangs
+    schedule(startCountdown, 8500);
   }
 
   function toggleMute() {

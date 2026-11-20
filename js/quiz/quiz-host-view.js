@@ -2,18 +2,22 @@
 (function(global) {
   'use strict';
 
-  const ALLOWED_POSES = ['idle', 'walk', 'jump', 'clap', 'win', 'celebrate'];
-  let currentLobbyPose = 'walk';
+  const ALLOWED_POSES = ['entrance', 'idle', 'wave', 'walk', 'jump', 'clap', 'win', 'celebrate'];
+  let currentLobbyPose = 'entrance';
   const uiIcon = (name, size = 14) => (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function') ? global.ScoreARUI.icon(name, { size }) : '';
 
   function setLobbyHeroesPose(pose) {
-    currentLobbyPose = ALLOWED_POSES.includes(pose) ? pose : 'walk';
-    document.querySelectorAll('.host-lobby-hero-char').forEach(el => {
-      el.className = 'scorear-character host-lobby-hero-char character-' + currentLobbyPose;
+    currentLobbyPose = ALLOWED_POSES.includes(pose) ? pose : 'entrance';
+    const slots = document.querySelectorAll('.host-lobby-hero-char');
+    const total = slots.length || 1;
+    slots.forEach((el, idx) => {
       const code = el.getAttribute('data-char-code') || 'char_01';
-      el.setAttribute('data-cur-pose', currentLobbyPose);
-      const loopFlag = currentLobbyPose !== 'jump';
-      global.ScoreARMotionEngine?.mount?.(el, code, currentLobbyPose, { width: 140, height: 185, loop: loopFlag });
+      const fromLeft = total <= 1 ? true : (idx < Math.ceil(total / 2));
+      const mountPose = currentLobbyPose === 'entrance' ? (fromLeft ? 'walkRight' : 'walkLeft') : currentLobbyPose;
+      el.className = 'scorear-character host-lobby-hero-char character-' + mountPose;
+      el.setAttribute('data-cur-pose', mountPose);
+      const loopFlag = mountPose !== 'jump';
+      global.ScoreARMotionEngine?.mount?.(el, code, mountPose, { width: 140, height: 185, loop: loopFlag });
     });
     if (global.ScoreARLobbyDirector?.setMode) global.ScoreARLobbyDirector.setMode(currentLobbyPose);
     document.querySelectorAll('[data-lobby-pose]').forEach(btn => {
@@ -87,9 +91,12 @@
 
   /* ── 1. LOBBY WITH COSMIC GLASS CONTROLS + FIXED WHITE PIN/QR BANNER & 3D START BUTTON ── */
   function renderHostLobby(stage, currentRoom, isRoomLocked) {
+    if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
+    currentLobbyPose = 'entrance';
     const worldId = (currentRoom && currentRoom.world && currentRoom.world.id) ? currentRoom.world.id : 'royal';
     const w = currentRoom.world || { name: 'المنافسة', tag: 'جاهز' };
     if (currentRoom && !currentRoom.quizTitle) currentRoom.quizTitle = resolveRealQuizTitle(currentRoom, '');
+    global.ScoreARMotionV3?.preloadCharacters?.(currentRoom?.players || [], ['walkRight', 'walkLeft', 'wave', 'idle']);
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + window.location.pathname + '?pin=' + currentRoom.pin)}`;
     const activeGameMode = (global.ScoreARGameModes && typeof global.ScoreARGameModes.getMode === 'function') ? global.ScoreARGameModes.getMode() : 'SOLO';
     const modeLabel = activeGameMode === 'CARD_ARENA' ? 'طور حرب الكروت' : (activeGameMode === 'SQUADS' ? 'وضع الفريق' : 'التحدي الفردي');
@@ -157,10 +164,12 @@
           <span class="scorear-control-pill">${uiIcon('users', 14)} <span>المتصلون:</span> <b id="hostConnectedPlayersPill" style="color:#58dce3;">${currentRoom.players.length}</b></span>
           <span class="scorear-control-pill">${uiIcon('clock', 14)} <span>الانتظار:</span> <b id="hostLobbyTimerText" style="color:#fff;">0:00</b></span>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;background:rgba(14,16,34,0.88);backdrop-filter:blur(16px);border:1px solid rgba(172,139,242,0.28);padding:4px 10px;border-radius:12px;">
+        <div style="display:flex;align-items:center;gap:6px;background:rgba(14,16,34,0.88);backdrop-filter:blur(16px);border:1px solid rgba(172,139,242,0.28);padding:4px 10px;border-radius:12px;flex-wrap:wrap;">
           <span style="font-size:11.5px;font-weight:800;color:#b1a2e9;margin-left:4px;display:inline-flex;align-items:center;gap:5px;">${uiIcon('gamepad', 14)} حركة الأبطال:</span>
+          <button type="button" data-lobby-pose="entrance" class="scorear-gear-btn is-active" onclick="ScoreARHostView.setLobbyHeroesPose('entrance')" style="padding:4px 10px;font-size:11.5px;background:rgba(117,80,239,0.65);border-color:rgba(196,168,255,0.55);">مسار الدخول</button>
+          <button type="button" data-lobby-pose="wave" class="scorear-gear-btn" onclick="ScoreARHostView.setLobbyHeroesPose('wave')" style="padding:4px 10px;font-size:11.5px;">التحية 👋</button>
           <button type="button" data-lobby-pose="idle" class="scorear-gear-btn" onclick="ScoreARHostView.setLobbyHeroesPose('idle')" style="padding:4px 10px;font-size:11.5px;">الوقوف</button>
-          <button type="button" data-lobby-pose="walk" class="scorear-gear-btn is-active" onclick="ScoreARHostView.setLobbyHeroesPose('walk')" style="padding:4px 10px;font-size:11.5px;">المشي</button>
+          <button type="button" data-lobby-pose="walk" class="scorear-gear-btn" onclick="ScoreARHostView.setLobbyHeroesPose('walk')" style="padding:4px 10px;font-size:11.5px;">المشي</button>
           <button type="button" data-lobby-pose="jump" class="scorear-gear-btn" onclick="ScoreARHostView.setLobbyHeroesPose('jump')" style="padding:4px 10px;font-size:11.5px;">القفز</button>
           <button type="button" data-lobby-pose="clap" class="scorear-gear-btn" onclick="ScoreARHostView.setLobbyHeroesPose('clap')" style="padding:4px 10px;font-size:11.5px;">التصفيق</button>
           <button type="button" data-lobby-pose="win" class="scorear-gear-btn" onclick="ScoreARHostView.setLobbyHeroesPose('win')" style="padding:4px 10px;font-size:11.5px;">الاحتفال</button>
@@ -185,23 +194,32 @@
     return { code, idle: `${p}assets/characters/animated/${code}-idle.webp`, full: `${p}assets/characters/${code}.webp`, atlas: `${p}assets/characters/animated/${code}-atlas.webp`, fallback: `${p}assets/characters/char_01.webp` };
   }
 
+  function resolveLobbySlotMountPose(idx, totalCount) {
+    if (currentLobbyPose !== 'entrance') return currentLobbyPose || 'walkRight';
+    const fromLeft = totalCount <= 1 ? true : (idx < Math.ceil(totalCount / 2));
+    return fromLeft ? 'walkRight' : 'walkLeft';
+  }
+
+  function mountLobbySlotSprite(slotEl, p, idx, totalCount) {
+    if (!slotEl) return;
+    const code = normalizeAvatarCode(p.avatarId || p.characterId || p.avatar || p.player?.avatarId || p.player?.characterId || 'char_01');
+    const mountPose = resolveLobbySlotMountPose(idx, totalCount);
+    slotEl.setAttribute('data-char-code', code);
+    slotEl.setAttribute('data-cur-pose', mountPose);
+    global.ScoreARMotionEngine?.mount?.(slotEl, code, mountPose, { width: 140, height: 185, loop: mountPose !== 'jump', enableParticles: false, enableShadow: true });
+    if (p.cosmetics?.aura && global.ScoreARHeroCosmetics?.applyAura) {
+      global.ScoreARHeroCosmetics.applyAura(slotEl.parentElement || slotEl, p.cosmetics.aura);
+    }
+  }
+
   function attachLobbyAtlasLoaders(currentRoom) {
     if (!currentRoom || !currentRoom.players) return;
     setTimeout(() => {
-      currentRoom.players.forEach((p, idx) => {
-        const slot = document.getElementById('hostHeroSlot_' + idx);
-        if (!slot) return;
-        const code = normalizeAvatarCode(p.avatarId || p.characterId || p.avatar || p.player?.avatarId || p.player?.characterId || 'char_01');
-        slot.setAttribute('data-char-code', code);
-        slot.setAttribute('data-cur-pose', currentLobbyPose || 'walk');
-        global.ScoreARMotionEngine?.mount?.(slot, code, currentLobbyPose || 'walk', { width: 140, height: 185, enableParticles: false, enableShadow: true });
-        if (p.cosmetics?.aura && global.ScoreARHeroCosmetics?.applyAura) {
-          global.ScoreARHeroCosmetics.applyAura(slot.parentElement || slot, p.cosmetics.aura);
-        }
-      });
+      const players = currentRoom.players || [];
+      players.forEach((p, idx) => mountLobbySlotSprite(document.getElementById('hostHeroSlot_' + idx), p, idx, players.length));
       const arena = document.getElementById('hostCharactersArena');
       if (arena && global.ScoreARLobbyDirector?.syncArena) {
-        global.ScoreARLobbyDirector.syncArena(arena, currentRoom.players, currentLobbyPose || 'walk');
+        global.ScoreARLobbyDirector.syncArena(arena, players, currentLobbyPose || 'entrance');
       }
     }, 35);
   }
@@ -209,14 +227,68 @@
   function refreshLobbyUi(currentRoom) {
     if (!currentRoom) return;
     const arena = document.getElementById('hostCharactersArena');
-    if (arena) arena.innerHTML = renderFullbodyCharactersHtml(currentRoom);
+    const players = currentRoom.players || [];
     const countEl = document.getElementById('hostPlayerCount'), countPill = document.getElementById('hostConnectedPlayersPill');
-    if (countEl) countEl.textContent = currentRoom.players.length;
-    if (countPill) countPill.textContent = currentRoom.players.length;
+    if (countEl) countEl.textContent = players.length;
+    if (countPill) countPill.textContent = players.length;
     const botCount = document.getElementById('hostBotCount');
-    if (botCount) botCount.textContent = currentRoom.players.filter(p => p.isBot).length;
+    if (botCount) botCount.textContent = players.filter(p => p.isBot).length;
     if (currentRoom.mode || currentRoom.gameMode) updateLobbyModeBadge(currentRoom.gameMode || currentRoom.mode);
-    attachLobbyAtlasLoaders(currentRoom);
+
+    if (!arena) return;
+    if (!players.length) {
+      arena.innerHTML = renderFullbodyCharactersHtml(currentRoom);
+      if (global.ScoreARLobbyDirector?.stop) global.ScoreARLobbyDirector.stop();
+      return;
+    }
+
+    global.ScoreARMotionV3?.preloadCharacters?.(players, ['walkRight', 'walkLeft', 'wave', 'idle']);
+    const existingSlots = Array.from(arena.querySelectorAll('.host-lobby-hero-slot'));
+    if (!existingSlots.length) {
+      arena.innerHTML = renderFullbodyCharactersHtml(currentRoom);
+      attachLobbyAtlasLoaders(currentRoom);
+      return;
+    }
+
+    // Remove empty state placeholder if present without touching live hero nodes
+    Array.from(arena.children).forEach(ch => {
+      if (ch.id !== 'hostLobbyFxCanvas' && !ch.classList.contains('host-lobby-hero-slot')) ch.remove();
+    });
+
+    const existingById = new Map();
+    existingSlots.forEach((el, i) => {
+      const pid = el.getAttribute('data-player-id') || ('slot_' + i);
+      existingById.set(pid, el);
+    });
+    const activeIds = new Set(players.map((p, i) => String(p.id || ('slot_' + i))));
+    existingById.forEach((el, pid) => { if (!activeIds.has(pid)) el.remove(); });
+
+    const newMounts = [];
+    players.forEach((p, idx) => {
+      const pid = String(p.id || ('slot_' + idx));
+      let slotWrapper = existingById.get(pid);
+      if (!slotWrapper) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = renderLobbyHeroSlotHtml(p, idx, players.length);
+        slotWrapper = tmp.firstElementChild;
+        if (slotWrapper) {
+          arena.appendChild(slotWrapper);
+          newMounts.push({ el: slotWrapper.querySelector('.host-lobby-hero-char'), p, idx });
+        }
+      } else {
+        const fig = slotWrapper.querySelector('.host-lobby-hero-figure');
+        if (fig) fig.setAttribute('onclick', `ScoreARHostView.cycleSingleHeroPose(${idx})`);
+        const charSpan = slotWrapper.querySelector('.host-lobby-hero-char');
+        if (charSpan) charSpan.id = 'hostHeroSlot_' + idx;
+        const imgEl = slotWrapper.querySelector('.host-hero-img');
+        if (imgEl) imgEl.id = 'hostHeroImg_' + idx;
+      }
+    });
+
+    newMounts.forEach(({ el, p, idx }) => mountLobbySlotSprite(el, p, idx, players.length));
+    if (global.ScoreARLobbyDirector?.syncArena) {
+      global.ScoreARLobbyDirector.syncArena(arena, players, currentLobbyPose || 'entrance');
+    }
   }
 
   function updateLobbyModeBadge(mode) {
@@ -224,25 +296,30 @@
     if (txt) txt.textContent = mode === 'CARD_ARENA' ? 'طور حرب الكروت' : (mode === 'SQUADS' ? 'وضع الفريق' : 'التحدي الفردي');
   }
 
-  function renderFullbodyCharactersHtml(currentRoom) {
-    if (!currentRoom || !currentRoom.players.length) {
-      return `<div style="display:flex;flex-direction:column;align-items:center;gap:12px;pointer-events:auto;margin-bottom:70px;"><div style="background:rgba(24,23,46,0.88);backdrop-filter:blur(16px);border:1px solid rgba(172,139,242,0.35);color:#ffffff;font-size:22px;font-weight:900;padding:12px 32px;border-radius:16px;box-shadow:0 14px 38px rgba(0,0,0,0.55);">في انتظار المتسابقين...</div><button type="button" class="scorear-gear-btn" onclick="ScoreARBots ? ScoreARBots.openModal() : ScoreARQuizHost.addDemoPlayer()" style="background:rgba(17,18,37,0.88);border-color:rgba(172,139,242,0.45);padding:8px 18px;font-size:12px;">${uiIcon('bot', 14)} <span>إضافة أبطال تجريبيين للقاعة</span></button></div>`;
-    }
-    return currentRoom.players.map((p, idx) => {
-      const isBot = Boolean(p.isBot || p.isDemo), safeName = escapeHtml(p.name);
-      const urls = getHeroAssetUrls(p.avatarId || p.characterId || p.avatar || p.player?.avatarId || p.player?.characterId || 'char_01');
-      const delAction = p.isBot ? `ScoreARBots && ScoreARBots.removeBot('${escapeHtml(p.id)}')` : `ScoreARQuizHost.kickPlayer('${escapeHtml(p.id)}')`;
-      return `<div class="animate-enter-fullbody host-lobby-hero-slot" data-player-id="${escapeHtml(p.id)}" data-player-name="${safeName}" style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:auto;animation-delay:${idx*0.06}s;min-width:132px;">
+  function renderLobbyHeroSlotHtml(p, idx, totalCount) {
+    const isBot = Boolean(p.isBot || p.isDemo), safeName = escapeHtml(p.name);
+    const urls = getHeroAssetUrls(p.avatarId || p.characterId || p.avatar || p.player?.avatarId || p.player?.characterId || 'char_01');
+    const delAction = p.isBot ? `ScoreARBots && ScoreARBots.removeBot('${escapeHtml(p.id)}')` : `ScoreARQuizHost.kickPlayer('${escapeHtml(p.id)}')`;
+    const mountPose = resolveLobbySlotMountPose(idx, totalCount || 1);
+    const hideWhileLoading = Boolean(global.ScoreARLobbyDirector && currentLobbyPose === 'entrance');
+    const pid = escapeHtml(p.id || ('slot_' + idx));
+    return `<div class="animate-enter-fullbody host-lobby-hero-slot" data-player-id="${pid}" data-player-name="${safeName}" style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:auto;animation-delay:${idx*0.06}s;min-width:132px;${hideWhileLoading ? 'opacity:0;' : ''}">
         <div class="player-name-floating-pill" style="margin-bottom:-30px;position:relative;z-index:24;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;box-shadow:0 8px 20px rgba(0,0,0,0.55);" title="إزالة اللاعب من القاعة">
           <span style="font-size:11px;color:#7550ef;">${isBot ? 'BOT' : '●'}</span>
           <span style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;">${safeName}</span>
           <button type="button" onclick="${delAction}" style="background:#ef4444;border:0;color:#fff;width:18px;height:18px;border-radius:50%;font-size:11px;font-weight:900;cursor:pointer;display:inline-grid;place-items:center;margin-right:4px;" title="إزالة اللاعب">✕</button>
         </div>
         <div class="host-lobby-hero-figure" onclick="ScoreARHostView.cycleSingleHeroPose(${idx})" style="cursor:pointer;position:relative;width:145px;height:184px;display:flex;align-items:flex-end;justify-content:center;" title="تبديل الوضعية">
-          <span id="hostHeroSlot_${idx}" class="scorear-character host-lobby-hero-char character-${currentLobbyPose}" style="--character-atlas:url('${urls.atlas}');width:136px;height:182px;position:relative;display:flex;align-items:flex-end;justify-content:center;transform-origin:bottom center;filter:drop-shadow(0 14px 22px rgba(0,0,0,0.65));"><img id="hostHeroImg_${idx}" class="host-hero-img" src="${urls.idle}" onerror="this.onerror=null;this.src='${urls.full}';this.onerror=function(){this.src='${urls.fallback}';};" alt="${safeName}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;"><span class="character-frames" aria-hidden="true"></span></span>
+          <span id="hostHeroSlot_${idx}" class="scorear-character host-lobby-hero-char character-${mountPose}" style="--character-atlas:url('${urls.atlas}');width:136px;height:182px;position:relative;display:flex;align-items:flex-end;justify-content:center;transform-origin:bottom center;filter:drop-shadow(0 14px 22px rgba(0,0,0,0.65));"><img id="hostHeroImg_${idx}" class="host-hero-img" src="${urls.idle}" onerror="this.onerror=null;this.src='${urls.full}';this.onerror=function(){this.src='${urls.fallback}';};" alt="${safeName}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;"><span class="character-frames" aria-hidden="true"></span></span>
         </div>
       </div>`;
-    }).join('');
+  }
+
+  function renderFullbodyCharactersHtml(currentRoom) {
+    if (!currentRoom || !currentRoom.players.length) {
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:12px;pointer-events:auto;margin-bottom:70px;"><div style="background:rgba(24,23,46,0.88);backdrop-filter:blur(16px);border:1px solid rgba(172,139,242,0.35);color:#ffffff;font-size:22px;font-weight:900;padding:12px 32px;border-radius:16px;box-shadow:0 14px 38px rgba(0,0,0,0.55);">في انتظار المتسابقين...</div><button type="button" class="scorear-gear-btn" onclick="ScoreARBots ? ScoreARBots.openModal() : ScoreARQuizHost.addDemoPlayer()" style="background:rgba(17,18,37,0.88);border-color:rgba(172,139,242,0.45);padding:8px 18px;font-size:12px;">${uiIcon('bot', 14)} <span>إضافة أبطال تجريبيين للقاعة</span></button></div>`;
+    }
+    return currentRoom.players.map((p, idx) => renderLobbyHeroSlotHtml(p, idx, currentRoom.players.length)).join('');
   }
 
   /* ── 2. ORIGINAL 3-STAGE PRE-CONTEST INTRO + REAL QUIZ TITLE + INTEGRATED HERO PATH PARADE ── */
@@ -258,6 +335,7 @@
     const isReduced = Boolean(global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
 
     let finished = false;
+    let stage3Started = false;
     const timers = [];
     const finishNow = () => {
       if (finished) return;
@@ -267,6 +345,28 @@
       if (typeof onDone === 'function') onDone();
     };
     global._skipScoreARIntro = finishNow;
+    const marchMove = global.ScoreARWorldCinematics?.WORLD_FILMS?.[worldId]?.marchMove || 'walk';
+    const introMoves = marchMove === 'fly'
+      ? ['fly', 'land', 'wave', 'idle']
+      : (marchMove === 'run' ? ['runRight', 'runLeft', 'wave', 'idle'] : ['walkRight', 'walkLeft', 'wave', 'idle']);
+    global.ScoreARMotionV3?.preloadCharacters?.((currentRoom?.players || []).slice(0, 6), introMoves);
+
+    function startStage3Countdown() {
+      if (stage3Started || finished) return;
+      stage3Started = true;
+      if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
+      stage.innerHTML = `<div style="position:fixed;inset:0;overflow:hidden;"><img src="assets/halls/${escapeHtml(worldId)}-hall.jpg" onerror="this.onerror=null;this.src='assets/worlds/${escapeHtml(worldId)}/question.jpg';" alt="" style="width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.45) blur(2px);"></div>
+        <button type="button" class="scorear-gear-btn" onclick="window._skipScoreARIntro && window._skipScoreARIntro()" style="position:absolute;top:22px;left:24px;z-index:30;padding:7px 16px;font-size:12px;">${uiIcon('skipForward', 14)} <span>تخطي</span></button>
+        <div style="position:relative;z-index:20;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;direction:rtl;">
+          <div style="font-size:16px;font-weight:800;color:#fde68a;margin-bottom:6px;">${escapeHtml(title)}</div>
+          <div style="font-size:26px;font-weight:900;color:#58dce3;margin-bottom:10px;">انتباه يا أبطال</div>
+          <h2 style="font-size:clamp(28px,4vw,42px);font-weight:900;color:#ffffff;margin:0 0 24px;">المسابقة تبدأ الآن... استعدوا!</h2>
+          <div id="introReadyCount" style="width:132px;height:132px;border-radius:50%;background:linear-gradient(135deg,#7550ef,#3b147a);border:3px solid rgba(255,255,255,0.28);color:#ffffff;font-size:64px;font-weight:900;display:grid;place-items:center;box-shadow:0 18px 50px rgba(0,0,0,0.65);font-family:Montserrat,monospace;">3</div>
+        </div>`;
+      timers.push(setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '2'; }, 1050));
+      timers.push(setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '1'; }, 2100));
+      timers.push(setTimeout(() => finishNow(), 3150));
+    }
 
     if (isReduced) {
       stage.innerHTML = `<div style="position:fixed;inset:0;background:#0b0c1b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:100;direction:rtl;text-align:center;padding:24px;">
@@ -302,31 +402,17 @@
           <div style="background:rgba(12,16,38,0.86);backdrop-filter:blur(18px);border:1px solid rgba(172,139,242,0.34);padding:28px 50px;border-radius:24px;box-shadow:0 24px 65px rgba(0,0,0,0.75);max-width:900px;width:92%;animation:transferZoomIn 0.65s cubic-bezier(0.22,1,0.36,1) both;">
             <div style="font-size:13.5px;font-weight:800;color:#58dce3;margin-bottom:8px;">عنوان المسابقة</div>
             <h1 id="introRealQuizTitle" style="font-size:clamp(26px,3.8vw,40px);font-weight:900;color:#ffffff;margin:0;line-height:1.35;">${escapeHtml(title)}</h1>
-            <div style="margin-top:20px;width:100%;height:6px;background:rgba(255,255,255,0.12);border-radius:999px;overflow:hidden;"><div style="height:100%;background:linear-gradient(90deg,#58dce3,#8e64ef,#fbbf24);animation:titleBarFill 4.2s linear forwards;"></div></div>
+            <div style="margin-top:20px;width:100%;height:6px;background:rgba(255,255,255,0.12);border-radius:999px;overflow:hidden;"><div style="height:100%;background:linear-gradient(90deg,#58dce3,#8e64ef,#fbbf24);animation:titleBarFill 5.6s linear forwards;"></div></div>
           </div>
           <div id="introHeroPathStage" style="position:relative;width:min(1040px,96%);flex:1;min-height:185px;margin-top:8px;overflow:hidden;pointer-events:none;"></div>
         </div>`;
       if (global.ScoreARWorldCinematics?.mountPathParade) {
-        global.ScoreARWorldCinematics.mountPathParade(document.getElementById('introHeroPathStage'), currentRoom, worldId);
+        global.ScoreARWorldCinematics.mountPathParade(document.getElementById('introHeroPathStage'), currentRoom, worldId, {
+          onArrived: () => { timers.push(setTimeout(startStage3Countdown, 1300)); }
+        });
       }
+      timers.push(setTimeout(startStage3Countdown, 6500));
     }, 2400));
-
-    // Stage 3: Preserved 3-2-1 Ready Countdown
-    timers.push(setTimeout(() => {
-      if (finished) return;
-      if (global.ScoreARWorldCinematics?.stopEntranceFilm) global.ScoreARWorldCinematics.stopEntranceFilm();
-      stage.innerHTML = `<div style="position:fixed;inset:0;overflow:hidden;"><img src="assets/halls/${escapeHtml(worldId)}-hall.jpg" onerror="this.onerror=null;this.src='assets/worlds/${escapeHtml(worldId)}/question.jpg';" alt="" style="width:100%;height:100%;object-fit:cover;display:block;filter:brightness(0.45) blur(2px);"></div>
-        <button type="button" class="scorear-gear-btn" onclick="window._skipScoreARIntro && window._skipScoreARIntro()" style="position:absolute;top:22px;left:24px;z-index:30;padding:7px 16px;font-size:12px;">${uiIcon('skipForward', 14)} <span>تخطي</span></button>
-        <div style="position:relative;z-index:20;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;direction:rtl;">
-          <div style="font-size:16px;font-weight:800;color:#fde68a;margin-bottom:6px;">${escapeHtml(title)}</div>
-          <div style="font-size:26px;font-weight:900;color:#58dce3;margin-bottom:10px;">انتباه يا أبطال</div>
-          <h2 style="font-size:clamp(28px,4vw,42px);font-weight:900;color:#ffffff;margin:0 0 24px;">المسابقة تبدأ الآن... استعدوا!</h2>
-          <div id="introReadyCount" style="width:132px;height:132px;border-radius:50%;background:linear-gradient(135deg,#7550ef,#3b147a);border:3px solid rgba(255,255,255,0.28);color:#ffffff;font-size:64px;font-weight:900;display:grid;place-items:center;box-shadow:0 18px 50px rgba(0,0,0,0.65);font-family:Montserrat,monospace;">3</div>
-        </div>`;
-      timers.push(setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '2'; }, 1050));
-      timers.push(setTimeout(() => { const el = document.getElementById('introReadyCount'); if (el) el.textContent = '1'; }, 2100));
-      timers.push(setTimeout(() => finishNow(), 3150));
-    }, 6600));
   }
 
   /* ── 3. QUESTION READING & ANSWERING STAGE (Preserving 100% Question Card & 4-Color Choices) ── */

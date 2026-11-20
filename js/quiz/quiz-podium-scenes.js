@@ -275,12 +275,12 @@
     }
 
     const animMap = {
-      chests: 'scHeroChestArrive 0.58s cubic-bezier(0.22, 1, 0.36, 1) both',
-      goldrain: 'scHeroChestArrive 0.58s cubic-bezier(0.22, 1, 0.36, 1) both',
-      cards: 'scHeroCardFlipIn 0.66s cubic-bezier(0.22, 1, 0.36, 1) both',
-      rockets: 'scHeroRocketLaunch 0.66s cubic-bezier(0.22, 1, 0.36, 1) both',
-      finishline: 'scHeroSprintIn 0.60s cubic-bezier(0.22, 1, 0.36, 1) both',
-      portal: 'scHeroPortalEmerge 0.64s cubic-bezier(0.22, 1, 0.36, 1) both'
+      chests: 'scHeroChestArrive 1.15s cubic-bezier(0.22, 1, 0.36, 1) both',
+      goldrain: 'scHeroChestArrive 1.15s cubic-bezier(0.22, 1, 0.36, 1) both',
+      cards: 'scHeroCardFlipIn 1.30s cubic-bezier(0.22, 1, 0.36, 1) both',
+      rockets: 'scHeroRocketLaunch 1.30s cubic-bezier(0.22, 1, 0.36, 1) both',
+      finishline: 'scHeroSprintIn 1.20s cubic-bezier(0.22, 1, 0.36, 1) both',
+      portal: 'scHeroPortalEmerge 1.25s cubic-bezier(0.22, 1, 0.36, 1) both'
     };
     const dirEntry = (meta.entryPose === 'run')
       ? (rank === 2 ? 'runRight' : (rank === 3 ? 'runLeft' : 'runRight'))
@@ -297,7 +297,7 @@
       spawnThemeBurst(rank, entryMode);
       if (hm && typeof mountHeroFn === 'function') mountHeroFn(hm, player.avatarId, climaxPose);
       scheduleScene(() => { heroArea.classList.add('podium-hero-revealed'); }, 260);
-    }, 380);
+    }, 880);
   }
 
   function triggerHeroStunt(rank, mountHeroFn, player) {

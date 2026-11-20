@@ -437,7 +437,7 @@
   }
 
   function startCinematicShow() {
-    if (global.ScoreARWorldHalls?.isActive?.()) { global.ScoreARWorldHalls.replayHall(); return; }
+    if (global.ScoreARWorldHalls?.isActive?.()) { global.ScoreARWorldHalls.startCinematicShow(); return; }
     if (!revealOrder.length) return;
     clearPodiumTimers();
     if (scenes()?.cancelPending) scenes().cancelPending();
@@ -455,7 +455,7 @@
     revealStep = 0;
     advanceReveal();
     for (let i = 1; i < revealOrder.length; i++) {
-      schedulePodium(() => advanceReveal(), i * 2500);
+      schedulePodium(() => advanceReveal(), i * 4200);
     }
   }
 

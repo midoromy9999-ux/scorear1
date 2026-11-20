@@ -169,10 +169,18 @@
     tex.minFilter = THREE.LinearFilter;
     tex.magFilter = THREE.LinearFilter;
 
+    const charId = charNum(player?.avatarId || player?.characterId || 1);
+    const initialMotion = opts.initialMotion || 'idle';
+    const initialLoop = opts.initialLoop ?? true;
     const base = new URL('assets/motion-v3/', (typeof document !== 'undefined' && document.baseURI) || 'http://localhost/').href;
     let spritePlayer = null;
     if (global.ScorearSpritePlayer) {
-      spritePlayer = global.ScorearSpritePlayer.attach(offCanvas, { characterId: charNum(player?.avatarId || player?.characterId || 1), assetBase: base });
+      spritePlayer = global.ScorearSpritePlayer.attach(offCanvas, {
+        characterId: charId,
+        assetBase: base,
+        initialMotion,
+        loop: initialLoop
+      });
     }
 
     const group = new THREE.Group();
@@ -257,13 +265,33 @@
       group.add(reflMesh);
     }
 
-    let currentAction = 'idle';
+    let currentAction = initialMotion;
+    let actionToken = 0;
+    let readyPromise = spritePlayer?.ready || Promise.resolve(false);
+
+    function preloadMoves(moves) {
+      if (global.ScorearSpritePlayer?.preload) {
+        return global.ScorearSpritePlayer.preload([charId], moves, base);
+      }
+      return Promise.resolve([]);
+    }
+
     function setAction(move, loop = true) {
       currentAction = move;
-      if (!spritePlayer) return;
-      spritePlayer.ready.then(() => {
-        try { spritePlayer.play(move, { loop }); } catch {}
+      const tok = ++actionToken;
+      if (!spritePlayer) return Promise.resolve(false);
+      const p = spritePlayer.ready.then(async () => {
+        if (tok !== actionToken) return false;
+        try {
+          const ok = await spritePlayer.play(move, { loop });
+          if (tok === actionToken) tex.needsUpdate = true;
+          return ok;
+        } catch {
+          return false;
+        }
       });
+      readyPromise = p;
+      return p;
     }
 
     function setOpacity(v) {
@@ -303,7 +331,8 @@
     }
 
     return {
-      group, heroMesh, reflMesh, setAction, setOpacity, setJumpOffset, updateTexture, dispose,
+      group, heroMesh, reflMesh, setAction, preloadMoves, whenReady: () => readyPromise,
+      setOpacity, setJumpOffset, updateTexture, dispose,
       getAction: () => currentAction, player
     };
   }
