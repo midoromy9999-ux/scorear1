@@ -249,7 +249,14 @@
 
     const uid = credential.user.uid;
     await credential.user.updateProfile({ displayName: name.trim() });
-    await credential.user.sendEmailVerification().catch(() => {});
+    let emailVerificationSent = false;
+    try {
+      auth.languageCode = 'ar';
+      await credential.user.sendEmailVerification();
+      emailVerificationSent = true;
+    } catch (verErr) {
+      console.warn('[ScoreAR Auth] sendEmailVerification skipped/failed:', verErr?.code || verErr?.message);
+    }
 
     // Save request record with status: 'pending'
     const reqData = {
@@ -284,6 +291,7 @@
       success: true,
       status: 'pending',
       email: email.trim(),
+      emailVerificationSent,
       message: 'تم استلام طلب تسجيل المعلم بنجاح وهو الآن قيد مراجعة واعتماد الإدارة.'
     };
   }
@@ -372,6 +380,7 @@
     if (!raw.includes('@')) {
       throw new Error('إعادة تعيين كلمة مرور الطالب تتم مباشرة بواسطة معلّم الفصل أو إدارة المدرسة.');
     }
+    auth.languageCode = 'ar';
     await auth.sendPasswordResetEmail(raw);
   }
 
@@ -398,11 +407,7 @@
       if (global.toast) global.toast('تهانينا! تم اعتماد حسابك وتفعيل صلاحيات الاستوديو بنجاح 🚀');
       return { approved: true, role };
     } else {
-      if (!firebaseUser.emailVerified) {
-        if (global.toast) global.toast('يرجى تفعيل بريدك أولاً عبر الرابط المرسل لصندوق بريدك ✉️');
-      } else {
-        if (global.toast) global.toast('البريد مفعل ✓، ولكن الحساب لا يزال قيد مراجعة واعتماد الإدارة ⏳');
-      }
+      if (global.toast) global.toast('حسابك لا يزال قيد مراجعة واعتماد الإدارة ⏳ ستتمكن من الدخول فور الاعتماد.');
       return { approved: false, emailVerified: firebaseUser.emailVerified };
     }
   }

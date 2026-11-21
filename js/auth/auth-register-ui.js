@@ -8,6 +8,10 @@
   const $ = selector => document.querySelector(selector);
   let selectedStudentAvatar = 'char_01';
 
+  function escHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
   function uiIcon(name, size = 16) {
     return (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function')
       ? global.ScoreARUI.icon(name, { size })
@@ -79,7 +83,7 @@
 
           <div class="auth-notice-violet">
             <span class="auth-notice-icon">${uiIcon('info', 15)}</span>
-            <span><b>ملاحظة هامة:</b> ستكون حالة الحساب فور التسجيل <b>«قيد المراجعة»</b>، وسيتم إرسال بريد تفعيل إلى بريدك. يتطلب دخول الاستوديو موافقة الإدارة وضبط الصلاحيات.</span>
+            <span><b>ملاحظة هامة:</b> ستكون حالة الحساب فور التسجيل <b>«قيد المراجعة»</b>، وبمجرد اعتماد إدارة المنصة لطلبك ستتمكن من الدخول إلى استوديو المعلم مباشرة.</span>
           </div>
 
           <div id="trErrorBox" class="auth-error-box" style="display:none;"></div>
@@ -193,17 +197,20 @@
     if (errBox) errBox.style.display = 'none';
 
     try {
-      await global.ScoreARAuth.registerTeacher({ name, email, password, subject, school });
+      const regResult = await global.ScoreARAuth.registerTeacher({ name, email, password, subject, school });
       const { modalBody, modalTitle } = getModalElements();
       if (modalTitle) modalTitle.textContent = 'تم استلام طلب التسجيل بنجاح ✓';
+      const emailHint = regResult && regResult.emailVerificationSent
+        ? `تم إرسال نسخة تحقق اختيارية إلى بريدك (<b class="auth-highlight-cyan">${escHtml(email)}</b> — يمكنك مراجعة البريد غير المرغوب Spam إذا لزم)، وسيتم تفعيل حسابك فور اعتماد الإدارة دون عائق.`
+        : `سيتم تفعيل حسابك (<b class="auth-highlight-cyan">${escHtml(email)}</b>) وصلاحيات استوديو المعلم فور اعتماد إدارة المنصة لطلبك.`;
       modalBody.innerHTML = `
         <div class="modal-body-pad" style="text-align:center;padding:24px 16px;">
           <div style="margin:0 auto 14px;display:inline-flex;">${global.ScoreARUI?.iconBox ? global.ScoreARUI.iconBox('clock', { size: 'lg', tone: 'violet' }) : uiIcon('clock', 36)}</div>
-          <h3 class="auth-modal-title">مرحباً بك أ. ${name}</h3>
-          <p class="auth-modal-sub" style="font-size:14px;line-height:1.6;margin-bottom:16px;">
+          <h3 class="auth-modal-title">مرحباً بك أ. ${escHtml(name)}</h3>
+          <p class="auth-modal-sub" style="font-size:14px;line-height:1.65;margin-bottom:16px;">
             حسابك الآن <b>«قيد المراجعة والاعتماد»</b> من قِبل إدارة سكور آر.<br>
-            تم إرسال رابط تأكيد إلى بريدك: <b class="auth-highlight-cyan">${email}</b>.<br>
-            ستتمكن من تسجيل الدخول إلى استوديو المعلم فور تفعيل الحساب واعتماده.
+            ${emailHint}<br>
+            ستتمكن من تسجيل الدخول إلى استوديو المعلم فور موافقة الإدارة.
           </p>
           <button class="btn launch-primary full" onclick="if(global.closeModal)global.closeModal()" style="font-weight:900;padding:12px;border-radius:12px;">
             حسناً، فهمت ذلك ✓

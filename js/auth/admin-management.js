@@ -96,17 +96,17 @@
           <div style="display:flex;align-items:center;gap:12px;">
             ${uiBox('shield', 'violet', 'md')}
             <div>
-              <h2 style="margin:0;font-size:19px;font-weight:900;color:#ffffff;">لوحة الإدارة والحسابات (Admin Hub)</h2>
-              <p style="margin:2px 0 0;font-size:12px;color:#a78bfa;">إدارة المعلمين والطلاب والموافقات الرسمية لمنصة ScoreAR</p>
+              <h2 class="adm-hub-title">لوحة الإدارة والحسابات (Admin Hub)</h2>
+              <p class="adm-hub-subtitle">إدارة المعلمين والطلاب والموافقات الرسمية لمنصة ScoreAR</p>
             </div>
           </div>
           <button type="button" onclick="ScoreARAdminManagement.closeAdminHub()" class="scorear-gear-btn" aria-label="إغلاق">${uiIc('close', 16)}</button>
         </div>
 
-        <div style="padding:10px 24px;background:rgba(17,18,38,0.85);border-bottom:1px solid rgba(255,255,255,0.08);overflow-x:auto;">
+        <div class="adm-tabs-bar">
           <div class="scorear-segmented-tabs">
             <button type="button" onclick="ScoreARAdminManagement.setTab('requests')" class="scorear-segmented-tab ${currentTab === 'requests' ? 'active' : ''}" id="admTab_requests">
-              ${uiIc('clock', 14)} <span>طلبات المعلمين</span> <span id="admBadgeRequests" style="background:#ef4444;color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;display:none;">0</span>
+              ${uiIc('clock', 14)} <span>طلبات المعلمين</span> <span id="admBadgeRequests" class="adm-tab-badge" style="display:none;">0</span>
             </button>
             <button type="button" onclick="ScoreARAdminManagement.setTab('teachers')" class="scorear-segmented-tab ${currentTab === 'teachers' ? 'active' : ''}" id="admTab_teachers">
               ${uiIc('school', 14)} <span>المعلمون المعتمدون</span>
@@ -121,7 +121,7 @@
         </div>
 
         <div id="admContentArea" class="scorear-modal-body" style="flex:1;overflow-y:auto;">
-          <div style="text-align:center;padding:40px;color:#a78bfa;">جاري تحميل البيانات من الخادم...</div>
+          <div class="adm-loading-text">جاري تحميل البيانات من الخادم...</div>
         </div>
       </div>
     `;
@@ -192,10 +192,10 @@
 
     if (pending.length === 0) {
       container.innerHTML = `
-        <div style="text-align:center;padding:56px 20px;color:#9ca3af;">
+        <div class="adm-empty-state">
           <div style="display:flex;justify-content:center;margin-bottom:12px;">${uiBox('checkCircle', 'cyan', 'lg')}</div>
-          <h3 style="color:#fff;font-size:18px;font-weight:800;margin-bottom:6px;">لا توجد طلبات معلمين معلقة حالياً</h3>
-          <p style="font-size:13px;color:#a78bfa;">جميع طلبات الانضمام تم البت فيها بنجاح.</p>
+          <h3>لا توجد طلبات معلمين معلقة حالياً</h3>
+          <p>جميع طلبات الانضمام تم البت فيها بنجاح.</p>
         </div>
       `;
       return;
@@ -203,27 +203,27 @@
 
     const ui = global.ScoreARUI || { icon: () => '', iconBox: () => '' };
     container.innerHTML = `
-      <div style="margin-bottom:16px;color:#cbd5e1;font-size:14px;font-weight:700;">
+      <div class="adm-section-head" style="margin-bottom:16px;">
         طلبات الانضمام بانتظار المراجعة (${pending.length}):
       </div>
       <div style="display:grid;gap:14px;">
         ${pending.map(r => `
-          <div class="scorear-spotlight-card" style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+          <div class="scorear-spotlight-card adm-row-card" style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
             <div style="display:flex;align-items:center;gap:14px;">
               ${ui.iconBox('graduation', { size: 'md', tone: 'violet' })}
               <div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                  <span style="color:#f6f3ff;font-size:16px;font-weight:900;">${esc(r.displayName)}</span>
+                  <span class="adm-item-name">${esc(r.displayName)}</span>
                   <span class="launch-pill" style="padding:2px 10px;font-size:11px;">قيد المراجعة</span>
                 </div>
-                <div style="color:#a1a4be;font-size:13px;margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <div class="adm-item-meta">
                   <b>${esc(r.email)}</b>
                   <span>·</span>
                   <span style="display:inline-flex;align-items:center;gap:4px;">${ui.icon('book', { size: 13 })} ${esc(r.subject || 'غير محدد')}</span>
                   <span>·</span>
                   <span>${esc(r.school || 'مدرسة غير محددة')}</span>
                 </div>
-                <div style="color:#9396b2;font-size:11px;margin-top:4px;display:inline-flex;align-items:center;gap:5px;">
+                <div class="adm-item-time">
                   ${ui.icon('clock', { size: 12 })} تاريخ الطلب: ${formatDate(r.createdAt)}
                 </div>
               </div>
@@ -232,7 +232,7 @@
               <button onclick="ScoreARAdminManagement.approveTeacher('${r.uid}')" class="btn launch-primary" style="padding:9px 18px;font-size:13px;">
                 ${ui.icon('check', { size: 14 })} اعتماد كمعلم
               </button>
-              <button onclick="ScoreARAdminManagement.rejectTeacherPrompt('${r.uid}', '${esc(r.displayName)}')" class="btn launch-outline" style="padding:9px 14px;font-size:13px;border-color:#c3849866;color:#ffd3e5;">
+              <button onclick="ScoreARAdminManagement.rejectTeacherPrompt('${r.uid}', '${esc(r.displayName)}')" class="btn launch-outline adm-btn-danger" style="padding:9px 14px;font-size:13px;">
                 ${ui.icon('close', { size: 14 })} رفض
               </button>
             </div>
@@ -248,20 +248,20 @@
 
     container.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap;">
-        <span style="color:#cbd5e1;font-size:14px;font-weight:700;">سجل المعلمين المعتمدين (${list.length}):</span>
-        <input type="text" placeholder="بحث بالاسم أو البريد أو المادة..." oninput="ScoreARAdminManagement.onSearch(this.value)" style="background:#0c0d1d;border:1px solid #ffffff1e;color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;width:min(100%, 260px);direction:rtl;" value="${esc(searchQuery)}">
+        <span class="adm-section-head">سجل المعلمين المعتمدين (${list.length}):</span>
+        <input type="text" class="adm-search-input" placeholder="بحث بالاسم أو البريد أو المادة..." oninput="ScoreARAdminManagement.onSearch(this.value)" value="${esc(searchQuery)}">
       </div>
       <div style="display:grid;gap:12px;">
         ${list.filter(t => !searchQuery || (t.displayName||'').toLowerCase().includes(searchQuery.toLowerCase()) || (t.email||'').toLowerCase().includes(searchQuery.toLowerCase())).map(t => `
-          <div class="scorear-spotlight-card" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div class="scorear-spotlight-card adm-row-card" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
             <div>
               <div style="display:flex;align-items:center;gap:8px;">
-                <span style="color:#f6f3ff;font-size:15px;font-weight:900;">${esc(t.displayName)}</span>
-                <span style="background:${t.status==='suspended'?'#422337':'#1d5c52'};color:${t.status==='suspended'?'#ffd3e5':'#befff2'};font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;">
+                <span class="adm-item-name is-md">${esc(t.displayName)}</span>
+                <span class="adm-status-badge ${t.status === 'suspended' ? 'is-bad' : 'is-ok'}">
                   ${t.status === 'suspended' ? 'موقوف' : 'معتمد نشط'}
                 </span>
               </div>
-              <div style="color:#a1a4be;font-size:13px;margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <div class="adm-item-meta">
                 <span>${esc(t.email)}</span>
                 <span>·</span>
                 <span style="display:inline-flex;align-items:center;gap:4px;">${ui.icon('book', { size: 13 })} ${esc(t.schoolSubject || t.subject || 'غير محدد')}</span>
@@ -271,12 +271,12 @@
               <button onclick="ScoreARAdminManagement.toggleTeacherStatus('${t.uid}', ${t.status !== 'suspended'})" class="btn launch-outline" style="padding:7px 12px;font-size:12px;">
                 ${t.status === 'suspended' ? 'إلغاء الإيقاف' : 'إيقاف الحساب'}
               </button>
-              <button onclick="ScoreARAdminManagement.deleteTeacherPrompt('${t.uid}', '${esc(t.displayName)}')" class="btn launch-outline" style="padding:7px 12px;font-size:12px;border-color:#c3849866;color:#ffd3e5;">
+              <button onclick="ScoreARAdminManagement.deleteTeacherPrompt('${t.uid}', '${esc(t.displayName)}')" class="btn launch-outline adm-btn-danger" style="padding:7px 12px;font-size:12px;">
                 حذف نهائي
               </button>
             </div>
           </div>
-        `).join('') || '<div style="text-align:center;padding:30px;color:#9396b2;">لا توجد نتائج مطابقة</div>'}
+        `).join('') || '<div class="adm-empty-inline">لا توجد نتائج مطابقة</div>'}
       </div>
     `;
   }
@@ -285,21 +285,21 @@
     const ui = global.ScoreARUI || { icon: () => '' };
     container.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap;">
-        <span style="color:#cbd5e1;font-size:14px;font-weight:700;">سجل الطلاب المسجلين (${cachedStudents.length}):</span>
-        <input type="text" placeholder="بحث باسم العرض أو المستخدم أو الفصل..." oninput="ScoreARAdminManagement.onSearch(this.value)" style="background:#0c0d1d;border:1px solid #ffffff1e;color:#fff;padding:8px 14px;border-radius:10px;font-size:13px;width:min(100%, 260px);direction:rtl;" value="${esc(searchQuery)}">
+        <span class="adm-section-head">سجل الطلاب المسجلين (${cachedStudents.length}):</span>
+        <input type="text" class="adm-search-input" placeholder="بحث باسم العرض أو المستخدم أو الفصل..." oninput="ScoreARAdminManagement.onSearch(this.value)" value="${esc(searchQuery)}">
       </div>
       <div style="display:grid;gap:12px;">
         ${cachedStudents.filter(s => !searchQuery || (s.displayName||'').toLowerCase().includes(searchQuery.toLowerCase()) || (s.username||'').toLowerCase().includes(searchQuery.toLowerCase()) || (s.className||'').toLowerCase().includes(searchQuery.toLowerCase())).map(s => `
-          <div class="scorear-spotlight-card" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div class="scorear-spotlight-card adm-row-card" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
             <div>
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <span style="color:#f6f3ff;font-size:15px;font-weight:900;">${esc(s.displayName)}</span>
-                <span style="color:#c9baff;font-size:12px;font-weight:800;">(@${esc(s.username)})</span>
-                <span style="background:${s.isActive === false ? '#422337' : '#1d5c52'};color:${s.isActive === false ? '#ffd3e5' : '#befff2'};font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;">
+                <span class="adm-item-name is-md">${esc(s.displayName)}</span>
+                <span class="adm-item-handle">(@${esc(s.username)})</span>
+                <span class="adm-status-badge ${s.isActive === false ? 'is-bad' : 'is-ok'}">
                   ${s.isActive === false ? 'موقوف' : 'نشط'}
                 </span>
               </div>
-              <div style="color:#a1a4be;font-size:13px;margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <div class="adm-item-meta">
                 <span>الفصل: <b>${esc(s.className || 'عام')}</b></span>
                 <span>·</span>
                 <span style="display:inline-flex;align-items:center;gap:4px;">${ui.icon('clock', { size: 12 })} تاريخ التسجيل: ${formatDate(s.createdAt)}</span>
@@ -309,15 +309,15 @@
               <button onclick="ScoreARAdminManagement.toggleStudentStatus('${s.uid}', ${s.isActive === false})" class="btn launch-outline" style="padding:7px 12px;font-size:12px;">
                 ${s.isActive === false ? 'إعادة التفعيل' : 'إيقاف الحساب'}
               </button>
-              <button onclick="ScoreARAdminManagement.resetPasswordPrompt('${s.uid}', '${esc(s.displayName)}')" class="btn launch-outline" style="padding:7px 12px;font-size:12px;border-color:#9665ff66;color:#d7ccea;">
+              <button onclick="ScoreARAdminManagement.resetPasswordPrompt('${s.uid}', '${esc(s.displayName)}')" class="btn launch-outline adm-btn-accent" style="padding:7px 12px;font-size:12px;">
                 ${ui.icon('key', { size: 13 })} إعادة كلمة المرور
               </button>
-              <button onclick="ScoreARAdminManagement.deleteStudentPrompt('${s.uid}', '${esc(s.displayName)}')" class="btn launch-outline" style="padding:7px 12px;font-size:12px;border-color:#c3849866;color:#ffd3e5;">
+              <button onclick="ScoreARAdminManagement.deleteStudentPrompt('${s.uid}', '${esc(s.displayName)}')" class="btn launch-outline adm-btn-danger" style="padding:7px 12px;font-size:12px;">
                 حذف
               </button>
             </div>
           </div>
-        `).join('') || '<div style="text-align:center;padding:30px;color:#9396b2;">لا يوجد طلاب مسجلون حالياً</div>'}
+        `).join('') || '<div class="adm-empty-inline">لا يوجد طلاب مسجلون حالياً</div>'}
       </div>
     `;
   }
@@ -327,28 +327,28 @@
     const history = cachedRequests.filter(r => r.status === 'approved' || r.status === 'rejected' || r.status === 'deleted');
 
     container.innerHTML = `
-      <div style="margin-bottom:16px;color:#cbd5e1;font-size:14px;font-weight:700;">
+      <div class="adm-section-head" style="margin-bottom:16px;">
         سجل العمليات الإدارية والموافقات السابقة (${history.length}):
       </div>
       <div style="display:grid;gap:10px;">
         ${history.map(h => `
-          <div class="scorear-spotlight-card" style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div class="scorear-spotlight-card adm-row-card" style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
             <div>
               <div style="display:flex;align-items:center;gap:8px;">
-                <span style="color:#f6f3ff;font-weight:800;font-size:14px;">${esc(h.displayName)}</span>
-                <span style="font-size:11px;padding:2px 8px;border-radius:999px;font-weight:800;background:${h.status==='approved'?'#1d5c52':h.status==='rejected'?'#422337':'#27253f'};color:${h.status==='approved'?'#befff2':h.status==='rejected'?'#ffd3e5':'#a1a4be'};">
+                <span class="adm-item-name is-sm">${esc(h.displayName)}</span>
+                <span class="adm-status-badge ${h.status === 'approved' ? 'is-ok' : h.status === 'rejected' ? 'is-bad' : 'is-muted'}">
                   ${h.status === 'approved' ? 'معتمد' : h.status === 'rejected' ? 'مرفوض' : 'محذوف'}
                 </span>
               </div>
-              <div style="color:#a1a4be;font-size:12px;margin-top:3px;">
+              <div class="adm-item-meta is-sm">
                 ${esc(h.email)} · ملاحظة: <i>${esc(h.reviewNote || 'بدون ملاحظات')}</i>
               </div>
             </div>
-            <div style="color:#9396b2;font-size:11px;display:inline-flex;align-items:center;gap:5px;">
+            <div class="adm-item-time">
               ${ui.icon('clock', { size: 12 })} ${formatDate(h.reviewedAt || h.createdAt)}
             </div>
           </div>
-        `).join('') || '<div style="text-align:center;padding:30px;color:#9396b2;">لا توجد عمليات مسجلة</div>'}
+        `).join('') || '<div class="adm-empty-inline">لا توجد عمليات مسجلة</div>'}
       </div>
     `;
   }

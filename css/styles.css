@@ -4715,6 +4715,83 @@ html[data-theme="day"] .scorear-modal-shell [style*="color:#34d399"] {
   color: #047857 !important;
 }
 
+/* --- Admin Hub Semantic & Day-Mode Contrast Layer --- */
+.adm-hub-title { margin: 0; font-size: 19px; font-weight: 900; color: #ffffff; }
+.adm-hub-subtitle { margin: 2px 0 0; font-size: 12px; color: #c4b5fd; }
+.adm-tabs-bar {
+  padding: 10px 24px;
+  background: rgba(17, 18, 38, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+}
+.adm-tab-badge { background: #dc2626; color: #ffffff; font-size: 11px; padding: 1px 6px; border-radius: 10px; font-weight: 800; }
+.adm-loading-text { text-align: center; padding: 40px; color: #c4b5fd; font-weight: 700; }
+.adm-empty-state { text-align: center; padding: 56px 20px; color: #9ca3af; }
+.adm-empty-state h3 { color: #ffffff; font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+.adm-empty-state p { font-size: 13px; color: #c4b5fd; }
+.adm-empty-inline { text-align: center; padding: 30px; color: #9396b2; font-size: 13px; font-weight: 700; }
+.adm-section-head { color: #cbd5e1; font-size: 14px; font-weight: 700; }
+.adm-item-name { color: #f6f3ff; font-size: 16px; font-weight: 900; }
+.adm-item-name.is-md { font-size: 15px; }
+.adm-item-name.is-sm { font-size: 14px; font-weight: 800; }
+.adm-item-handle { color: #c9baff; font-size: 12px; font-weight: 800; }
+.adm-item-meta { color: #a1a4be; font-size: 13px; margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.adm-item-meta.is-sm { font-size: 12px; margin-top: 3px; }
+.adm-item-time { color: #9396b2; font-size: 11px; margin-top: 4px; display: inline-flex; align-items: center; gap: 5px; }
+.adm-search-input {
+  background: #0c0d1d;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  width: min(100%, 260px);
+  direction: rtl;
+}
+.adm-status-badge { font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 999px; }
+.adm-status-badge.is-ok { background: #1d5c52; color: #befff2; }
+.adm-status-badge.is-bad { background: #422337; color: #ffd3e5; }
+.adm-status-badge.is-muted { background: #27253f; color: #cbd5e1; }
+.adm-btn-danger { border-color: rgba(195, 132, 152, 0.42) !important; color: #ffd3e5 !important; }
+.adm-btn-accent { border-color: rgba(150, 101, 255, 0.42) !important; color: #d7ccea !important; }
+
+html[data-theme="day"] .adm-hub-title { color: #0d1b3e; }
+html[data-theme="day"] .adm-hub-subtitle { color: #334e7b; }
+html[data-theme="day"] .adm-tabs-bar {
+  background: #e8f3ff;
+  border-bottom: 1px solid rgba(14, 165, 233, 0.22);
+}
+html[data-theme="day"] .adm-loading-text { color: #4338ca; }
+html[data-theme="day"] .adm-empty-state { color: #334e7b; }
+html[data-theme="day"] .adm-empty-state h3 { color: #0d1b3e; }
+html[data-theme="day"] .adm-empty-state p,
+html[data-theme="day"] .adm-empty-inline { color: #334e7b; }
+html[data-theme="day"] .adm-section-head { color: #1e3a6e; }
+html[data-theme="day"] .adm-item-name { color: #0d1b3e; }
+html[data-theme="day"] .adm-item-handle { color: #4f46e5; }
+html[data-theme="day"] .adm-item-meta { color: #334e7b; }
+html[data-theme="day"] .adm-item-meta b { color: #0d1b3e; }
+html[data-theme="day"] .adm-item-time { color: #475569; }
+html[data-theme="day"] .adm-search-input {
+  background: #ffffff;
+  border-color: rgba(14, 165, 233, 0.36);
+  color: #0d1b3e;
+}
+html[data-theme="day"] .adm-search-input::placeholder { color: #64748b; }
+html[data-theme="day"] .adm-status-badge.is-ok { background: #d1fae5; color: #065f46; }
+html[data-theme="day"] .adm-status-badge.is-bad { background: #fee2e2; color: #991b1b; }
+html[data-theme="day"] .adm-status-badge.is-muted { background: #e2e8f0; color: #334155; }
+html[data-theme="day"] .adm-btn-danger {
+  border-color: rgba(220, 38, 38, 0.42) !important;
+  color: #b91c1c !important;
+  background: #fff5f5 !important;
+}
+html[data-theme="day"] .adm-btn-accent {
+  border-color: rgba(79, 70, 229, 0.38) !important;
+  color: #4f46e5 !important;
+  background: #f5f3ff !important;
+}
+
 @media (max-width: 640px) {
   .scorear-modal-shell {
     border-radius: 18px !important;

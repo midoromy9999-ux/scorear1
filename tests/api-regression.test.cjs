@@ -3,7 +3,7 @@ const root=path.resolve(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f
 function response(){return {code:0,headers:{},setHeader(k,v){this.headers[k]=v},status(s){this.code=s;return this},json(v){this.body=v;return this},end(){return this}};}
 function load(file,{claims={uid:'ordinary',role:'student'},env={},db={},auth:authOverrides={},imports={},fetch:fetchMock}={}){
  const mutations=[];
- const auth={verifyIdToken:async token=>{if(token==='invalid')throw Error('bad token');return claims},getUser:async()=>({emailVerified:true,customClaims:{},email:'teacher@example.test'}),setCustomUserClaims:async(...args)=>mutations.push(args),revokeRefreshTokens:async()=>{},...authOverrides};
+ const auth={verifyIdToken:async token=>{if(token==='invalid')throw Error('bad token');return claims},getUser:async()=>({emailVerified:true,customClaims:{},email:'teacher@example.test'}),updateUser:async()=>{},setCustomUserClaims:async(...args)=>mutations.push(args),revokeRefreshTokens:async()=>{},...authOverrides};
  const context={console,process:{env},URL,Buffer,Date,Math,Set,AbortSignal,fetch:fetchMock,crypto:require('node:crypto').webcrypto,
   mockImport:async name=>{if(name in imports)return imports[name];if(name==='firebase-admin/app')return {getApps:()=>[{name:'scorear-server'}]};if(name==='firebase-admin/auth')return {getAuth:()=>auth};if(name==='firebase-admin/database')return {getDatabase:()=>db};throw Error('Unexpected module: '+name)}};
  const transform=s=>s.replace(/^import .*;\r?\n/gm,'').replace(/export default async function handler/,'async function handler').replace(/export /g,'').replace(/\bimport\(/g,'mockImport(');
@@ -27,6 +27,27 @@ test('approve preserves unrelated custom claims',async()=>{
  const updates=[];const db={ref:()=>({once:async()=>({val:()=>({displayName:'معلم'})}),update:async x=>updates.push(x)})};
  const m=load('api/account-request.js',{claims:{uid:'admin',role:'admin'},db,auth:{getUser:async()=>({emailVerified:true,customClaims:{schoolId:'s1'},email:'teacher@example.test'})}}),res=response();
  await m.handler(req({action:'approve',targetUid:'teacher'}),res);assert.equal(res.code,200);assert.equal(m.mutations[0][1].role,'teacher');assert.equal(m.mutations[0][1].schoolId,'s1');assert.equal(updates.length,1);
+});
+test('admin approve verifies unverified teacher email and grants teacher role',async()=>{
+ const updates=[];const userUpdates=[];
+ const db={ref:()=>({once:async()=>({val:()=>({displayName:'أ. محمد علي',subject:'اللغة الإنجليزية'})}),update:async x=>updates.push(x)})};
+ const m=load('api/account-request.js',{claims:{uid:'admin',role:'admin'},db,auth:{getUser:async()=>({emailVerified:false,customClaims:{},email:'purebluehorizon@yahoo.com'}),updateUser:async(uid,patch)=>userUpdates.push({uid,patch})}}),res=response();
+ await m.handler(req({action:'approve',targetUid:'teacher'}),res);
+ assert.equal(res.code,200);
+ assert.equal(userUpdates.length,1);
+ assert.equal(userUpdates[0].uid,'teacher');
+ assert.equal(userUpdates[0].patch.emailVerified,true);
+ assert.equal(m.mutations[0][1].role,'teacher');
+ assert.equal(updates[0]['scorear_account_requests/teacher/status'],'approved');
+});
+test('admin reject does not mark unverified teacher email as verified',async()=>{
+ const updates=[];const userUpdates=[];
+ const db={ref:()=>({once:async()=>({val:()=>({displayName:'معلم مرفوض'})}),update:async x=>updates.push(x)})};
+ const m=load('api/account-request.js',{claims:{uid:'admin',role:'admin'},db,auth:{getUser:async()=>({emailVerified:false,customClaims:{},email:'pending@yahoo.com'}),updateUser:async(uid,patch)=>userUpdates.push({uid,patch})}}),res=response();
+ await m.handler(req({action:'reject',targetUid:'teacher',note:'غير مكتمل'}),res);
+ assert.equal(res.code,200);
+ assert.equal(userUpdates.length,0);
+ assert.equal(updates[0]['scorear_account_requests/teacher/status'],'rejected');
 });
 test('Blob out-of-scope pathname is rejected before token creation',async()=>{
  const m=load('api/upload-token.js',{claims:{uid:'teacher',role:'teacher'},env:{BLOB_READ_WRITE_TOKEN:'mock'},imports:{'@vercel/blob/client':{handleUpload:async o=>o.onBeforeGenerateToken('quiz-images/another/image.webp')}}}),res=response();

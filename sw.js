@@ -4,7 +4,7 @@
  * Ensures resilient classroom gameplay on slow or intermittent school networks.
  */
 
-const CACHE_NAME = 'scorear-v31-mobile-day-audit-fix';
+const CACHE_NAME = 'scorear-v32-teacher-approve-admin-day-fix';
 const STATIC_ASSETS = [
   './',
   './index.html',

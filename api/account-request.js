@@ -29,7 +29,9 @@ export default async function handler(req, res) {
       if (!request && target.customClaims?.role !== 'teacher') return res.status(404).json({ error: 'طلب المعلم غير موجود.' });
       const active = action === 'approve' || (action === 'toggleTeacherStatus' && isActive === true);
       if (action === 'toggleTeacherStatus' && typeof isActive !== 'boolean') return res.status(400).json({ error: 'حالة التفعيل غير صحيحة.' });
-      if (active && !target.emailVerified) return res.status(400).json({ error: 'يجب تأكيد بريد المعلم أولًا.' });
+      if (active && !target.emailVerified) {
+        await auth.updateUser(targetUid, { emailVerified: true });
+      }
       await setRole(active ? 'teacher' : null);
       const status = active ? 'approved' : action === 'reject' ? 'rejected' : 'suspended';
       const updates = {};
