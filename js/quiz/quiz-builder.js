@@ -7,6 +7,11 @@
   let currentQuiz = null, activeQIndex = 0, saveState = 'saved', debounceTimer = null, lastSavedAt = null;
   const uiIc = (n, s = 14) => global.ScoreARUI?.icon?.(n, { size: s }) || '';
   const uiBox = (n, t = 'violet', s = 'sm') => global.ScoreARUI?.iconBox?.(n, { size: s, tone: t }) || '';
+  function parseQuestionPoints(raw, fallback = 1000) {
+    if (raw === null || raw === undefined || raw === '') return fallback;
+    const n = Number(raw);
+    return (Number.isFinite(n) && n >= 0) ? n : fallback;
+  }
 
   function createNewQuestion(index = 1) {
     return {
@@ -180,7 +185,7 @@
   }
 
   function setQuestionTime(seconds) { if (currentQuiz?.questions[activeQIndex]) { currentQuiz.questions[activeQIndex].timeLimit = Number(seconds); scheduleAutoSave(); renderBuilderView(); } }
-  function setQuestionPoints(pts) { if (currentQuiz?.questions[activeQIndex]) { currentQuiz.questions[activeQIndex].points = Number(pts); scheduleAutoSave(); renderBuilderView(); } }
+  function setQuestionPoints(pts) { if (currentQuiz?.questions[activeQIndex]) { currentQuiz.questions[activeQIndex].points = parseQuestionPoints(pts, 1000); scheduleAutoSave(); renderBuilderView(); } }
   function setQuestionImage(idx, url) { if (currentQuiz?.questions[idx]) { currentQuiz.questions[idx].imageUrl = url; scheduleAutoSave(); renderBuilderView(); } }
   function setQuestionImageAlt(idx, alt) { if (currentQuiz?.questions[idx]) { currentQuiz.questions[idx].imageAlt = alt; scheduleAutoSave(); } }
 
@@ -192,8 +197,14 @@
     currentQuiz.questions.forEach((q, qIdx) => {
       const qNum = qIdx + 1;
       if (!q.q || !q.q.trim()) errors.push(`السؤال (${qNum}): نص السؤال فارغ.`);
-      if (!q.opts || q.opts.length < 2) errors.push(`السؤال (${qNum}): يجب أن يحتوي على خيارين على الأقل.`);
-      if (typeof q.ans !== 'number' || q.ans < 0 || q.ans >= q.opts.length) errors.push(`السؤال (${qNum}): لم يتم تحديد الإجابة الصحيحة.`);
+      const rawOpts = Array.isArray(q.opts) ? q.opts : (Array.isArray(q.options) ? q.options : []);
+      const cleanOpts = rawOpts.map(o => String(o ?? '').trim()).filter(Boolean);
+      if (cleanOpts.length < 2) errors.push(`السؤال (${qNum}): يجب أن يحتوي على خيارين غير فارغين على الأقل.`);
+      if (cleanOpts.length > 4) errors.push(`السؤال (${qNum}): الحد الأقصى للخيارات في المسابقة الحية هو 4 خيارات فقط.`);
+      if (Array.isArray(q.correct) && q.correct.length > 1) errors.push(`السؤال (${qNum}): المسابقة الحية تدعم إجابة صحيحة واحدة فقط.`);
+      if (typeof q.ans !== 'number' || q.ans < 0 || q.ans >= rawOpts.length || !String(rawOpts[q.ans] ?? '').trim()) {
+        errors.push(`السؤال (${qNum}): لم يتم تحديد إجابة صحيحة صالحة.`);
+      }
     });
     return { valid: errors.length === 0, errors };
   }
@@ -215,7 +226,16 @@
     const realTitle = (currentQuiz.title || '').trim() || 'مسابقة جديدة';
     global.activeQuizTitle = realTitle;
     try { sessionStorage.setItem('scorear_active_quiz_title', realTitle); } catch(e){}
-    global.contestQuestions = JSON.parse(JSON.stringify(currentQuiz.questions));
+    global.contestQuestions = currentQuiz.questions.map(orig => {
+      const copy = JSON.parse(JSON.stringify(orig));
+      const rawOpts = Array.isArray(copy.opts) ? copy.opts : (Array.isArray(copy.options) ? copy.options : []);
+      const indexed = rawOpts.map((o, i) => ({ i, text: String(o ?? '').trim() })).filter(x => Boolean(x.text)).slice(0, 4);
+      const mappedAns = indexed.findIndex(x => x.i === Number(copy.ans));
+      copy.opts = indexed.map(x => x.text);
+      copy.ans = mappedAns >= 0 ? mappedAns : 0;
+      copy.points = parseQuestionPoints(copy.points, 1000);
+      return copy;
+    });
     closeBuilder();
     if (global.toast) global.toast('تم اعتماد ونشر المسابقة بنجاح. اختر عالم المنافسة.');
     if (global.ScoreARWorldFlow && typeof global.ScoreARWorldFlow.openWorldPicker === 'function') {
@@ -300,9 +320,9 @@
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;">
                   <span class="scorear-inline-icon" style="color:#ddd8ff;font-size:12px;font-weight:700;">${uiIc('zap', 14)} النقاط:</span>
-                  <select onchange="ScoreARQuizBuilder.handlePointsSelect(this.value)" style="background:#1c1d3b;border:1px solid rgba(172,139,242,0.35);color:#fff;font-size:12px;font-weight:800;padding:4px 8px;border-radius:8px;font-family:inherit;">${[100,200,500,1000,2000].map(p => `<option value="${p}" ${q.points === p ? 'selected' : ''}>${p} نقطة</option>`).join('')}<option value="custom" ${![100,200,500,1000,2000].includes(q.points) ? 'selected' : ''}>قيمة مخصصة…</option></select>
-                  ${![100,200,500,1000,2000].includes(q.points) ? `<input type="number" value="${q.points}" onchange="ScoreARQuizBuilder.setQuestionPoints(this.value)" style="width:70px;background:#1c1d3b;border:1px solid #7550ef;color:#fff;padding:3px 6px;border-radius:6px;font-size:11px;font-weight:800;">` : ''}
-                  <button type="button" onclick="ScoreARQuizBuilderActions.applyPointsToAll(ScoreARQuizBuilder.getCurrentQuiz(), ${q.points || 1000}, () => ScoreARQuizBuilder.renderBuilderView())" class="scorear-gear-btn" style="font-size:10.5px;padding:4px 9px;" title="تعميم هذه النقاط على كافة الأسئلة">تعميم</button>
+                  <select onchange="ScoreARQuizBuilder.handlePointsSelect(this.value)" style="background:#1c1d3b;border:1px solid rgba(172,139,242,0.35);color:#fff;font-size:12px;font-weight:800;padding:4px 8px;border-radius:8px;font-family:inherit;">${[0,100,200,500,1000,2000].map(p => `<option value="${p}" ${q.points === p ? 'selected' : ''}>${p === 0 ? '0 (تدريبي)' : `${p} نقطة`}</option>`).join('')}<option value="custom" ${![0,100,200,500,1000,2000].includes(q.points) ? 'selected' : ''}>قيمة مخصصة…</option></select>
+                  ${![0,100,200,500,1000,2000].includes(q.points) ? `<input type="number" min="0" value="${q.points}" onchange="ScoreARQuizBuilder.setQuestionPoints(this.value)" style="width:70px;background:#1c1d3b;border:1px solid #7550ef;color:#fff;padding:3px 6px;border-radius:6px;font-size:11px;font-weight:800;">` : ''}
+                  <button type="button" onclick="ScoreARQuizBuilderActions.applyPointsToAll(ScoreARQuizBuilder.getCurrentQuiz(), ${parseQuestionPoints(q.points, 1000)}, () => ScoreARQuizBuilder.renderBuilderView())" class="scorear-gear-btn" style="font-size:10.5px;padding:4px 9px;" title="تعميم هذه النقاط على كافة الأسئلة">تعميم</button>
                 </div>
               </div>
             </div>
@@ -314,7 +334,7 @@
             <div>
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                 <label style="color:#ddd8ff;font-size:13px;font-weight:800;">الاختيارات (اضغط الدائرة لتحديد الإجابة الصحيحة):</label>
-                ${q.opts.length < 6 ? `<button type="button" onclick="ScoreARQuizBuilder.addOption()" class="scorear-gear-btn" style="padding:4px 10px;font-size:11px;">${uiIc('plus', 12)} إضافة خيار (${q.opts.length}/6)</button>` : ''}
+                ${q.opts.length < 4 ? `<button type="button" onclick="ScoreARQuizBuilder.addOption()" class="scorear-gear-btn" style="padding:4px 10px;font-size:11px;">${uiIc('plus', 12)} إضافة خيار (${q.opts.length}/4)</button>` : ''}
               </div>
               <div class="builder-options-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                 ${q.opts.map((optText, oIdx) => {
@@ -341,7 +361,9 @@
   function handlePointsSelect(val) {
     if (val === 'custom') {
       const customVal = prompt('أدخل قيمة النقاط المخصصة:', '1500');
-      if (customVal && !isNaN(Number(customVal))) setQuestionPoints(Number(customVal));
+      if (customVal !== null && customVal.trim() !== '' && Number.isFinite(Number(customVal)) && Number(customVal) >= 0) {
+        setQuestionPoints(Number(customVal));
+      }
     } else {
       setQuestionPoints(Number(val));
     }
@@ -358,19 +380,29 @@
   function updateQuestionExplain(e) { if (currentQuiz?.questions[activeQIndex]) { currentQuiz.questions[activeQIndex].explain = e; scheduleAutoSave(); } }
   function updateOptionText(oIdx, t) { if (currentQuiz?.questions[activeQIndex]?.opts) { currentQuiz.questions[activeQIndex].opts[oIdx] = t; scheduleAutoSave(); } }
   function setCorrectAnswer(oIdx) { if (currentQuiz?.questions[activeQIndex]) { currentQuiz.questions[activeQIndex].ans = oIdx; scheduleAutoSave(); renderBuilderView(); } }
-  function addOption() { const q = currentQuiz?.questions[activeQIndex]; if (q && q.opts.length < 6) { q.opts.push('الخيار ' + (q.opts.length + 1)); scheduleAutoSave(); renderBuilderView(); } }
+  function addOption() { const q = currentQuiz?.questions[activeQIndex]; if (q && q.opts.length < 4) { q.opts.push('الخيار ' + (q.opts.length + 1)); scheduleAutoSave(); renderBuilderView(); } }
   function removeOption(oIdx) { const q = currentQuiz?.questions[activeQIndex]; if (q && q.opts.length > 2) { q.opts.splice(oIdx, 1); if (q.ans === oIdx) q.ans = 0; else if (q.ans > oIdx) q.ans--; scheduleAutoSave(); renderBuilderView(); } }
 
   function addImportedQuestion(qObj) {
     if (!currentQuiz) currentQuiz = { ...createDefaultQuiz(), questions: [] };
-    const opts = Array.isArray(qObj?.opts) ? qObj.opts : (Array.isArray(qObj?.options) ? qObj.options : ['خيار 1', 'خيار 2', 'خيار 3', 'خيار 4']);
-    const ans = Number(qObj?.ans ?? qObj?.answer ?? (Array.isArray(qObj?.correct) ? qObj.correct[0] : 0)) || 0;
+    const rawOpts = Array.isArray(qObj?.opts) ? qObj.opts : (Array.isArray(qObj?.options) ? qObj.options : ['خيار 1', 'خيار 2', 'خيار 3', 'خيار 4']);
+    const rawAns = Number(qObj?.ans ?? qObj?.answer ?? (Array.isArray(qObj?.correct) ? qObj.correct[0] : 0)) || 0;
+    const indexedOpts = rawOpts.map((o, i) => ({ i, text: String(o ?? '').trim() })).filter(x => Boolean(x.text)).slice(0, 4);
+    const remappedAns = indexedOpts.findIndex(x => x.i === rawAns);
+    const isDouble = Boolean(qObj?.isDouble || qObj?.doublePoints || qObj?.multiplier === 2);
     currentQuiz.questions.push({
       id: qObj?.id || ('q_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
-      q: qObj?.q || qObj?.text || '', opts: [...opts], ans,
-      time: Number(qObj?.time || qObj?.timeLimit) || 20, points: Number(qObj?.points) || 100,
-      doublePoints: Boolean(qObj?.doublePoints), explain: qObj?.explain || qObj?.explanation || qObj?.why || '',
-      skill: qObj?.skill || currentQuiz.subject || 'اللغة العربية', image: qObj?.image || null, imageAlt: qObj?.imageAlt || ''
+      q: qObj?.q || qObj?.text || '',
+      opts: indexedOpts.length >= 2 ? indexedOpts.map(x => x.text) : rawOpts.slice(0, 4),
+      ans: remappedAns >= 0 ? remappedAns : 0,
+      timeLimit: Number(qObj?.timeLimit || qObj?.time) || 20,
+      points: parseQuestionPoints(qObj?.points, 1000),
+      isDouble,
+      multiplier: isDouble ? 2 : 1,
+      explain: qObj?.explain || qObj?.explanation || qObj?.why || '',
+      skill: qObj?.skill || currentQuiz.subject || 'اللغة العربية',
+      imageUrl: qObj?.imageUrl || qObj?.image || null,
+      imageAlt: qObj?.imageAlt || ''
     });
     activeQIndex = currentQuiz.questions.length - 1;
     scheduleAutoSave();

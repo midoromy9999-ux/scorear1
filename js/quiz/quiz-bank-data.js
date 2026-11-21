@@ -283,7 +283,7 @@
       ans: Number(qData.ans !== undefined ? qData.ans : (qData.correct ? qData.correct[0] : 0)) || 0,
       explain: (qData.explain || qData.explanation || '').trim(),
       timeLimit: Number(qData.timeLimit) || 20,
-      points: Number(qData.points) || 1000,
+      points: (qData.points !== null && qData.points !== undefined && qData.points !== '' && Number.isFinite(Number(qData.points)) && Number(qData.points) >= 0) ? Number(qData.points) : 1000,
       subject: (meta.subject || '').trim(),
       grade: (meta.grade || '').trim(),
       tags: Array.isArray(meta.tags) ? meta.tags : (meta.tags ? [meta.tags] : []),

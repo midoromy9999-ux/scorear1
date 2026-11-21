@@ -363,7 +363,10 @@
         mgr.players[currentStudentId].status.multiplier = 1;
       }
       if (myRes?.wager100Outcome === 'won') showStudentCardAlert('🎲 كسبت رهان المائة! +100 نقطة إضافية!');
-      else if (myRes?.wager100Outcome === 'lost') showStudentCardAlert('🎲 خسرت رهان المائة (-100 نقطة)!', true);
+      else if (myRes?.wager100Outcome === 'lost') {
+        const actualLoss = Number(myRes.pointsEarned ?? -100);
+        showStudentCardAlert(`🎲 خسرت رهان المائة (${actualLoss} نقطة)!`, true);
+      }
       ingestStudentAuthoritativeGrants(msg, mgr);
       renderStudentDeckUi();
       return;

@@ -602,6 +602,7 @@
                 <input id="duelTeamBNameInput" type="text" maxlength="24" value="${esc(modalTeamNames.team_b === DEFAULT_TEAM_NAMES.team_b ? '' : modalTeamNames.team_b)}" placeholder="${DEFAULT_TEAM_NAMES.team_b}" oninput="ScoreARArenaModes._setDraftTeamName('team_b', this.value)" style="padding:8px 12px;border-radius:10px;border:1px solid rgba(251,146,60,0.5);background:rgba(9,13,30,0.72);color:#fff;font-family:Cairo,sans-serif;font-size:13px;font-weight:800;">
               </label>
             </div>
+            <div style="margin-top:8px;font-size:11px;font-weight:700;color:#bae6fd;opacity:0.9;">ℹ️ تُحسب نتيجة المواجهة بالمجموع المباشر لنقاط أعضاء كل فريق (يُفضَّل توازن العدد).</div>
           </div>
         ` : (modalSelectedMode === 'SURVIVAL' ? `
           <div id="survivalModeInfoStrip" style="margin-bottom:14px;padding:10px 16px;border-radius:14px;background:rgba(245,158,11,0.14);backdrop-filter:blur(10px);border:1px solid rgba(251,191,36,0.42);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">

@@ -239,16 +239,19 @@
       issues.push('الاقتباس المرجعي غير مطابق للنص تماماً.');
     }
 
+    const hasPoints = rawQuestion.points !== '' && rawQuestion.points !== null && rawQuestion.points !== undefined;
+    const cappedOpts = opts.slice(0, 4);
+    const cappedAns = (typeof ans === 'number' && ans >= 0 && ans < cappedOpts.length) ? ans : 0;
     return {
       isValid: issues.length === 0,
       issues,
       canonicalQuestion: {
         id: rawQuestion.id || ('q_ai_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
         q: qText,
-        opts,
-        ans,
+        opts: cappedOpts,
+        ans: cappedAns,
         timeLimit: Math.max(5, Math.min(Number(rawQuestion.timeLimit) || 20, 120)),
-        points: [100, 200, 500, 1000, 2000].includes(Number(rawQuestion.points)) ? Number(rawQuestion.points) : 1000,
+        points: (hasPoints && [0, 100, 200, 500, 1000, 2000].includes(Number(rawQuestion.points))) ? Number(rawQuestion.points) : 1000,
         explain: (rawQuestion.explain || rawQuestion.explanation || '').trim(),
         sourceQuote: sourceQuote || '',
         sourceRef: sourceRef,

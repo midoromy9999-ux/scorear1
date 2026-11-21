@@ -8,6 +8,29 @@
 
   function rt() { return global.ScoreARRealtime || null; }
   function lb() { return global.ScoreARHostLeaderboard || null; }
+  function parseQuestionPoints(raw, fallback = 1000) {
+    if (raw === null || raw === undefined || raw === '') return fallback;
+    const n = Number(raw);
+    return (Number.isFinite(n) && n >= 0) ? n : fallback;
+  }
+  function validateLiveQuestion(qData) {
+    if (!qData || typeof qData !== 'object') return { valid: false, error: 'السؤال غير معرف أو تالف.' };
+    const opts = Array.isArray(qData.options || qData.opts) ? (qData.options || qData.opts) : [];
+    const cleanOpts = opts.map(o => String(o ?? '').trim()).filter(Boolean);
+    if (cleanOpts.length > 4) return { valid: false, error: 'الحد الأقصى للخيارات في المسابقة الحية هو 4 خيارات فقط.' };
+    if (Array.isArray(qData.correct) && qData.correct.length > 1) return { valid: false, error: 'المسابقة الحية تدعم إجابة صحيحة واحدة فقط لكل سؤال.' };
+    const evaluator = global.ScoreAREvaluator;
+    if (evaluator?.normalizeQuestion && evaluator?.validateQuestion) {
+      try {
+        const norm = evaluator.normalizeQuestion(qData);
+        if (Array.isArray(norm.correct) && norm.correct.length > 1) return { valid: false, error: 'المسابقة الحية تدعم إجابة صحيحة واحدة فقط لكل سؤال.' };
+        return evaluator.validateQuestion(norm);
+      } catch (e) { return { valid: false, error: e.message }; }
+    }
+    if (!String(qData.q || qData.text || qData.question || '').trim()) return { valid: false, error: 'نص السؤال فارغ.' };
+    if (cleanOpts.length < 2) return { valid: false, error: 'يجب توفر إجابتين على الأقل.' };
+    return { valid: true, error: null };
+  }
   function getModeInfo() {
     const mode = (global.ScoreARGameModes && typeof global.ScoreARGameModes.getMode === 'function') ? global.ScoreARGameModes.getMode() : (global.currentLobbyGameMode || 'SOLO');
     const aiEnabled = (global.ScoreARGameModes && typeof global.ScoreARGameModes.isAIEnabled === 'function') ? global.ScoreARGameModes.isAIEnabled() : Boolean(global.currentLobbyAIEnabled);
@@ -94,7 +117,7 @@
         qIndex,
         totalQuestions: total,
         q: qData.text || qData.q,
-        opts: qData.options || qData.opts,
+        opts: (qData.options || qData.opts || []).slice(0, 4),
         timeLimit: timeRemaining,
         skill: qData.skill || 'سؤال',
         worldId,
@@ -155,6 +178,7 @@
     const limitSec = (typeof totalTime === 'number' && totalTime > 0) ? totalTime : 20;
     const totalMs = limitSec * 1000;
     const evaluated = [];
+    let warnedMultiChoice = false;
 
     players.forEach(p => {
       const pIdStr = String(p.id);
@@ -178,9 +202,13 @@
         return;
       }
       const ans = answers[pIdStr] || answers[p.id] ||
-        Object.values(answers).find(a => String(a.playerId) === pIdStr || (a.playerName && a.playerName.trim() === p.name.trim()));
+        Object.values(answers).find(a => a && a.playerId !== undefined && a.playerId !== null && String(a.playerId) === pIdStr) || null;
 
       const chosen = ans ? (ans.chosenIndices !== undefined ? ans.chosenIndices : ans.optionIndex) : -1;
+      if (!warnedMultiChoice && Array.isArray(qData?.correct) && qData.correct.length > 1 && ans && ans.chosenIndices === undefined) {
+        warnedMultiChoice = true;
+        console.warn('[ScoreAR Host] Multi-answer question in single-choice live room:', qData?.id || qData?.q);
+      }
       const optionOrder = ans ? ans.optionOrder : null;
       const cardP = global.ScoreARCardArena?.getManager?.()?.players?.[pIdStr];
       const wasPinned = Boolean(cardP?.status?.isPinned || p.isPinned);
@@ -253,28 +281,37 @@
       p.timeSliced = false;
 
       if (isAnsCorrect) {
-        const base = Number(qData.points) || 1000;
-        const speedRatio = Math.max(0, Math.min(1, (totalMs - elapsedMs) / totalMs));
-        const tf = 0.25 + 0.75 * speedRatio;
+        const base = parseQuestionPoints(qData.points, 1000);
+        const nextStreak = (p.streak || 0) + 1;
         const cardMult = (cardP?.status?.multiplier === 2 || p.cardMultiplier === 2) ? 2 : 1;
         if (cardP?.status) cardP.status.multiplier = 1;
         p.cardMultiplier = 1;
-        const mult = ((qData.isDouble || qData.multiplier === 2) ? 2 : (Number(qData.multiplier) || 1)) * cardMult;
+        if (base === 0) {
+          earned = hadWager100 ? 100 : 0;
+          p.streak = nextStreak;
+          p.score = (p.score || 0) + earned;
+          scoreFormula = hadWager100
+            ? 'سؤال تدريبي (0 نقطة) + 🎲100 (رهان المائة) = 100'
+            : 'سؤال تدريبي (0 نقطة)';
+        } else {
+          const speedRatio = Math.max(0, Math.min(1, (totalMs - elapsedMs) / totalMs));
+          const tf = 0.25 + 0.75 * speedRatio;
+          const mult = ((qData.isDouble || qData.multiplier === 2) ? 2 : (Number(qData.multiplier) || 1)) * cardMult;
 
-        const baseScale = base / 1000;
-        const speedBonusRaw = speedRank === 1 ? 120 : speedRank === 2 ? 70 : speedRank === 3 ? 30 : 0;
-        const speedBonus = Math.round(speedBonusRaw * baseScale);
+          const baseScale = base / 1000;
+          const speedBonusRaw = speedRank === 1 ? 120 : speedRank === 2 ? 70 : speedRank === 3 ? 30 : 0;
+          const speedBonus = Math.round(speedBonusRaw * baseScale);
 
-        const nextStreak = (p.streak || 0) + 1;
-        const streakStep = Math.max(5, Math.round(15 * baseScale));
-        const streakCap = Math.max(15, Math.round(45 * baseScale));
-        const streakBonus = nextStreak >= 2 ? Math.min(streakCap, (nextStreak - 1) * streakStep) : 0;
+          const streakStep = Math.max(5, Math.round(15 * baseScale));
+          const streakCap = Math.max(15, Math.round(45 * baseScale));
+          const streakBonus = nextStreak >= 2 ? Math.min(streakCap, (nextStreak - 1) * streakStep) : 0;
 
-        earned = Math.round((base * tf + speedBonus) * mult) + streakBonus;
-        if (hadWager100) earned += 100;
-        p.streak = nextStreak;
-        p.score = (p.score || 0) + earned;
-        scoreFormula = `${base} × ${tf.toFixed(2)}${speedBonus ? ' + ⚡' + speedBonus : ''} × ${mult}${streakBonus ? ' + 🔥' + streakBonus : ''}${hadWager100 ? ' + 🎲100 (رهان المائة)' : ''} = ${earned}`;
+          earned = Math.round((base * tf + speedBonus) * mult) + streakBonus;
+          if (hadWager100) earned += 100;
+          p.streak = nextStreak;
+          p.score = (p.score || 0) + earned;
+          scoreFormula = `${base} × ${tf.toFixed(2)}${speedBonus ? ' + ⚡' + speedBonus : ''} × ${mult}${streakBonus ? ' + 🔥' + streakBonus : ''}${hadWager100 ? ' + 🎲100 (رهان المائة)' : ''} = ${earned}`;
+        }
       } else {
         const saverIdx = cardP?.trapSlots ? cardP.trapSlots.findIndex(t => t.id === 'STREAK_SAVER') : -1;
         if (saverIdx !== -1) {
@@ -283,9 +320,10 @@
           p.streak = 0;
         }
         if (hadWager100) {
-          p.score = Math.max(0, (p.score || 0) - 100);
-          earned = -100;
-          scoreFormula = (wasPinned ? 'مجمد بكارت تثبيت ❄️' : 'إجابة خاطئة') + ' · 🎲 خسارة رهان المائة (-100)';
+          const prevScore = Number(p.score) || 0;
+          p.score = Math.max(0, prevScore - 100);
+          earned = p.score - prevScore;
+          scoreFormula = (wasPinned ? 'مجمد بكارت تثبيت ❄️' : 'إجابة خاطئة') + ` · 🎲 خسارة رهان المائة (${earned})`;
         } else {
           p.score = (p.score || 0);
         }
@@ -420,6 +458,8 @@
     publishStudentKicked,
     publishRoomLockState,
     evaluateQuestionResults,
+    validateLiveQuestion,
+    parseQuestionPoints,
     handleHostIncomingMessage,
     renderHostLeaderboard,
     renderHostPodium

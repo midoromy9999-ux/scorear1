@@ -1439,7 +1439,7 @@
         entry.status = 'wrong';
         applyPodColor(entry, 0xef4444, false);
         entry.setMotion('sad', true);
-        const wrongLabel = res?.wager100Outcome === 'lost' ? '🎲 -100' : '✗ 0';
+        const wrongLabel = res?.wager100Outcome === 'lost' ? (pts < 0 ? `🎲 ${pts}` : '🎲 0') : '✗ 0';
         updateEntryNameplate(entry, wrongLabel, '#ef4444');
       }
     });

@@ -28,6 +28,18 @@
       : '';
   }
 
+  function matchesStudentIdentity(entry, myId, myName) {
+    if (!entry) return false;
+    if (myId) {
+      const entryId = (entry.id !== undefined && entry.id !== null)
+        ? String(entry.id).trim()
+        : ((entry.uid !== undefined && entry.uid !== null) ? String(entry.uid).trim() : '');
+      return Boolean(entryId && entryId === myId);
+    }
+    const eName = String(entry.name ?? entry.playerName ?? '').trim();
+    return Boolean(myName && eName && eName === myName);
+  }
+
   function renderHeroActionDock(includeCelebrate = false) {
     const actions = [
       { e: '🦘', lbl: 'قفزة نصر', clr: '#38bdf8' },
@@ -165,15 +177,11 @@
 
   function renderStudentResult(stage, resData, state) {
     const { currentStudent, currentWorldId, currentQIndex, selectedOptionIndex, currentScore, currentStreak, lastRank } = state;
-    const myId = String(currentStudent.uid);
-    let myResult = (resData.playerResults && resData.playerResults[myId]) ? resData.playerResults[myId] : null;
-    if (!myResult && resData.playerResults && currentStudent.name) {
-      const match = (resData.topLeaderboard || []).find(p => p.name === currentStudent.name);
-      if (match && resData.playerResults[match.id]) myResult = resData.playerResults[match.id];
-    }
+    const myId = (currentStudent?.uid !== undefined && currentStudent?.uid !== null) ? String(currentStudent.uid).trim() : '';
+    const myName = (currentStudent?.name || '').trim();
+    let myResult = (myId && resData.playerResults && resData.playerResults[myId]) ? resData.playerResults[myId] : null;
     if (!myResult && resData.playerResults) {
-      const byName = Object.values(resData.playerResults).find(r => r && (r.playerName === currentStudent.name || (r.id && String(r.id) === myId)));
-      if (byName) myResult = byName;
+      myResult = Object.values(resData.playerResults).find(r => matchesStudentIdentity(r, myId, myName)) || null;
     }
 
     const correctIdx = Number(resData.correctAnswer);
@@ -182,10 +190,9 @@
     const isCorrect = myResult ? Boolean(myResult.isCorrect ?? myResult.correct) : false;
     const earned = myResult ? Number(myResult.pointsEarned || 0) : 0;
     const respTime = myResult ? myResult.respTime : null;
-    const myName = (currentStudent.name || '').trim();
-    const isFastest = (resData.fastestStudent && (String(resData.fastestStudent.id) === myId || (resData.fastestStudent.name && resData.fastestStudent.name.trim() === myName)));
+    const isFastest = Boolean(resData.fastestStudent && matchesStudentIdentity(resData.fastestStudent, myId, myName));
     const myFastRank = (resData.fastestTop2 && Array.isArray(resData.fastestTop2))
-      ? (resData.fastestTop2.findIndex(f => String(f.id) === myId || (f.name && f.name.trim() === myName)) + 1)
+      ? (resData.fastestTop2.findIndex(f => matchesStudentIdentity(f, myId, myName)) + 1)
       : (isFastest ? 1 : 0);
     const isCardArena = (typeof window !== 'undefined' && window.ScoreARCardArena && typeof window.ScoreARCardArena.isModeActive === 'function')
       ? window.ScoreARCardArena.isModeActive()
@@ -193,7 +200,7 @@
 
     let currentRank = '-';
     if (resData.topLeaderboard && Array.isArray(resData.topLeaderboard)) {
-      const foundIdx = resData.topLeaderboard.findIndex(p => String(p.id) === myId || p.name === currentStudent.name);
+      const foundIdx = resData.topLeaderboard.findIndex(p => matchesStudentIdentity(p, myId, myName));
       if (foundIdx !== -1) currentRank = foundIdx + 1;
     }
 
@@ -219,7 +226,7 @@
           </div>
           <h2 style="font-size:19px;font-weight:900;color:${isCorrect ? '#34d399' : '#f87171'};margin:0 0 4px 0;">${isCorrect ? 'إجابة صحيحة وممتازة!' : (myChoiceIdx === -1 ? 'انتهى الوقت ولم تُجب!' : 'إجابة خاطئة!')}</h2>
           <div style="font-size:18px;font-weight:900;color:${earned < 0 ? '#f87171' : '#fcd34d'};margin:2px 0;">${earned > 0 ? `+${earned}` : (earned < 0 ? `${earned}` : '+0')} <span style="font-size:12px;color:#c9baff;">نقطة</span>${respTime ? `<span style="font-size:11px;color:#6ee7b7;font-weight:700;margin-inline-start:6px;">(⚡ ${respTime}ث)</span>` : ''}</div>
-          ${myResult?.wager100Outcome === 'won' ? `<div style="background:rgba(16,185,129,0.24);border:1px solid rgba(52,211,153,0.55);color:#6ee7b7;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">🎲 ربحت رهان المائة! (+100 نقطة إضافية)</div>` : (myResult?.wager100Outcome === 'lost' ? `<div style="background:rgba(239,68,68,0.24);border:1px solid rgba(248,113,113,0.55);color:#fca5a5;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">🎲 خسرت رهان المائة (-100 نقطة)</div>` : '')}
+          ${myResult?.wager100Outcome === 'won' ? `<div style="background:rgba(16,185,129,0.24);border:1px solid rgba(52,211,153,0.55);color:#6ee7b7;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">🎲 ربحت رهان المائة! (+100 نقطة إضافية)</div>` : (myResult?.wager100Outcome === 'lost' ? `<div style="background:rgba(239,68,68,0.24);border:1px solid rgba(248,113,113,0.55);color:#fca5a5;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">🎲 خسرت رهان المائة (${earned} نقطة)</div>` : '')}
           ${isCardArena && (myFastRank === 1 || myFastRank === 2) ? `<div style="background:rgba(142,100,239,0.22);border:1px solid rgba(172,139,242,0.45);color:#e9d5ff;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">المركز ${myFastRank === 1 ? 'الأول' : 'الثاني'} في السرعة! كسبت كارت تكتيكي</div>` : (isCardArena && isCorrect && ((myResult?.streak ?? (currentStreak + 1)) % 2 === 0) ? `<div style="background:rgba(245,158,11,0.22);border:1px solid rgba(251,191,36,0.48);color:#fde68a;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">🔥 إجابتان متتاليتان صحيحتان! كسبت كارت تكتيكي جديد!</div>` : (isCardArena && isCorrect ? `<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#c9baff;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;margin-top:4px;">أسرع في السؤال القادم أو حقق إجابتين متتاليتين لكسب كارت!</div>` : (isFastest ? `<div style="background:rgba(245,158,11,0.22);border:1px solid rgba(245,158,11,0.45);color:#fcd34d;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">⚡ بطل السرعة: كنت أسرع إجابة صحيحة!</div>` : '')))}
           ${currentStreak > 1 ? `<div style="font-size:11px;color:#f97316;font-weight:800;margin-top:3px;">🔥 سلسلة ${currentStreak} إجابات متتالية!</div>` : ''}
           <div style="background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.45);border-radius:12px;padding:8px 12px;margin-top:8px;text-align:center;">
@@ -252,7 +259,8 @@
   }
 
   function renderStudentFinalPodium(stage, data, currentStudent, currentScore, currentWorldId) {
-    const myId = String(currentStudent.uid);
+    const myId = (currentStudent?.uid !== undefined && currentStudent?.uid !== null) ? String(currentStudent.uid).trim() : '';
+    const myName = (currentStudent?.name || '').trim();
     const activeMode = data?.mode || data?.gameMode || global.__scorearJoinedRoomMode || 'SOLO';
     const isDuel = activeMode === 'DUEL_TEAMS';
     const myTeamId = isDuel ? resolveStudentTeamId(data, currentStudent) : null;
@@ -266,7 +274,7 @@
     let myFinalRank = '-';
     const rankSource = Array.isArray(data.leaderboard) ? data.leaderboard : (Array.isArray(data.podium) ? data.podium : (Array.isArray(data.top3) ? data.top3 : []));
     if (!isDuel && rankSource.length) {
-      const idx = rankSource.findIndex(p => String(p?.id) === myId || p?.name === currentStudent.name);
+      const idx = rankSource.findIndex(p => matchesStudentIdentity(p, myId, myName));
       if (idx !== -1) myFinalRank = idx + 1;
     }
     const duelStatusCard = isDuel ? `
@@ -350,9 +358,9 @@
   }
 
   function renderStudentLeaderboardCard(stage, msg, currentStudent, currentScore, currentWorldId) {
-    const myId = String(currentStudent?.uid || '');
-    const myName = currentStudent?.name || '';
-    const myInfo = (msg.allRanks || []).find(r => String(r.id) === myId || r.name === myName) || {
+    const myId = (currentStudent?.uid !== undefined && currentStudent?.uid !== null) ? String(currentStudent.uid).trim() : '';
+    const myName = (currentStudent?.name || '').trim();
+    const myInfo = (msg.allRanks || []).find(r => matchesStudentIdentity(r, myId, myName)) || {
       rank: '-', score: currentScore, delta: 0, streak: 0, gapToAbove: 0
     };
     const rankNum = typeof myInfo.rank === 'number' ? myInfo.rank : '-';
@@ -426,7 +434,7 @@
               ${topContestants.map((tp, i) => {
                 const av = tp?.avatarId || 'char_01';
                 const rankBadge = String(i + 1).padStart(2, '0');
-                const isMe = String(tp?.id) === myId || (tp?.name && tp.name === myName);
+                const isMe = matchesStudentIdentity(tp, myId, myName);
                 const tpEmoji = tp?.teamId === 'team_b' ? '🦁 ' : (tp?.teamId === 'team_a' ? '🦅 ' : '');
                 return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border-radius:11px;background:${isMe ? 'rgba(117,80,239,0.24)' : 'rgba(255,255,255,0.03)'};border:1px solid ${isMe ? 'rgba(172,139,242,0.48)' : 'rgba(255,255,255,0.07)'};">
                   <div style="display:flex;align-items:center;gap:8px;min-width:0;">
@@ -461,7 +469,8 @@
   function isMeEliminated(payload, currentStudent) {
     if (global.__scorearAmEliminated === true) return true;
     const stu = currentStudent || getSessionStudentObj();
-    const myId = String(stu?.uid || stu?.id || '');
+    const rawId = stu?.uid ?? stu?.id;
+    const myId = (rawId !== undefined && rawId !== null) ? String(rawId).trim() : '';
     const myName = (stu?.name || '').trim();
     if (!myId && !myName) return false;
 
@@ -477,11 +486,11 @@
       return true;
     }
 
-    const pools = [payload?.allRanks, payload?.roster, payload?.leaderboard];
+    const pools = [payload?.allRanks, payload?.roster, payload?.leaderboard, payload?.topLeaderboard];
     for (let i = 0; i < pools.length; i++) {
       const list = pools[i];
       if (!Array.isArray(list)) continue;
-      const m = list.find(r => r && ((myId && String(r.id) === myId) || (myName && r.name === myName)));
+      const m = list.find(r => matchesStudentIdentity(r, myId, myName));
       if (m && m.eliminated) {
         global.__scorearAmEliminated = true;
         return true;
@@ -549,13 +558,14 @@
   }
 
   function resolveStudentTeamId(payload, currentStudent) {
-    const myId = String(currentStudent?.uid || currentStudent?.id || '');
-    const myName = currentStudent?.name || '';
-    const pools = [payload?.allRanks, payload?.roster, payload?.leaderboard];
+    const rawId = currentStudent?.uid ?? currentStudent?.id;
+    const myId = (rawId !== undefined && rawId !== null) ? String(rawId).trim() : '';
+    const myName = (currentStudent?.name || '').trim();
+    const pools = [payload?.allRanks, payload?.roster, payload?.leaderboard, payload?.topLeaderboard];
     for (let i = 0; i < pools.length; i++) {
       const list = pools[i];
       if (!Array.isArray(list)) continue;
-      const m = list.find(r => r && ((myId && String(r.id) === myId) || (myName && r.name === myName)));
+      const m = list.find(r => matchesStudentIdentity(r, myId, myName));
       if (m && (m.teamId === 'team_a' || m.teamId === 'team_b')) return m.teamId;
     }
     if (global.__scorearStudentTeamId) return global.__scorearStudentTeamId;

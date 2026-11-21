@@ -19,6 +19,11 @@
   function escapeHtml(str) {
     return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  function parseQuestionPoints(raw, fallback = 1000) {
+    if (raw === null || raw === undefined || raw === '') return fallback;
+    const n = Number(raw);
+    return (Number.isFinite(n) && n >= 0) ? n : fallback;
+  }
   // --- 1. Template Generation & Download ---
   function downloadTemplate(format = 'xlsx') {
     const headers = ['السؤال (Question)', 'الإجابة 1 (Answer 1)', 'الإجابة 2 (Answer 2)', 'الإجابة 3 (Answer 3)', 'الإجابة 4 (Answer 4)', 'الزمن بالثواني (Time limit)', 'رقم الإجابة الصحيحة (Correct answer)', 'النقاط (Points)', 'الشرح بعد الإجابة (Explanation)'];
@@ -97,27 +102,47 @@
       const joined = row.map(x => String(x || '').trim()).join('');
       if (!joined || joined.startsWith('#') || joined.startsWith('//')) continue;
       const qText = String(row[colMap.q] ?? '').trim();
-      const rawOpts = [
+      const rawSlots = [
         String(row[colMap.o1] ?? '').trim(), String(row[colMap.o2] ?? '').trim(),
         colMap.o3 >= 0 ? String(row[colMap.o3] ?? '').trim() : '',
         colMap.o4 >= 0 ? String(row[colMap.o4] ?? '').trim() : '',
         colMap.o5 >= 0 ? String(row[colMap.o5] ?? '').trim() : '',
         colMap.o6 >= 0 ? String(row[colMap.o6] ?? '').trim() : ''
-      ].filter(Boolean);
+      ];
+      const filledSlots = rawSlots.map((text, idx) => ({ origIdx: idx, text })).filter(s => Boolean(s.text));
+      const rawOpts = filledSlots.map(s => s.text);
       let pTime = colMap.time >= 0 ? parseInt(row[colMap.time], 10) : 20;
       if (isNaN(pTime) || pTime <= 0) pTime = 20;
-      let pPts = colMap.pts >= 0 ? parseInt(row[colMap.pts], 10) : 1000;
-      if (![0, 1000, 2000].includes(pPts)) pPts = 1000;
+      const rawPtsStr = colMap.pts >= 0 ? String(row[colMap.pts] ?? '').trim() : '';
+      let pPts = rawPtsStr !== '' ? parseInt(rawPtsStr, 10) : 1000;
+      if (![0, 100, 200, 500, 1000, 2000].includes(pPts)) pPts = 1000;
       const rAns = colMap.ans >= 0 ? String(row[colMap.ans] ?? '').trim() : '1';
       let cIdx = -1;
-      const numAns = parseInt(rAns, 10);
-      if (!isNaN(numAns) && numAns >= 1 && numAns <= rawOpts.length) {
-        cIdx = numAns - 1;
+      let importError = null;
+      if (/^\d+$/.test(rAns)) {
+        const numAns = parseInt(rAns, 10);
+        if (numAns < 1 || numAns > 6) {
+          importError = 'رقم الإجابة الصحيحة خارج النطاق المسموح (1 إلى 4).';
+        } else if (!rawSlots[numAns - 1]) {
+          importError = `رقم الإجابة الصحيحة (${numAns}) يشير إلى عمود خيار فارغ.`;
+        } else {
+          cIdx = filledSlots.findIndex(s => s.origIdx === numAns - 1);
+        }
+      } else if (/^\d+(?:\s*[,،;&+]\s*\d+)+$/.test(rAns) || /^[a-fأ-د](?:\s*[,،;&+]\s*[a-fأ-د])+$/i.test(rAns)) {
+        importError = 'المسابقة الحية تدعم إجابة صحيحة واحدة فقط لكل سؤال (لا تدعم تعدد الإجابات).';
       } else {
         const lMap = { 'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'أ': 0, 'ب': 1, 'ج': 2, 'د': 3 };
         const lKey = rAns.toLowerCase();
-        if (lMap[lKey] !== undefined && lMap[lKey] < rawOpts.length) cIdx = lMap[lKey];
-        else { const m = rawOpts.findIndex(o => o.toLowerCase() === rAns.toLowerCase()); if (m >= 0) cIdx = m; }
+        if (lMap[lKey] !== undefined) {
+          if (!rawSlots[lMap[lKey]]) {
+            importError = 'حرف الإجابة الصحيحة يشير إلى عمود خيار فارغ.';
+          } else {
+            cIdx = filledSlots.findIndex(s => s.origIdx === lMap[lKey]);
+          }
+        } else {
+          const m = rawOpts.findIndex(o => o.toLowerCase() === rAns.toLowerCase());
+          if (m >= 0) cIdx = m;
+        }
       }
       const item = {
         id: 'imp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -128,6 +153,7 @@
         timeLimit: pTime,
         points: pPts,
         explain: colMap.exp >= 0 ? String(row[colMap.exp] ?? '').trim() : '',
+        importError,
         errors: []
       };
       validateRow(item);
@@ -138,19 +164,30 @@
   // --- 3. Row Validation Engine ---
   function validateRow(row) {
     const errs = [];
+    if (row.importError) errs.push(row.importError);
+    if (Array.isArray(row.correct) && row.correct.length > 1) {
+      errs.push('المسابقة الحية تدعم إجابة صحيحة واحدة فقط لكل سؤال.');
+    }
+    const indexedOpts = (row.opts || []).map((o, i) => ({ i, text: String(o || '').trim() })).filter(x => Boolean(x.text));
+    const clean = indexedOpts.map(x => x.text);
+    const remappedAns = indexedOpts.findIndex(x => x.i === Number(row.ans));
+    if (clean.length > 4) {
+      errs.push('الحد الأقصى للخيارات في المسابقة الحية هو 4 خيارات فقط.');
+    }
+    if (clean.length < 2) {
+      errs.push('يجب توفر إجابتين على الأقل');
+    } else if (row.ans === null || row.ans === undefined || isNaN(Number(row.ans)) || remappedAns < 0) {
+      errs.push('لم يتم تحديد الإجابة الصحيحة أو أن الخيار المحدد فارغ');
+    }
     const evaluator = global.ScoreAREvaluator;
-    if (evaluator) {
+    if (evaluator && errs.length === 0) {
       try {
-        const canonical = evaluator.normalizeQuestion({ q: row.q, opts: row.opts, ans: row.ans });
+        const canonical = evaluator.normalizeQuestion({ q: row.q, opts: clean, ans: remappedAns });
         const val = evaluator.validateQuestion(canonical);
         if (!val.valid) errs.push(val.error);
       } catch(e) { errs.push(e.message); }
-    } else {
-      const q = (row.q || '').trim();
-      if (!q) errs.push('نص السؤال فارغ');
-      const clean = (row.opts || []).map(o => (o || '').trim()).filter(Boolean);
-      if (clean.length < 2) errs.push('يجب توفر إجابتين على الأقل');
-      if (row.ans === null || row.ans === undefined || isNaN(row.ans) || row.ans < 0) errs.push('لم يتم تحديد الإجابة الصحيحة');
+    } else if (!String(row.q || '').trim()) {
+      errs.push('نص السؤال فارغ');
     }
     const t = Number(row.timeLimit);
     if (isNaN(t) || t < 5 || t > 120) errs.push('الزمن يجب أن يكون بين 5 و 120 ثانية');
@@ -305,9 +342,12 @@
                     </td>
                     <td style="padding:6px;text-align:center;">
                       <select onchange="ScoreARQuizImporter.updateRowText(${idx}, 'points', this.value)" style="background:#0c0d1d;border:1px solid #ffffff1c;border-radius:6px;color:#fff;font-size:10px;padding:3px;font-family:inherit;">
-                        <option value="1000" ${row.points === 1000 ? 'selected' : ''}>1000</option>
-                        <option value="2000" ${row.points === 2000 ? 'selected' : ''}>2000</option>
-                        <option value="0" ${row.points === 0 ? 'selected' : ''}>0</option>
+                        <option value="0" ${Number(row.points) === 0 ? 'selected' : ''}>0 (تدريبي)</option>
+                        <option value="100" ${Number(row.points) === 100 ? 'selected' : ''}>100</option>
+                        <option value="200" ${Number(row.points) === 200 ? 'selected' : ''}>200</option>
+                        <option value="500" ${Number(row.points) === 500 ? 'selected' : ''}>500</option>
+                        <option value="1000" ${Number(row.points) === 1000 ? 'selected' : ''}>1000</option>
+                        <option value="2000" ${Number(row.points) === 2000 ? 'selected' : ''}>2000</option>
                       </select>
                     </td>
                     <td style="padding:6px;">
@@ -340,18 +380,42 @@
     `;
   }
   // --- 7. Live Table Edit Actions ---
-  function updateRowText(idx, field, val) { if (!importedRows[idx]) return; importedRows[idx][field] = val; validateRow(importedRows[idx]); renderPreviewView(); }
-  function updateRowOption(idx, oIdx, val) { if (!importedRows[idx]) return; importedRows[idx].opts[oIdx] = val; validateRow(importedRows[idx]); renderPreviewView(); }
-  function setRowCorrectAnswer(idx, oIdx) { if (!importedRows[idx]) return; importedRows[idx].ans = oIdx; validateRow(importedRows[idx]); renderPreviewView(); }
+  function updateRowText(idx, field, val) {
+    if (!importedRows[idx]) return;
+    importedRows[idx][field] = (field === 'points')
+      ? parseQuestionPoints(val, 1000)
+      : (field === 'timeLimit' ? Number(val) : val);
+    validateRow(importedRows[idx]);
+    renderPreviewView();
+  }
+  function updateRowOption(idx, oIdx, val) {
+    if (!importedRows[idx]) return;
+    importedRows[idx].opts[oIdx] = val;
+    importedRows[idx].importError = null;
+    validateRow(importedRows[idx]);
+    renderPreviewView();
+  }
+  function setRowCorrectAnswer(idx, oIdx) {
+    if (!importedRows[idx]) return;
+    importedRows[idx].ans = oIdx;
+    importedRows[idx].importError = null;
+    importedRows[idx].correct = [oIdx];
+    validateRow(importedRows[idx]);
+    renderPreviewView();
+  }
   function toggleRowInclude(idx, isInc) { if (!importedRows[idx]) return; importedRows[idx].included = isInc; renderPreviewView(); }
   function deleteRow(idx) { importedRows.splice(idx, 1); renderPreviewView(); }
   // --- 8. Save & Target Routing ---
   async function commitImportedQuestions() {
-    const validQuestions = importedRows.filter(r => r.included && r.isValid).map(r => ({
-      id: 'q_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      q: r.q.trim(), opts: r.opts.map(o => o.trim()).filter(Boolean), ans: r.ans,
-      timeLimit: Number(r.timeLimit) || 20, points: Number(r.points) || 1000, explain: (r.explain || '').trim()
-    }));
+    const validQuestions = importedRows.filter(r => r.included && r.isValid).map(r => {
+      const indexedOpts = (r.opts || []).map((o, i) => ({ i, text: String(o || '').trim() })).filter(x => Boolean(x.text));
+      const remappedAns = indexedOpts.findIndex(x => x.i === Number(r.ans));
+      return {
+        id: 'q_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        q: r.q.trim(), opts: indexedOpts.map(x => x.text), ans: remappedAns >= 0 ? remappedAns : 0,
+        timeLimit: Number(r.timeLimit) || 20, points: parseQuestionPoints(r.points, 1000), explain: (r.explain || '').trim()
+      };
+    });
     if (!validQuestions.length) { alert('لا توجد أسئلة سليمة لاعتمادها.'); return; }
     if (currentContext.mode === 'builder' && typeof currentContext.onImport === 'function') {
       currentContext.onImport(validQuestions); closeImporter();
@@ -463,8 +527,9 @@
         q: (q.q || q.text || '').trim(),
         opts: Array.isArray(q.opts || q.options) ? [...(q.opts || q.options)] : [],
         ans: (q.ans !== undefined) ? q.ans : 0,
+        correct: Array.isArray(q.correct) ? [...q.correct] : undefined,
         timeLimit: Number(q.timeLimit) || 20,
-        points: Number(q.points) || 1000,
+        points: parseQuestionPoints(q.points, 1000),
         explain: (q.explain || q.explanation || '').trim(),
         errors: []
       };
@@ -475,6 +540,7 @@
   }
   global.ScoreARQuizImporter = {
     openImporter, closeImporter, downloadTemplate, handleFileSelect: parseUploadedFile,
+    processRawRows, validateRow, getImportedRows: () => importedRows,
     renderUploadView, renderPreviewView, updateRowText, updateRowOption, setRowCorrectAnswer,
     toggleRowInclude, deleteRow, commitImportedQuestions, saveAsNewQuiz, saveToQuestionBank,
     handlePreloadedQuestions

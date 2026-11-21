@@ -4,7 +4,7 @@
  * Ensures resilient classroom gameplay on slow or intermittent school networks.
  */
 
-const CACHE_NAME = 'scorear-v23-card-arena-3d';
+const CACHE_NAME = 'scorear-v24-audit-fixes';
 const STATIC_ASSETS = [
   './',
   './index.html',

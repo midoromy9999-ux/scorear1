@@ -41,12 +41,105 @@ function resolveFile(rootDir, file) {
 // - Student messages (_senderRole: 'student') are ONLY delivered to Host ('host')
 // - Host messages (_senderRole: 'host') are delivered to ALL Students ('student')
 const networkClients = [];
+const sharedRtdb = {};
+const childAddedListeners = new Map();
 
-function createClientVm(role, clientName) {
+function resolveServerValues(v) {
+  if (v && typeof v === 'object') {
+    if (v['.sv'] === 'timestamp') return Date.now();
+    if (Array.isArray(v)) return v.map(resolveServerValues);
+    const out = {};
+    for (const k of Object.keys(v)) out[k] = resolveServerValues(v[k]);
+    return out;
+  }
+  return v;
+}
+
+function getAtPath(p) {
+  const parts = String(p || '').split('/').filter(Boolean);
+  let cur = sharedRtdb;
+  for (const part of parts) {
+    if (!cur || typeof cur !== 'object') return null;
+    cur = cur[part];
+  }
+  return cur === undefined ? null : cur;
+}
+
+function setAtPath(p, rawVal) {
+  const parts = String(p || '').split('/').filter(Boolean);
+  const val = resolveServerValues(rawVal);
+  if (!parts.length) return;
+  let cur = sharedRtdb;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (!cur[parts[i]] || typeof cur[parts[i]] !== 'object') cur[parts[i]] = {};
+    cur = cur[parts[i]];
+  }
+  const leafKey = parts[parts.length - 1];
+  const isNew = cur[leafKey] === undefined;
+  cur[leafKey] = val;
+  const parentPath = parts.slice(0, -1).join('/');
+  const listeners = childAddedListeners.get(parentPath);
+  if (isNew && listeners && listeners.size) {
+    const snap = { key: leafKey, val: () => JSON.parse(JSON.stringify(val)), exists: () => val !== null };
+    listeners.forEach(fn => fn(snap));
+  }
+}
+
+function updateAtPath(p, patch) {
+  const resolved = resolveServerValues(patch || {});
+  const parts = String(p || '').split('/').filter(Boolean);
+  let cur = sharedRtdb;
+  for (const part of parts) {
+    if (!cur[part] || typeof cur[part] !== 'object') cur[part] = {};
+    cur = cur[part];
+  }
+  for (const [k, v] of Object.entries(resolved)) cur[k] = v;
+}
+
+function createSharedMockDb() {
+  return {
+    ref(pathStr = '') {
+      const cleanPath = String(pathStr || '').replace(/^\/+|\/+$/g, '');
+      return {
+        async set(val) { setAtPath(cleanPath, val); },
+        async update(patch) {
+          for (const [k, v] of Object.entries(patch || {})) {
+            if (k.includes('/')) setAtPath((cleanPath ? cleanPath + '/' : '') + k, v);
+            else updateAtPath(cleanPath, { [k]: v });
+          }
+        },
+        async once() {
+          const v = getAtPath(cleanPath);
+          return { key: cleanPath.split('/').pop(), exists: () => v !== null, val: () => (v === null ? null : JSON.parse(JSON.stringify(v))) };
+        },
+        on(ev, fn) {
+          if (ev !== 'child_added' || typeof fn !== 'function') return fn;
+          if (!childAddedListeners.has(cleanPath)) childAddedListeners.set(cleanPath, new Set());
+          childAddedListeners.get(cleanPath).add(fn);
+          const existing = getAtPath(cleanPath);
+          if (existing && typeof existing === 'object') {
+            Object.entries(existing).forEach(([k, v]) => fn({ key: k, val: () => JSON.parse(JSON.stringify(v)), exists: () => true }));
+          }
+          return fn;
+        },
+        off(ev, fn) {
+          const set = childAddedListeners.get(cleanPath);
+          if (!set) return;
+          if (fn) set.delete(fn);
+          else set.clear();
+        },
+        onDisconnect() { return { update: async () => {}, set: async () => {}, remove: async () => {} }; }
+      };
+    }
+  };
+}
+
+function createClientVm(role, clientName, fixedUid = null) {
   const elements = new Map();
   const optButtons = [];
   const doc = {
     readyState: 'complete',
+    head: { children: [], appendChild(c) { doc.head.children.push(c); if (c.id) elements.set(c.id, c); return c; }, querySelector: () => null },
     createElement(tag) {
       let _id = '';
       const el = {
@@ -62,9 +155,12 @@ function createClientVm(role, clientName) {
         offsetWidth: 360,
         offsetHeight: 220,
         appendChild(child) { el.children.push(child); if (child.id) elements.set(child.id, child); return child; },
+        insertAdjacentElement() {},
+        insertAdjacentHTML() {},
         setAttribute() {},
         getAttribute() { return null; },
         addEventListener() {},
+        removeEventListener() {},
         getContext() {
           return {
             fillStyle: '', font: '', textAlign: '', globalCompositeOperation: '',
@@ -73,12 +169,13 @@ function createClientVm(role, clientName) {
         },
         getBoundingClientRect: () => ({ left: 0, top: 0, width: 360, height: 220 }),
         remove() { if (el.id) elements.delete(el.id); },
-        querySelector() { return null; },
-        querySelectorAll() { return []; }
+        querySelector(sel) { return sel?.startsWith('#') ? (elements.get(sel.slice(1)) || null) : null; },
+        querySelectorAll(sel) { return sel === '.student-opt-btn' ? optButtons : []; }
       };
       return el;
     },
     getElementById(id) { return elements.get(id) || null; },
+    querySelector(sel) { return sel?.startsWith('#') ? (elements.get(sel.slice(1)) || null) : null; },
     querySelectorAll(sel) {
       if (sel === '.student-opt-btn') return optButtons;
       return [];
@@ -112,22 +209,46 @@ function createClientVm(role, clientName) {
     doc.body.appendChild(fb);
   }
 
+  const sharedDb = createSharedMockDb();
+  const clientAuth = {
+    currentUser: role === 'host' ? { uid: fixedUid || 'host', isAnonymous: false } : null,
+    onAuthStateChanged(cb) { return () => {}; },
+    async signInAnonymously() {
+      if (!clientAuth.currentUser) {
+        clientAuth.currentUser = { uid: fixedUid || ('anon_' + clientName), isAnonymous: true };
+      }
+      return { user: clientAuth.currentUser };
+    }
+  };
+
   const subscribers = new Set();
+  const typedSubscribers = new Map();
   let myRole = role;
   let myPin = null;
 
   const mockRealtime = {
-    init(r, p, cb) {
+    async init(r, p, cb) {
       myRole = (r === 'teacher' || r === 'admin' || r === 'host') ? 'host' : 'student';
       myPin = String(p).trim();
       subscribers.clear();
+      typedSubscribers.clear();
       if (typeof cb === 'function') subscribers.add(cb);
     },
-    subscribe(fn) {
-      if (typeof fn === 'function') subscribers.add(fn);
+    subscribe(typeOrFn, fnArg) {
+      if (typeof typeOrFn === 'string' && typeof fnArg === 'function') {
+        if (!typedSubscribers.has(typeOrFn)) typedSubscribers.set(typeOrFn, new Set());
+        typedSubscribers.get(typeOrFn).add(fnArg);
+        return () => typedSubscribers.get(typeOrFn)?.delete(fnArg);
+      }
+      if (typeof typeOrFn === 'function') {
+        subscribers.add(typeOrFn);
+        return () => subscribers.delete(typeOrFn);
+      }
+      return () => {};
     },
     publish(type, payload = {}) {
-      const packet = { type, ...payload, _senderRole: myRole, _timestamp: Date.now() };
+      const senderUid = myRole === 'host' ? (clientAuth.currentUser?.uid || 'host') : (clientAuth.currentUser?.uid || fixedUid || clientName);
+      const packet = { type, ...payload, _senderRole: myRole, _senderUid: senderUid, _timestamp: Date.now() };
       networkClients.forEach(targetClient => {
         if (targetClient === clientObj) return;
         // Exact realtime-engine.js isolation: student packets only reach host; host packets reach all students
@@ -135,17 +256,22 @@ function createClientVm(role, clientName) {
         targetClient.receive(JSON.parse(JSON.stringify(packet)));
       });
     },
-    cleanup() { subscribers.clear(); }
+    cleanup() { subscribers.clear(); typedSubscribers.clear(); }
   };
 
   const sandbox = {
     window: {},
     location: { origin: 'http://localhost', pathname: '/' },
     addEventListener() {},
+    removeEventListener() {},
     document: doc,
+    CustomEvent: function(name, opts) { this.type = name; this.detail = opts?.detail; },
     localStorage: { getItem: () => null, setItem: () => {} },
     sessionStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     setTimeout, clearTimeout, setInterval, clearInterval, Date, Math, console,
+    crypto: { randomUUID: () => 'uuid_' + Math.random().toString(36).slice(2, 10) },
+    ScoreARAuth: { getAuth: () => clientAuth, getDb: () => sharedDb },
+    firebase: { auth: () => clientAuth, database: Object.assign(() => sharedDb, { ServerValue: { TIMESTAMP: { '.sv': 'timestamp' } } }) },
     ScoreARRealtime: mockRealtime,
     ScoreAREvaluator: require(resolveFile(rootDir, 'quiz-evaluator.js'))
   };
@@ -158,6 +284,8 @@ function createClientVm(role, clientName) {
 
   loadScript('CardArenaEngine.js');
   loadScript('quiz-game-modes.js');
+  loadScript('quiz-arena-modes.js');
+  loadScript('quiz-card-cinema.js');
   loadScript('quiz-card-arena.js');
   if (role === 'host') {
     loadScript('quiz-host-leaderboard.js');
@@ -179,6 +307,9 @@ function createClientVm(role, clientName) {
     optButtons,
     receive(msg) {
       subscribers.forEach(fn => fn(msg));
+      if (msg?.type && typedSubscribers.has(msg.type)) {
+        typedSubscribers.get(msg.type).forEach(fn => fn(msg));
+      }
     }
   };
   networkClients.push(clientObj);
@@ -188,9 +319,9 @@ function createClientVm(role, clientName) {
 (async () => {
   console.log('🧪 Starting End-to-End Card Arena Live Opponents & Manual Bot Control Test...\n');
 
-  const host = createClientVm('host', 'TeacherHost');
-  const studentA = createClientVm('student', 'StudentA_Phone');
-  const studentB = createClientVm('student', 'StudentB_Phone');
+  const host = createClientVm('host', 'TeacherHost', 'teacher_host_1');
+  const studentA = createClientVm('student', 'StudentA_Phone', 'stu_ahmed');
+  const studentB = createClientVm('student', 'StudentB_Phone', 'stu_sara');
 
   // --- TEST 1: Zero Automatic Bots When Opening CARD_ARENA Room ---
   console.log('--- 1. Verifying ZERO Automatic Bots on Room Creation ---');
@@ -208,8 +339,8 @@ function createClientVm(role, clientName) {
 
   // --- TEST 2: Live Students Join & Teacher Explicitly Adds 1 Bot from Lobby ---
   console.log('\n--- 2. Verifying Manual Participant Selection (2 Live Students + 1 Teacher-Added Bot) ---');
-  studentA.sandbox.ScoreARQuizStudent.startStudentSession('554433', { uid: 'stu_ahmed', name: 'أحمد البطل', avatarId: 'char_01' });
-  studentB.sandbox.ScoreARQuizStudent.startStudentSession('554433', { uid: 'stu_sara', name: 'سارة المبدعة', avatarId: 'char_02' });
+  await studentA.sandbox.ScoreARQuizStudent.startStudentSession('554433', { uid: 'stu_ahmed', name: 'أحمد البطل', avatarId: 'char_01' });
+  await studentB.sandbox.ScoreARQuizStudent.startStudentSession('554433', { uid: 'stu_sara', name: 'سارة المبدعة', avatarId: 'char_02' });
 
   // Teacher manually adds 1 bot from the lobby
   host.sandbox.ScoreARBots.addBots(1, 'medium', 'fast');
@@ -296,7 +427,7 @@ function createClientVm(role, clientName) {
   console.log('\n--- 7. Verifying Queued Attack Card Played on Result Screen Fires on Next Question ---');
   // Simulate Student B being on Result screen (already answered Q1)
   studentB.optButtons.forEach(b => { b.disabled = false; });
-  studentB.sandbox.ScoreARQuizStudent.submitAnswer(0); // now hasAnswered() === true (options closed)
+  await studentB.sandbox.ScoreARQuizStudent.submitAnswer(0); // now hasAnswered() === true (options closed)
   studentB.optButtons.forEach(b => { b.disabled = false; }); // reset raw buttons before Q2
 
   const cardPinQueued = stuAMgr.grantRandomCard('stu_ahmed', 'PIN_STUDENT');

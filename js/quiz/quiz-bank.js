@@ -380,11 +380,15 @@
       <input type="text" id="bkQExplain" class="field" placeholder="توضيح الإجابة (اختياري)">`;
     showFormDialog('scorearAddBankQDialog', 'إضافة سؤال إلى بنك الأسئلة', 'layers', body, async (dlg, closeFn) => {
       const q = dlg.querySelector('#bkQText')?.value?.trim() || '';
-      const opts = Array.from(dlg.querySelectorAll('.bkQOpt')).map(el => el.value.trim()).filter(Boolean);
-      const ans = Number(dlg.querySelector('input[name="bkQAns"]:checked')?.value || 0);
-      if (!q || opts.length < 2) return;
+      const rawOpts = Array.from(dlg.querySelectorAll('.bkQOpt')).map((el, i) => ({ i, text: el.value.trim() }));
+      const rawAns = Number(dlg.querySelector('input[name="bkQAns"]:checked')?.value || 0);
+      const indexed = rawOpts.filter(x => Boolean(x.text)).slice(0, 4);
+      const opts = indexed.map(x => x.text);
+      const ans = indexed.findIndex(x => x.i === rawAns);
+      if (!q || opts.length < 2) { alert('يرجى كتابة السؤال وخيارين على الأقل.'); return; }
+      if (ans < 0) { alert('الخيار المحدد كإجابة صحيحة فارغ.'); return; }
       await global.ScoreARQuizBankData?.saveQuestion?.(
-        { q, opts, ans: Math.min(ans, opts.length - 1), explain: dlg.querySelector('#bkQExplain')?.value?.trim() || '', timeLimit: 20, points: 1000 },
+        { q, opts, ans, explain: dlg.querySelector('#bkQExplain')?.value?.trim() || '', timeLimit: 20, points: 1000 },
         { subject: dlg.querySelector('#bkQSubj')?.value?.trim() || '', grade: dlg.querySelector('#bkQGrade')?.value?.trim() || '' }
       );
       closeFn(); renderBankHubView(); if (global.toast) global.toast('تمت إضافة السؤال إلى البنك بنجاح ✓');
@@ -445,6 +449,12 @@
   function launchQuiz(quizId) {
     const qz = global.ScoreARQuizBankData?.getQuizzes().find(x => x.id === quizId);
     if (!qz?.questions?.length) { alert('المسابقة لا تحتوي على أسئلة جاهزة للإطلاق.'); return; }
+    if (global.ScoreARHostEvents?.validateLiveQuestion) {
+      for (let i = 0; i < qz.questions.length; i++) {
+        const val = global.ScoreARHostEvents.validateLiveQuestion(qz.questions[i]);
+        if (!val.valid) { alert(`لا يمكن إطلاق المسابقة: السؤال رقم (${i + 1}) غير صالح للمسابقة الحية (${val.error}).`); return; }
+      }
+    }
     const realTitle = (qz.title || '').trim() || 'مسابقة سكور آر';
     global.activeQuizTitle = realTitle;
     try { sessionStorage.setItem('scorear_active_quiz_title', realTitle); } catch(e){}
@@ -457,9 +467,10 @@
   function editQuiz(quizId) { const qz = global.ScoreARQuizBankData?.getQuizzes().find(x => x.id === quizId); if (qz) { closeBankHub(); global.ScoreARQuizBuilder?.openBuilder?.(qz); } }
   async function duplicateQuiz(quizId) { if (global.ScoreARQuizBankData) { await global.ScoreARQuizBankData.duplicateQuiz(quizId); renderBankHubView(); if (global.toast) global.toast('تم تكرار المسابقة بنجاح ✓'); } }
   function createNewQuiz() { closeBankHub(); global.ScoreARQuizBuilder?.openBuilder?.(null); }
+  function resolvePts(raw) { return (raw !== null && raw !== undefined && raw !== '' && Number.isFinite(Number(raw)) && Number(raw) >= 0) ? Number(raw) : 1000; }
   function addToActiveQuiz(qId) {
     const q = (global.ScoreARQuizBankData?.getQuestions() || []).find(x => x.id === qId); if (!q) return;
-    global.ScoreARQuizBuilder?.addImportedQuestion?.({ id: 'q_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), q: q.q || q.text, opts: [...q.opts], ans: q.ans !== undefined ? q.ans : 0, explain: q.explain || '', timeLimit: q.timeLimit || 20, points: q.points || 1000 });
+    global.ScoreARQuizBuilder?.addImportedQuestion?.({ id: 'q_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), q: q.q || q.text, opts: [...q.opts], ans: q.ans !== undefined ? q.ans : 0, explain: q.explain || '', timeLimit: q.timeLimit || 20, points: resolvePts(q.points) });
     if (global.toast) global.toast('تمت إضافة السؤال لمسابقتك الحالية ✓');
   }
   function batchAddToQuiz() {
@@ -467,7 +478,7 @@
     for (const id of selectedItemIds) {
       const q = qList.find(x => x.id === id);
       if (q && global.ScoreARQuizBuilder?.addImportedQuestion) {
-        global.ScoreARQuizBuilder.addImportedQuestion({ id: 'q_' + Date.now() + '_' + count, q: q.q || q.text, opts: [...q.opts], ans: q.ans !== undefined ? q.ans : 0, explain: q.explain || '', timeLimit: q.timeLimit || 20, points: q.points || 1000 });
+        global.ScoreARQuizBuilder.addImportedQuestion({ id: 'q_' + Date.now() + '_' + count, q: q.q || q.text, opts: [...q.opts], ans: q.ans !== undefined ? q.ans : 0, explain: q.explain || '', timeLimit: q.timeLimit || 20, points: resolvePts(q.points) });
         count++;
       }
     }
