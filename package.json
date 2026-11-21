@@ -8,11 +8,12 @@
   },
   "scripts": {
     "build": "node build.js",
-    "deploy": "npm run build && npm test && npm run check:assets && npx firebase-tools deploy --only hosting,database",
-    "test": "node --test tests/security-regression.test.cjs tests/api-regression.test.cjs",
+    "test": "node --test tests/security-regression.test.cjs tests/api-regression.test.cjs tests/quiz-builder-import.test.cjs && node tests/verify_15_protected_files.cjs && node tests/test_audit_fixes_regression.cjs && node tests/test_game_modes_and_cards.cjs && node tests/test_student_join_logic.cjs",
+    "verify": "npm run build && npm test && npm run check:assets",
+    "deploy": "npm run verify && npx firebase-tools deploy --only hosting,database",
     "test:rules": "node tests/rtdb-security.cjs",
     "check:assets": "node tools/check-assets.cjs",
-    "deploy:scorear1": "npm run build && npm test && npm run check:assets && npx firebase-tools deploy --only hosting,database --project scorear1"
+    "deploy:scorear1": "npm run verify && npx firebase-tools deploy --only hosting,database --project scorear1"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.2",

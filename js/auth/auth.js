@@ -71,6 +71,7 @@
               isAnonymous: false,
               role: roleClaim,
               email: firebaseUser.email,
+              emailVerified: Boolean(firebaseUser.emailVerified),
               displayName: firebaseUser.displayName || (roleClaim === 'admin' ? 'مدير المنصة' : 'أ. معلم سكور آر')
             });
             return;
@@ -180,6 +181,7 @@
           uid: user.uid,
           role: roleClaim,
           email: user.email,
+          emailVerified: Boolean(user.emailVerified),
           displayName: user.displayName || (roleClaim === 'admin' ? 'مدير المنصة' : 'أ. معلم سكور آر'),
           isAnonymous: false
         };
@@ -266,6 +268,7 @@
       subject: subject.trim(),
       school: (school || '').trim(),
       status: 'pending',
+      emailVerified: false,
       createdAt: window.firebase.database.ServerValue.TIMESTAMP
     };
 
@@ -395,6 +398,7 @@
         uid: firebaseUser.uid,
         role: role,
         email: firebaseUser.email,
+        emailVerified: Boolean(firebaseUser.emailVerified),
         displayName: firebaseUser.displayName || 'أ. معلم سكور آر',
         isAnonymous: false
       };

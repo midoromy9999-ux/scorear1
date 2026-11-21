@@ -13,23 +13,52 @@
     const n = Number(raw);
     return (Number.isFinite(n) && n >= 0) ? n : fallback;
   }
-  function validateLiveQuestion(qData) {
-    if (!qData || typeof qData !== 'object') return { valid: false, error: 'السؤال غير معرف أو تالف.' };
-    const opts = Array.isArray(qData.options || qData.opts) ? (qData.options || qData.opts) : [];
-    const cleanOpts = opts.map(o => String(o ?? '').trim()).filter(Boolean);
-    if (cleanOpts.length > 4) return { valid: false, error: 'الحد الأقصى للخيارات في المسابقة الحية هو 4 خيارات فقط.' };
-    if (Array.isArray(qData.correct) && qData.correct.length > 1) return { valid: false, error: 'المسابقة الحية تدعم إجابة صحيحة واحدة فقط لكل سؤال.' };
-    const evaluator = global.ScoreAREvaluator;
-    if (evaluator?.normalizeQuestion && evaluator?.validateQuestion) {
-      try {
-        const norm = evaluator.normalizeQuestion(qData);
-        if (Array.isArray(norm.correct) && norm.correct.length > 1) return { valid: false, error: 'المسابقة الحية تدعم إجابة صحيحة واحدة فقط لكل سؤال.' };
-        return evaluator.validateQuestion(norm);
-      } catch (e) { return { valid: false, error: e.message }; }
+  function analyzeLiveQuestion(qObj, opts = {}) {
+    if (!qObj || typeof qObj !== 'object') return { valid: false, errors: ['السؤال غير معرف أو تالف.'], text: '', rawOpts: [], cleanOpts: [], mappedAns: null };
+    const errors = [];
+    if (opts.checkReviewFlag !== false && qObj.needsReview === true) errors.push((qObj.reviewErrors && qObj.reviewErrors[0]) || 'السؤال يحتاج إلى مراجعة مفتاح الإجابة.');
+    const text = String(qObj.q ?? qObj.text ?? qObj.question ?? '').trim();
+    const rawOpts = Array.isArray(qObj.opts) ? qObj.opts : (Array.isArray(qObj.options) ? qObj.options : []);
+    const indexed = rawOpts.map((o, origIdx) => ({ origIdx, text: String(o ?? '').trim() }));
+    const nonEmpty = indexed.filter(x => Boolean(x.text));
+    const isOneBased = opts.forceZeroBased ? false : Boolean(qObj.isKahootOneBased || qObj.isKahoot || qObj.oneBased || qObj.isOneBased);
+    if (!text) errors.push('نص السؤال فارغ.');
+    if (nonEmpty.length < 2) errors.push('يجب أن يحتوي السؤال على خيارين غير فارغين على الأقل.');
+    if (nonEmpty.length > 4) errors.push(`المسابقة الحية تدعم من 2 إلى 4 اختيارات فقط (يحتوي على ${nonEmpty.length}).`);
+    let rawKey = [qObj.correct, qObj.correctIndices, qObj.correctIndex, qObj.ans, qObj.answer, qObj.correctAnswer]
+      .find(v => v !== undefined && v !== null && !(typeof v === 'string' && !v.trim()));
+    let mappedAns = null;
+    const isMulti = [qObj.correct, qObj.correctIndices, qObj.ans].some(a => Array.isArray(a) && a.length > 1) ||
+      (typeof rawKey === 'string' && (/^\d+(?:\s*[,،;&+|]\s*\d+)+$/.test(rawKey.trim()) || /^[a-fأ-ي](?:\s*[,،;&+|]\s*[a-fأ-ي])+$/i.test(rawKey.trim())));
+    if (isMulti) errors.push('المسابقة الحية تدعم إجابة صحيحة واحدة فقط لكل سؤال (تعدد الإجابات غير مدعوم).');
+    else {
+      if (Array.isArray(rawKey)) rawKey = rawKey.length === 1 ? rawKey[0] : undefined;
+      if (rawKey === undefined || rawKey === null || (typeof rawKey === 'string' && !rawKey.trim())) errors.push('مفتاح الإجابة الصحيحة مفقود ويجب تحديده يدوياً.');
+      else {
+        let origTarget = -1; const kStr = String(rawKey).trim(), kNum = Number(rawKey);
+        const lMap = { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, 'أ': 0, 'ب': 1, 'ج': 2, 'د': 3 };
+        if (typeof rawKey === 'number' || (/^-?\d+$/.test(kStr) && Number.isInteger(kNum))) origTarget = isOneBased ? (kNum - 1) : kNum;
+        else if (lMap[kStr.toLowerCase()] !== undefined) origTarget = lMap[kStr.toLowerCase()];
+        else { const mp = nonEmpty.findIndex(x => x.text.toLowerCase() === kStr.toLowerCase()); if (mp >= 0) origTarget = nonEmpty[mp].origIdx; }
+        if (!Number.isInteger(origTarget) || origTarget < 0 || origTarget >= rawOpts.length) errors.push('مفتاح الإجابة الصحيحة غير صالح أو خارج نطاق الاختيارات.');
+        else if (!String(rawOpts[origTarget] ?? '').trim()) errors.push(`مفتاح الإجابة الصحيحة يشير إلى خيار فارغ (رقم ${origTarget + 1}).`);
+        else {
+          const ci = nonEmpty.findIndex(x => x.origIdx === origTarget);
+          if (ci < 0 || ci >= 4) errors.push(`مفتاح الإجابة يشير إلى الاختيار (${ci + 1}) خارج حد 4 اختيارات.`);
+          else mappedAns = ci;
+        }
+      }
     }
-    if (!String(qData.q || qData.text || qData.question || '').trim()) return { valid: false, error: 'نص السؤال فارغ.' };
-    if (cleanOpts.length < 2) return { valid: false, error: 'يجب توفر إجابتين على الأقل.' };
-    return { valid: true, error: null };
+    const cleanOpts = nonEmpty.map(x => x.text);
+    if (errors.length === 0 && global.ScoreAREvaluator?.validateQuestion) {
+      const ev = global.ScoreAREvaluator.validateQuestion({ text, options: cleanOpts, correct: [mappedAns] });
+      if (!ev.valid) errors.push(ev.error);
+    }
+    return { valid: errors.length === 0, errors, text, rawOpts, cleanOpts, mappedAns };
+  }
+  function validateLiveQuestion(qData) {
+    const res = analyzeLiveQuestion(qData, { forceZeroBased: true, checkReviewFlag: true });
+    return { valid: res.valid, error: res.errors[0] || null };
   }
   function getModeInfo() {
     const mode = (global.ScoreARGameModes && typeof global.ScoreARGameModes.getMode === 'function') ? global.ScoreARGameModes.getMode() : (global.currentLobbyGameMode || 'SOLO');
@@ -441,42 +470,26 @@
         if (typeof ctx.onPlayerReconnected === 'function') ctx.onPlayerReconnected(exists);
       }
       if (global.ScoreARCardArena?.syncHostRoster) global.ScoreARCardArena.syncHostRoster(room.players);
-      const { mode: jMode, gameMode: jGMode, aiEnabled: jAi, roster: jRoster, duelScores: jDuel, duelTeamNames: jNames, survivalState: jSurv } = getModeInfo();
-      if (rt() && room.pin) rt().publish('ROOM_MODE_UPDATE', { pin: room.pin, mode: jMode, gameMode: jGMode, aiEnabled: jAi, roster: jRoster, duelScores: jDuel, duelTeamNames: jNames, survivalState: jSurv });
-    }
-  }
+    const { mode: jMode, gameMode: jGMode, aiEnabled: jAi, roster: jRoster, duelScores: jDuel, duelTeamNames: jNames, survivalState: jSurv } = getModeInfo();
+    if (rt() && room.pin) rt().publish('ROOM_MODE_UPDATE', { pin: room.pin, mode: jMode, gameMode: jGMode, aiEnabled: jAi, roster: jRoster, duelScores: jDuel, duelTeamNames: jNames, survivalState: jSurv });
+  } }
 
   function renderHostLeaderboard(stage, currentRoom, activeQuestions, currentQIndex, onNext, onPodium, onClose) {
     const activeMode = global.ScoreARGameModes?.getMode?.() || currentRoom?.gameMode || currentRoom?.mode || 'SOLO';
-    if (!global.ScoreARArenaModes?.isDuelMode?.(activeMode) && !global.ScoreARArenaModes?.isCardArenaMode?.(activeMode) && global.ScoreARArena3D?.dispose) {
-      global.ScoreARArena3D.dispose();
-    }
+    if (!global.ScoreARArenaModes?.isDuelMode?.(activeMode) && !global.ScoreARArenaModes?.isCardArenaMode?.(activeMode) && global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     if (lb()) lb().renderHostLeaderboard(stage, currentRoom, activeQuestions, currentQIndex, onNext, onPodium, onClose);
   }
-
   function renderHostPodium(stage, currentRoom, onClose) {
-    global.ScoreARCardArena?.stopBotDirector?.();
-    global.ScoreARCardCinema?.cleanup?.();
+    global.ScoreARCardArena?.stopBotDirector?.(); global.ScoreARCardCinema?.cleanup?.();
     if (global.ScoreARArena3D?.dispose) global.ScoreARArena3D.dispose();
     if (lb()) lb().renderHostPodium(stage, currentRoom, onClose);
   }
 
   const ScoreARHostEvents = {
-    publishRoomOpen,
-    publishRoomClosed,
-    publishQuestionReading,
-    publishQuestionStart,
-    publishQuestionResult,
-    publishPodiumReveal,
-    publishContestCompleted,
-    publishStudentKicked,
-    publishRoomLockState,
-    evaluateQuestionResults,
-    validateLiveQuestion,
-    parseQuestionPoints,
-    handleHostIncomingMessage,
-    renderHostLeaderboard,
-    renderHostPodium
+    publishRoomOpen, publishRoomClosed, publishQuestionReading, publishQuestionStart,
+    publishQuestionResult, publishPodiumReveal, publishContestCompleted, publishStudentKicked,
+    publishRoomLockState, evaluateQuestionResults, analyzeLiveQuestion, validateLiveQuestion,
+    parseQuestionPoints, handleHostIncomingMessage, renderHostLeaderboard, renderHostPodium
   };
 
   global.ScoreARHostEvents = ScoreARHostEvents;

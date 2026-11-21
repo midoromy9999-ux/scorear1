@@ -2506,7 +2506,7 @@ dialog::backdrop {
   font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s var(--ease);
+  transition: background-color 0.14s var(--ease), border-color 0.14s var(--ease), box-shadow 0.14s var(--ease);
 }
 .scorear-segmented-tab:hover {
   color: #ffffff;
@@ -4752,6 +4752,10 @@ html[data-theme="day"] .scorear-modal-shell [style*="color:#34d399"] {
 .adm-status-badge.is-ok { background: #1d5c52; color: #befff2; }
 .adm-status-badge.is-bad { background: #422337; color: #ffd3e5; }
 .adm-status-badge.is-muted { background: #27253f; color: #cbd5e1; }
+.adm-email-badge { font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 999px; border: 1px solid transparent; }
+.adm-email-badge.is-verified { background: rgba(14, 165, 233, 0.16); color: #7dd3fc; border-color: rgba(56, 189, 248, 0.35); }
+.adm-email-badge.is-unverified { background: rgba(245, 158, 11, 0.16); color: #fde68a; border-color: rgba(245, 158, 11, 0.38); }
+.adm-email-badge.is-unknown { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; border-color: rgba(148, 163, 184, 0.32); }
 .adm-btn-danger { border-color: rgba(195, 132, 152, 0.42) !important; color: #ffd3e5 !important; }
 .adm-btn-accent { border-color: rgba(150, 101, 255, 0.42) !important; color: #d7ccea !important; }
 
@@ -4781,6 +4785,9 @@ html[data-theme="day"] .adm-search-input::placeholder { color: #64748b; }
 html[data-theme="day"] .adm-status-badge.is-ok { background: #d1fae5; color: #065f46; }
 html[data-theme="day"] .adm-status-badge.is-bad { background: #fee2e2; color: #991b1b; }
 html[data-theme="day"] .adm-status-badge.is-muted { background: #e2e8f0; color: #334155; }
+html[data-theme="day"] .adm-email-badge.is-verified { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+html[data-theme="day"] .adm-email-badge.is-unverified { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+html[data-theme="day"] .adm-email-badge.is-unknown { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
 html[data-theme="day"] .adm-btn-danger {
   border-color: rgba(220, 38, 38, 0.42) !important;
   color: #b91c1c !important;
@@ -4790,6 +4797,25 @@ html[data-theme="day"] .adm-btn-accent {
   border-color: rgba(79, 70, 229, 0.38) !important;
   color: #4f46e5 !important;
   background: #f5f3ff !important;
+}
+
+/* Keep immersive live Host & Student stage HUD bars high-contrast over 3D arena/world art in Day Mode */
+html[data-theme="day"] #scorearHostStage .scorear-control-bar,
+html[data-theme="day"] #scorearStudentStage .scorear-control-bar {
+  background: linear-gradient(180deg, rgba(11, 13, 30, 0.92), rgba(14, 16, 38, 0.86)) !important;
+  border-bottom: 1px solid rgba(172, 139, 242, 0.24) !important;
+  color: #ffffff !important;
+}
+html[data-theme="day"] #scorearHostStage .scorear-control-pill,
+html[data-theme="day"] #scorearStudentStage .scorear-control-pill,
+html[data-theme="day"] #scorearHostStage .scorear-gear-btn,
+html[data-theme="day"] #scorearStudentStage .scorear-gear-btn {
+  background: rgba(20, 22, 48, 0.88) !important;
+  border-color: rgba(172, 139, 242, 0.36) !important;
+  color: #f3efff !important;
+}
+html[data-theme="day"] #scorearHostStage .scorear-control-pill b {
+  color: #fcd34d !important;
 }
 
 @media (max-width: 640px) {

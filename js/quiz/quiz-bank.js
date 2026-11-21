@@ -327,24 +327,8 @@
   function showFormDialog(id, title, iconName, fieldsHtml, onSubmit) {
     const { icon, iconBox } = ui();
     let dlg = document.getElementById(id);
-    if (!dlg) {
-      dlg = document.createElement('dialog');
-      dlg.id = id;
-      dlg.style.cssText = 'width:min(540px,94vw);border-radius:22px;padding:0;overflow:hidden;';
-      document.body.appendChild(dlg);
-    }
-    dlg.innerHTML = `
-      <div class="modal-head" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
-        <div style="display:flex;align-items:center;gap:10px;">${iconBox(iconName, { size: 'sm', tone: 'violet' })}<strong style="color:#f6f3ff;font-size:16px;">${title}</strong></div>
-        <button type="button" class="icon-btn" data-dlg-close="1">${icon('close', { size: 15 })}</button>
-      </div>
-      <form class="modal-body-pad" style="padding:18px 20px;display:flex;flex-direction:column;gap:12px;">
-        ${fieldsHtml}
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px;">
-          <button type="button" class="btn launch-outline" data-dlg-close="1">إلغاء</button>
-          <button type="submit" class="btn launch-primary">${icon('check', { size: 14 })} حفظ</button>
-        </div>
-      </form>`;
+    if (!dlg) { dlg = document.createElement('dialog'); dlg.id = id; dlg.style.cssText = 'width:min(540px,94vw);border-radius:22px;padding:0;overflow:hidden;'; document.body.appendChild(dlg); }
+    dlg.innerHTML = `<div class="modal-head" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;"><div style="display:flex;align-items:center;gap:10px;">${iconBox(iconName, { size: 'sm', tone: 'violet' })}<strong style="color:#f6f3ff;font-size:16px;">${title}</strong></div><button type="button" class="icon-btn" data-dlg-close="1">${icon('close', { size: 15 })}</button></div><form class="modal-body-pad" style="padding:18px 20px;display:flex;flex-direction:column;gap:12px;">${fieldsHtml}<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px;"><button type="button" class="btn launch-outline" data-dlg-close="1">إلغاء</button><button type="submit" class="btn launch-primary">${icon('check', { size: 14 })} حفظ</button></div></form>`;
     if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.style.display = 'block';
     const closeFn = () => (typeof dlg.close === 'function' ? dlg.close() : (dlg.style.display = 'none'));
     dlg.querySelectorAll('[data-dlg-close]').forEach(b => { b.onclick = closeFn; });
@@ -429,11 +413,18 @@
   function launchQuiz(quizId) {
     const qz = global.ScoreARQuizBankData?.getQuizzes().find(x => x.id === quizId);
     if (!qz?.questions?.length) { alert('المسابقة لا تحتوي على أسئلة جاهزة للإطلاق.'); return; }
-    if (global.ScoreARHostEvents?.validateLiveQuestion) {
-      for (let i = 0; i < qz.questions.length; i++) {
-        const val = global.ScoreARHostEvents.validateLiveQuestion(qz.questions[i]);
+    const preparedList = [];
+    for (let i = 0; i < qz.questions.length; i++) {
+      const q = qz.questions[i];
+      if (global.ScoreARHostEvents?.validateLiveQuestion) {
+        const val = global.ScoreARHostEvents.validateLiveQuestion(q);
         if (!val.valid) { alert(`لا يمكن إطلاق المسابقة: السؤال رقم (${i + 1}) غير صالح للمسابقة الحية (${val.error}).`); return; }
       }
+      if (global.ScoreARQuizBuilder?.prepareLiveQuestion) {
+        const prep = global.ScoreARQuizBuilder.prepareLiveQuestion(q);
+        if (!prep.valid || prep.question.needsReview || prep.question.ans === null) { alert(`لا يمكن إطلاق المسابقة: السؤال رقم (${i + 1}) يحتاج مراجعة (${prep.errors[0] || 'مفتاح الإجابة غير صالح'}).`); return; }
+        preparedList.push(prep.question);
+      } else { preparedList.push(JSON.parse(JSON.stringify(q))); }
     }
     const realTitle = (qz.title || '').trim() || 'مسابقة سكور آر';
     global.activeQuizTitle = realTitle;
@@ -441,35 +432,50 @@
     closeBankHub();
     global.ScoreARWorldFlow?.openWorldPicker?.({
       defaultWorldId: localStorage.getItem('scorear_last_world') || 'royal', quizTitle: realTitle,
-      onConfirm: (chosenWorld) => { global.activeQuizTitle = realTitle; global.contestQuestions = JSON.parse(JSON.stringify(qz.questions)); global.ScoreARQuizHost?.startHostLobby?.(chosenWorld, null, true); }
+      onConfirm: (chosenWorld) => { global.activeQuizTitle = realTitle; global.contestQuestions = preparedList; global.ScoreARQuizHost?.startHostLobby?.(chosenWorld, null, true); }
     });
   }
   function editQuiz(quizId) { const qz = global.ScoreARQuizBankData?.getQuizzes().find(x => x.id === quizId); if (qz) { closeBankHub(); global.ScoreARQuizBuilder?.openBuilder?.(qz); } }
   async function duplicateQuiz(quizId) { if (global.ScoreARQuizBankData) { await global.ScoreARQuizBankData.duplicateQuiz(quizId); renderBankHubView(); if (global.toast) global.toast('تم تكرار المسابقة بنجاح ✓'); } }
   function createNewQuiz() { closeBankHub(); global.ScoreARQuizBuilder?.openBuilder?.(null); }
   function resolvePts(raw) { return (raw !== null && raw !== undefined && raw !== '' && Number.isFinite(Number(raw)) && Number(raw) >= 0) ? Number(raw) : 1000; }
+  function toBuilderQuestionPayload(q, suffix) {
+    const rawOpts = Array.isArray(q?.opts) ? [...q.opts] : (Array.isArray(q?.options) ? [...q.options] : []);
+    return { id: 'q_' + Date.now() + '_' + suffix, q: q.q || q.text || '', opts: rawOpts, ans: q.ans, answer: q.answer, correct: q.correct, correctAnswer: q.correctAnswer, explain: q.explain || '', timeLimit: q.timeLimit || 20, points: resolvePts(q.points) };
+  }
   function addToActiveQuiz(qId) {
     const q = (global.ScoreARQuizBankData?.getQuestions() || []).find(x => x.id === qId); if (!q) return;
-    global.ScoreARQuizBuilder?.addImportedQuestion?.({ id: 'q_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), q: q.q || q.text, opts: [...q.opts], ans: q.ans !== undefined ? q.ans : 0, explain: q.explain || '', timeLimit: q.timeLimit || 20, points: resolvePts(q.points) });
+    const res = global.ScoreARQuizBuilder?.addImportedQuestion?.(toBuilderQuestionPayload(q, Math.random().toString(36).slice(2, 6)));
+    if (res && !res.valid) {
+      const msg = `تم نقل السؤال رقم (${res.index + 1}) للمراجعة قبل الحفظ: ${res.errors.join(' ')}`;
+      if (global.toast) global.toast(msg); else alert(msg);
+      closeBankHub(); global.ScoreARQuizBuilder?.openBuilder?.(global.ScoreARQuizBuilder.getQuiz(), { activeIndex: res.index });
+      return;
+    }
     if (global.toast) global.toast('تمت إضافة السؤال لمسابقتك الحالية ✓');
   }
   function batchAddToQuiz() {
-    const qList = global.ScoreARQuizBankData?.getQuestions() || []; let count = 0;
+    const qList = global.ScoreARQuizBankData?.getQuestions() || [];
+    let count = 0, validCount = 0; const reviewItems = [];
     for (const id of selectedItemIds) {
       const q = qList.find(x => x.id === id);
       if (q && global.ScoreARQuizBuilder?.addImportedQuestion) {
-        global.ScoreARQuizBuilder.addImportedQuestion({ id: 'q_' + Date.now() + '_' + count, q: q.q || q.text, opts: [...q.opts], ans: q.ans !== undefined ? q.ans : 0, explain: q.explain || '', timeLimit: q.timeLimit || 20, points: resolvePts(q.points) });
+        const res = global.ScoreARQuizBuilder.addImportedQuestion(toBuilderQuestionPayload(q, count), { silent: true });
+        if (!res || res.valid) validCount++; else reviewItems.push({ index: res.index, num: res.index + 1, errors: res.errors });
         count++;
       }
     }
-    selectedItemIds.clear(); renderBankHubView(); if (global.toast) global.toast(`تمت إضافة (${count}) أسئلة للمسابقة بنجاح ✓`);
+    selectedItemIds.clear(); renderBankHubView();
+    if (reviewItems.length > 0) {
+      const msg = `أُضيف ${count} سؤالاً (${validCount} جاهز و ${reviewItems.length} يحتاج مراجعة: سؤال رقم ${reviewItems.map(r => r.num).join('، ')})`;
+      if (global.toast) global.toast(msg); else alert(msg);
+      closeBankHub(); global.ScoreARQuizBuilder?.openBuilder?.(global.ScoreARQuizBuilder.getQuiz(), { activeIndex: reviewItems[0].index });
+    } else if (global.toast) global.toast(`تمت إضافة (${count}) أسئلة للمسابقة بنجاح ✓`);
   }
-
   function sendAsClassHomework(quizId) {
     if (global.ScoreARClassroomsHomework?.assignQuizModal) global.ScoreARClassroomsHomework.assignQuizModal(quizId);
     else alert('خدمة واجبات الصفوف غير متاحة حالياً.');
   }
-
   global.ScoreARQuizBank = {
     openBankHub, openHub: openBankHub, closeBankHub, switchTab, setViewMode, setFilter, changePage, toggleSelectItem, clearSelection,
     openPreview, closePreview, deleteQuestionWithUndo, deleteQuizWithUndo, batchDeleteWithUndo, triggerUndo,

@@ -46,15 +46,19 @@
   function openBuilder(quizData = null, opts = {}) {
     if (quizData) {
       currentQuiz = JSON.parse(JSON.stringify(quizData));
-      performSave(true);
+      if (Array.isArray(currentQuiz.questions)) currentQuiz.questions.forEach(syncQuestionReviewState);
+      if (validateQuiz().valid) performSave(true);
+      else saveState = 'blocked';
     } else if (opts.resumeDraft) {
       resumeLastDraft();
       return;
     } else {
       currentQuiz = createDefaultQuiz();
     }
-    activeQIndex = 0;
-    saveState = 'saved';
+    const reqIdx = Number(opts.activeIndex);
+    const maxIdx = Math.max(0, (currentQuiz.questions?.length || 1) - 1);
+    activeQIndex = (Number.isInteger(reqIdx) && reqIdx >= 0 && reqIdx <= maxIdx) ? reqIdx : 0;
+    if (saveState !== 'blocked') saveState = 'saved';
     renderBuilderView();
   }
 
@@ -87,7 +91,14 @@
   }
 
   async function performSave(isSilent = false) {
-    if (!currentQuiz) return;
+    if (!currentQuiz) return { saved: false };
+    const val = validateQuiz();
+    if (!val.valid) {
+      saveState = 'blocked';
+      updateSaveIndicatorUI();
+      if (!isSilent && global.toast) global.toast('يتعذر الحفظ قبل مراجعة الأسئلة المحددة.');
+      return { saved: false, errors: val.errors };
+    }
     saveState = 'saving';
     updateSaveIndicatorUI();
     currentQuiz.updatedAt = Date.now();
@@ -106,12 +117,16 @@
     saveState = 'saved';
     lastSavedAt = new Date();
     updateSaveIndicatorUI();
+    return { saved: true };
   }
 
   function updateSaveIndicatorUI() {
     const el = document.getElementById('builderSaveIndicator');
     if (!el) return;
-    if (saveState === 'saving') {
+    if (saveState === 'blocked') {
+      el.innerHTML = `${uiIc('alert', 12)} <span>يحتاج مراجعة (لم يُحفظ)</span>`;
+      el.style.color = '#fca5a5';
+    } else if (saveState === 'saving') {
       el.innerHTML = `${uiIc('clock', 12)} <span>جارٍ الحفظ...</span>`;
       el.style.color = '#fcd34d';
     } else {
@@ -189,22 +204,56 @@
   function setQuestionImage(idx, url) { if (currentQuiz?.questions[idx]) { currentQuiz.questions[idx].imageUrl = url; scheduleAutoSave(); renderBuilderView(); } }
   function setQuestionImageAlt(idx, alt) { if (currentQuiz?.questions[idx]) { currentQuiz.questions[idx].imageAlt = alt; scheduleAutoSave(); } }
 
+  function validateRawLiveQuestion(qObj, opts = {}) {
+    if (global.ScoreARHostEvents?.analyzeLiveQuestion) {
+      return global.ScoreARHostEvents.analyzeLiveQuestion(qObj, { ...opts, checkReviewFlag: false });
+    }
+    const text = String(qObj?.q ?? qObj?.text ?? qObj?.question ?? '').trim();
+    const rawOpts = Array.isArray(qObj?.opts) ? qObj.opts : (Array.isArray(qObj?.options) ? qObj.options : []);
+    const cleanOpts = rawOpts.map(o => String(o ?? '').trim()).filter(Boolean);
+    const ans = qObj?.ans;
+    const valid = Boolean(text) && cleanOpts.length >= 2 && cleanOpts.length <= 4 && typeof ans === 'number' && Number.isInteger(ans) && ans >= 0 && ans < rawOpts.length && Boolean(String(rawOpts[ans] ?? '').trim());
+    return { valid, errors: valid ? [] : ['السؤال أو مفتاح الإجابة يحتاج إلى مراجعة.'], text, rawOpts, cleanOpts, mappedAns: valid ? ans : null };
+  }
+
+  function prepareLiveQuestion(qObj) {
+    const res = validateRawLiveQuestion(qObj);
+    const isDouble = Boolean(qObj?.isDouble || qObj?.doublePoints || qObj?.multiplier === 2);
+    const finalOpts = res.cleanOpts.length > 0 ? res.cleanOpts : (res.rawOpts.length ? res.rawOpts.map(o => String(o ?? '').trim()) : ['', '']);
+    return {
+      valid: res.valid,
+      errors: res.errors,
+      question: {
+        id: qObj?.id || ('q_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+        q: res.text, opts: finalOpts, ans: res.mappedAns,
+        timeLimit: Number(qObj?.timeLimit || qObj?.time) || 20,
+        points: parseQuestionPoints(qObj?.points, 1000),
+        isDouble, multiplier: isDouble ? 2 : 1,
+        explain: qObj?.explain || qObj?.explanation || qObj?.why || '',
+        skill: qObj?.skill || currentQuiz?.subject || 'اللغة العربية',
+        imageUrl: qObj?.imageUrl || qObj?.image || null,
+        imageAlt: qObj?.imageAlt || '',
+        needsReview: !res.valid, reviewErrors: res.errors
+      }
+    };
+  }
+
+  function syncQuestionReviewState(q) {
+    if (!q) return { valid: false, errors: [] };
+    const check = validateRawLiveQuestion(q, { forceZeroBased: true });
+    q.needsReview = !check.valid;
+    q.reviewErrors = check.errors;
+    return check;
+  }
+
   function validateQuiz() {
     const errors = [];
     if (!currentQuiz) return { valid: false, errors: ['لا توجد مسابقة مفتوحة.'] };
     if (!currentQuiz.title || !currentQuiz.title.trim()) errors.push('عنوان المسابقة فارغ، يرجى كتابة عنوان مناسب.');
     if (!currentQuiz.questions || !currentQuiz.questions.length) return { valid: false, errors: ['المسابقة فارغة: يجب إضافة سؤال واحد على الأقل.'] };
     currentQuiz.questions.forEach((q, qIdx) => {
-      const qNum = qIdx + 1;
-      if (!q.q || !q.q.trim()) errors.push(`السؤال (${qNum}): نص السؤال فارغ.`);
-      const rawOpts = Array.isArray(q.opts) ? q.opts : (Array.isArray(q.options) ? q.options : []);
-      const cleanOpts = rawOpts.map(o => String(o ?? '').trim()).filter(Boolean);
-      if (cleanOpts.length < 2) errors.push(`السؤال (${qNum}): يجب أن يحتوي على خيارين غير فارغين على الأقل.`);
-      if (cleanOpts.length > 4) errors.push(`السؤال (${qNum}): الحد الأقصى للخيارات في المسابقة الحية هو 4 خيارات فقط.`);
-      if (Array.isArray(q.correct) && q.correct.length > 1) errors.push(`السؤال (${qNum}): المسابقة الحية تدعم إجابة صحيحة واحدة فقط.`);
-      if (typeof q.ans !== 'number' || q.ans < 0 || q.ans >= rawOpts.length || !String(rawOpts[q.ans] ?? '').trim()) {
-        errors.push(`السؤال (${qNum}): لم يتم تحديد إجابة صحيحة صالحة.`);
-      }
+      const check = syncQuestionReviewState(q);
+      check.errors.forEach(err => errors.push(`السؤال (${qIdx + 1}): ${err}`));
     });
     return { valid: errors.length === 0, errors };
   }
@@ -260,6 +309,12 @@
     const totalQ = currentQuiz.questions.length;
     const q = currentQuiz.questions[activeQIndex] || currentQuiz.questions[0];
     const lastDraft = global.ScoreARQuizBuilderActions ? global.ScoreARQuizBuilderActions.getLastDraftInfo() : null;
+    const reviewIssues = [];
+    currentQuiz.questions.forEach((item, i) => {
+      const st = syncQuestionReviewState(item);
+      if (!st.valid) reviewIssues.push(`السؤال (${i + 1}): ${st.errors[0]}`);
+    });
+    const alertVisible = reviewIssues.length > 0;
 
     stage.innerHTML = `
       <header class="scorear-control-bar" style="padding:11px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:20;flex-wrap:wrap;">
@@ -278,7 +333,7 @@
       </header>
       <datalist id="scorearSubjectList"><option value="لغة عربية"><option value="نحو وإعراب"><option value="رياضيات"><option value="علوم"><option value="دراسات اجتماعية"><option value="لغة إنجليزية"><option value="تربية إسلامية"><option value="عام ثقافة"></datalist>
       <datalist id="scorearGradeList"><option value="الصف الأول الابتدائي"><option value="الصف الثاني الابتدائي"><option value="الصف الثالث الابتدائي"><option value="الصف الرابع الابتدائي"><option value="الصف الخامس الابتدائي"><option value="الصف السادس الابتدائي"><option value="الصف الأول الإعدادي"><option value="الصف الثاني الإعدادي"><option value="الصف الثالث الإعدادي"><option value="المرحلة الثانوية"><option value="عام / جميع المراحل"></datalist>
-      <div id="builderValidationAlert" style="display:none;background:#422337;border-bottom:1px solid #c38498;color:#ffd3e5;padding:12px 24px;z-index:15;"></div>
+      <div id="builderValidationAlert" style="display:${alertVisible ? 'block' : 'none'};background:#422337;border-bottom:1px solid #c38498;color:#ffd3e5;padding:12px 24px;z-index:15;">${alertVisible ? `<div class="scorear-inline-icon" style="font-weight:900;margin-bottom:4px;font-size:13.5px;">${uiIc('alert', 15)} توجد (${reviewIssues.length}) أسئلة تحتاج مراجعة قبل الحفظ أو الإطلاق:</div><ul style="margin:0;padding-right:18px;font-size:12px;line-height:1.55;">${reviewIssues.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : ''}</div>
       <div class="builder-body-layout" style="flex:1;display:flex;overflow:hidden;">
         <aside class="builder-sidebar" style="width:280px;background:#0c0d1d;border-left:1px solid rgba(255,255,255,0.09);display:flex;flex-direction:column;justify-content:space-between;padding:12px;overflow-y:auto;">
           <div>
@@ -288,9 +343,9 @@
             </div>
             <div style="display:flex;flex-direction:column;gap:6px;">
               ${totalQ === 0 ? `<div style="text-align:center;padding:24px 8px;color:#a1a4be;font-size:12px;">لا توجد أسئلة حالياً.<br>اضغط (إضافة سؤال) للبدء.</div>` : currentQuiz.questions.map((item, idx) => `
-                <div draggable="true" ondragstart="ScoreARQuizBuilderActions.onDragStart(event, ${idx})" ondragover="ScoreARQuizBuilderActions.onDragOver(event)" ondrop="ScoreARQuizBuilderActions.onDrop(event, ${idx}, ScoreARQuizBuilder.getCurrentQuiz(), () => ScoreARQuizBuilder.renderBuilderView())" onclick="ScoreARQuizBuilder.selectQuestion(${idx})" style="background:${idx === activeQIndex ? 'rgba(117,80,239,0.22)' : 'rgba(20,21,42,0.72)'};border:1px solid ${idx === activeQIndex ? 'rgba(172,139,242,0.55)' : 'rgba(255,255,255,0.09)'};border-radius:12px;padding:8px 10px;cursor:pointer;position:relative;">
+                <div draggable="true" ondragstart="ScoreARQuizBuilderActions.onDragStart(event, ${idx})" ondragover="ScoreARQuizBuilderActions.onDragOver(event)" ondrop="ScoreARQuizBuilderActions.onDrop(event, ${idx}, ScoreARQuizBuilder.getCurrentQuiz(), () => ScoreARQuizBuilder.renderBuilderView())" onclick="ScoreARQuizBuilder.selectQuestion(${idx})" style="background:${idx === activeQIndex ? 'rgba(117,80,239,0.22)' : 'rgba(20,21,42,0.72)'};border:1px solid ${item.needsReview ? '#ef4444' : (idx === activeQIndex ? 'rgba(172,139,242,0.55)' : 'rgba(255,255,255,0.09)')};border-radius:12px;padding:8px 10px;cursor:pointer;position:relative;">
                   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-                    <span style="font-size:11px;font-weight:900;color:${idx === activeQIndex ? '#58dce3' : '#a1a4be'};display:inline-flex;align-items:center;gap:4px;">${item.isDouble ? uiIc('zap', 12) : ''}سؤال ${idx + 1}${item.imageUrl ? uiIc('image', 12) : ''}</span>
+                    <span style="font-size:11px;font-weight:900;color:${item.needsReview ? '#fda4af' : (idx === activeQIndex ? '#58dce3' : '#a1a4be')};display:inline-flex;align-items:center;gap:4px;">${item.isDouble ? uiIc('zap', 12) : ''}سؤال ${idx + 1}${item.imageUrl ? uiIc('image', 12) : ''}${item.needsReview ? ' ⚠ مراجعة' : ''}</span>
                     <div style="display:flex;gap:3px;" onclick="event.stopPropagation();">
                       <button type="button" onclick="ScoreARQuizBuilder.moveQuestion(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} style="background:none;border:none;color:#a1a4be;cursor:pointer;display:inline-grid;place-items:center;">${uiIc('arrowUp', 12)}</button>
                       <button type="button" onclick="ScoreARQuizBuilder.moveQuestion(${idx}, 1)" ${idx === totalQ - 1 ? 'disabled' : ''} style="background:none;border:none;color:#a1a4be;cursor:pointer;display:inline-grid;place-items:center;">${uiIc('arrowDown', 12)}</button>
@@ -332,6 +387,7 @@
             </div>
             ${global.ScoreARQuizBuilderMedia ? global.ScoreARQuizBuilderMedia.renderMediaZone(q, activeQIndex) : ''}
             <div>
+              ${(q.needsReview && q.reviewErrors?.length) ? `<div id="builderQuestionReviewBanner" style="margin-bottom:8px;padding:10px 12px;border-radius:12px;background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.45);color:#fecaca;font-size:12px;font-weight:800;">${q.reviewErrors.map(e => `• ${escapeHtml(e)}`).join('<br>')}</div>` : ''}
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                 <label style="color:#ddd8ff;font-size:13px;font-weight:800;">الاختيارات (اضغط الدائرة لتحديد الإجابة الصحيحة):</label>
                 ${q.opts.length < 4 ? `<button type="button" onclick="ScoreARQuizBuilder.addOption()" class="scorear-gear-btn" style="padding:4px 10px;font-size:11px;">${uiIc('plus', 12)} إضافة خيار (${q.opts.length}/4)</button>` : ''}
@@ -376,56 +432,54 @@
   function updateQuizTitle(t) { if (currentQuiz) { currentQuiz.title = t; scheduleAutoSave(); } }
   function updateQuizSubject(s) { if (currentQuiz) { currentQuiz.subject = s; scheduleAutoSave(); } }
   function updateQuizGrade(g) { if (currentQuiz) { currentQuiz.grade = g; scheduleAutoSave(); } }
-  function updateQuestionText(t) { if (currentQuiz?.questions[activeQIndex]) { currentQuiz.questions[activeQIndex].q = t; scheduleAutoSave(); } }
+  function updateQuestionText(t) { if (currentQuiz?.questions[activeQIndex]) { currentQuiz.questions[activeQIndex].q = t; syncQuestionReviewState(currentQuiz.questions[activeQIndex]); scheduleAutoSave(); } }
   function updateQuestionExplain(e) { if (currentQuiz?.questions[activeQIndex]) { currentQuiz.questions[activeQIndex].explain = e; scheduleAutoSave(); } }
-  function updateOptionText(oIdx, t) { if (currentQuiz?.questions[activeQIndex]?.opts) { currentQuiz.questions[activeQIndex].opts[oIdx] = t; scheduleAutoSave(); } }
-  function setCorrectAnswer(oIdx) { if (currentQuiz?.questions[activeQIndex]) { currentQuiz.questions[activeQIndex].ans = oIdx; scheduleAutoSave(); renderBuilderView(); } }
-  function addOption() { const q = currentQuiz?.questions[activeQIndex]; if (q && q.opts.length < 4) { q.opts.push('الخيار ' + (q.opts.length + 1)); scheduleAutoSave(); renderBuilderView(); } }
-  function removeOption(oIdx) { const q = currentQuiz?.questions[activeQIndex]; if (q && q.opts.length > 2) { q.opts.splice(oIdx, 1); if (q.ans === oIdx) q.ans = 0; else if (q.ans > oIdx) q.ans--; scheduleAutoSave(); renderBuilderView(); } }
+  function updateOptionText(oIdx, t) { if (currentQuiz?.questions[activeQIndex]?.opts) { currentQuiz.questions[activeQIndex].opts[oIdx] = t; syncQuestionReviewState(currentQuiz.questions[activeQIndex]); scheduleAutoSave(); } }
+  function setCorrectAnswer(oIdx) { const q = currentQuiz?.questions[activeQIndex]; if (q) { q.ans = oIdx; delete q.correct; delete q.correctIndices; syncQuestionReviewState(q); scheduleAutoSave(); renderBuilderView(); } }
+  function addOption() { const q = currentQuiz?.questions[activeQIndex]; if (q && q.opts.length < 4) { q.opts.push('الخيار ' + (q.opts.length + 1)); syncQuestionReviewState(q); scheduleAutoSave(); renderBuilderView(); } }
+  function removeOption(oIdx) { const q = currentQuiz?.questions[activeQIndex]; if (q && q.opts.length > 2) { q.opts.splice(oIdx, 1); if (q.ans === oIdx) q.ans = null; else if (typeof q.ans === 'number' && q.ans > oIdx) q.ans--; delete q.correct; delete q.correctIndices; syncQuestionReviewState(q); scheduleAutoSave(); renderBuilderView(); } }
 
-  function addImportedQuestion(qObj) {
+  function addImportedQuestion(qObj, opts = {}) {
     if (!currentQuiz) currentQuiz = { ...createDefaultQuiz(), questions: [] };
-    const rawOpts = Array.isArray(qObj?.opts) ? qObj.opts : (Array.isArray(qObj?.options) ? qObj.options : ['خيار 1', 'خيار 2', 'خيار 3', 'خيار 4']);
-    const rawAns = Number(qObj?.ans ?? qObj?.answer ?? (Array.isArray(qObj?.correct) ? qObj.correct[0] : 0)) || 0;
-    const indexedOpts = rawOpts.map((o, i) => ({ i, text: String(o ?? '').trim() })).filter(x => Boolean(x.text)).slice(0, 4);
-    const remappedAns = indexedOpts.findIndex(x => x.i === rawAns);
-    const isDouble = Boolean(qObj?.isDouble || qObj?.doublePoints || qObj?.multiplier === 2);
-    currentQuiz.questions.push({
-      id: qObj?.id || ('q_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
-      q: qObj?.q || qObj?.text || '',
-      opts: indexedOpts.length >= 2 ? indexedOpts.map(x => x.text) : rawOpts.slice(0, 4),
-      ans: remappedAns >= 0 ? remappedAns : 0,
-      timeLimit: Number(qObj?.timeLimit || qObj?.time) || 20,
-      points: parseQuestionPoints(qObj?.points, 1000),
-      isDouble,
-      multiplier: isDouble ? 2 : 1,
-      explain: qObj?.explain || qObj?.explanation || qObj?.why || '',
-      skill: qObj?.skill || currentQuiz.subject || 'اللغة العربية',
-      imageUrl: qObj?.imageUrl || qObj?.image || null,
-      imageAlt: qObj?.imageAlt || ''
-    });
-    activeQIndex = currentQuiz.questions.length - 1;
-    scheduleAutoSave();
-    const builderStage = document.getElementById('scorearQuizBuilderStage');
-    const appModal = document.getElementById('modal');
-    if (builderStage?.style.display === 'flex' || (appModal?.open && builderStage && builderStage.style.display !== 'none')) {
-      renderBuilderView();
+    const prepared = prepareLiveQuestion(qObj);
+    currentQuiz.questions.push(prepared.question);
+    const addedIdx = currentQuiz.questions.length - 1;
+    activeQIndex = addedIdx;
+    if (prepared.valid && !opts.silent) scheduleAutoSave();
+    else if (!prepared.valid) saveState = 'blocked';
+    if (!opts.silent) {
+      const stage = document.getElementById('scorearQuizBuilderStage');
+      const modal = document.getElementById('modal');
+      if (stage?.style.display === 'flex' || (modal?.open && stage && stage.style.display !== 'none')) renderBuilderView();
+      if (!prepared.valid && global.toast) global.toast(`تنبيه في السؤال (${addedIdx + 1}): ${prepared.errors[0]}`);
     }
+    return { added: true, valid: prepared.valid, index: addedIdx, question: prepared.question, errors: prepared.errors };
   }
 
   function importQuestions(list, meta = {}) {
-    if (!Array.isArray(list) || !list.length) return;
+    if (!Array.isArray(list) || !list.length) return { total: 0, validCount: 0, needsReviewCount: 0, reviewItems: [] };
     if (!currentQuiz) currentQuiz = { ...createDefaultQuiz(), questions: [] };
     if (meta.title) currentQuiz.title = meta.title;
     if (meta.subject) currentQuiz.subject = meta.subject;
     if (meta.grade) currentQuiz.grade = meta.grade;
     if (currentQuiz.questions.length === 1 && !currentQuiz.questions[0].q.trim()) currentQuiz.questions = [];
-    list.forEach(item => addImportedQuestion(item));
-    openBuilder(currentQuiz);
+    let validCount = 0;
+    const reviewItems = [];
+    list.forEach(item => {
+      const res = addImportedQuestion(item, { silent: true });
+      if (res.valid) validCount++;
+      else reviewItems.push({ index: res.index, num: res.index + 1, errors: res.errors });
+    });
+    openBuilder(currentQuiz, { activeIndex: reviewItems.length ? reviewItems[0].index : 0 });
+    const summaryMsg = reviewItems.length
+      ? `أُضيف ${list.length} سؤالاً (${validCount} جاهز و ${reviewItems.length} يحتاج مراجعة: سؤال رقم ${reviewItems.map(r => r.num).join('، ')})`
+      : `تمت إضافة (${validCount}) سؤالاً جاهزاً للمسابقة بنجاح ✓`;
+    if (global.toast) global.toast(summaryMsg);
+    return { total: list.length, validCount, needsReviewCount: reviewItems.length, reviewItems };
   }
 
   global.ScoreARQuizBuilder = {
-    addImportedQuestion, importQuestions, getQuiz: () => currentQuiz,
+    addImportedQuestion, importQuestions, prepareLiveQuestion, getQuiz: () => currentQuiz,
     openBuilder, resumeLastDraft, closeBuilder, addQuestion, duplicateQuestion,
     deleteQuestion, moveQuestion, selectQuestion, toggleDoublePoints,
     setQuestionTime, setQuestionPoints, handlePointsSelect, setQuestionImage,

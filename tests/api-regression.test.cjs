@@ -28,26 +28,52 @@ test('approve preserves unrelated custom claims',async()=>{
  const m=load('api/account-request.js',{claims:{uid:'admin',role:'admin'},db,auth:{getUser:async()=>({emailVerified:true,customClaims:{schoolId:'s1'},email:'teacher@example.test'})}}),res=response();
  await m.handler(req({action:'approve',targetUid:'teacher'}),res);assert.equal(res.code,200);assert.equal(m.mutations[0][1].role,'teacher');assert.equal(m.mutations[0][1].schoolId,'s1');assert.equal(updates.length,1);
 });
-test('admin approve verifies unverified teacher email and grants teacher role',async()=>{
+test('admin approve grants teacher role for unverified Yahoo email WITHOUT modifying emailVerified',async()=>{
  const updates=[];const userUpdates=[];
  const db={ref:()=>({once:async()=>({val:()=>({displayName:'أ. محمد علي',subject:'اللغة الإنجليزية'})}),update:async x=>updates.push(x)})};
  const m=load('api/account-request.js',{claims:{uid:'admin',role:'admin'},db,auth:{getUser:async()=>({emailVerified:false,customClaims:{},email:'purebluehorizon@yahoo.com'}),updateUser:async(uid,patch)=>userUpdates.push({uid,patch})}}),res=response();
  await m.handler(req({action:'approve',targetUid:'teacher'}),res);
  assert.equal(res.code,200);
- assert.equal(userUpdates.length,1);
- assert.equal(userUpdates[0].uid,'teacher');
- assert.equal(userUpdates[0].patch.emailVerified,true);
+ assert.equal(userUpdates.length,0);
+ assert.equal(res.body.emailVerified,false);
  assert.equal(m.mutations[0][1].role,'teacher');
  assert.equal(updates[0]['scorear_account_requests/teacher/status'],'approved');
+ assert.equal(updates[0]['scorear_account_requests/teacher/emailVerified'],false);
+ assert.equal(updates[0]['scorear_teachers_registry/teacher'].emailVerified,false);
 });
-test('admin reject does not mark unverified teacher email as verified',async()=>{
+test('admin approve keeps verified emailVerified true without calling updateUser',async()=>{
  const updates=[];const userUpdates=[];
- const db={ref:()=>({once:async()=>({val:()=>({displayName:'معلم مرفوض'})}),update:async x=>updates.push(x)})};
- const m=load('api/account-request.js',{claims:{uid:'admin',role:'admin'},db,auth:{getUser:async()=>({emailVerified:false,customClaims:{},email:'pending@yahoo.com'}),updateUser:async(uid,patch)=>userUpdates.push({uid,patch})}}),res=response();
- await m.handler(req({action:'reject',targetUid:'teacher',note:'غير مكتمل'}),res);
+ const db={ref:()=>({once:async()=>({val:()=>({displayName:'أ. معلم مؤكد',subject:'علوم'})}),update:async x=>updates.push(x)})};
+ const m=load('api/account-request.js',{claims:{uid:'admin',role:'admin'},db,auth:{getUser:async()=>({emailVerified:true,customClaims:{},email:'verified@example.com'}),updateUser:async(uid,patch)=>userUpdates.push({uid,patch})}}),res=response();
+ await m.handler(req({action:'approve',targetUid:'teacher2'}),res);
  assert.equal(res.code,200);
  assert.equal(userUpdates.length,0);
+ assert.equal(res.body.emailVerified,true);
+ assert.equal(updates[0]['scorear_account_requests/teacher2/emailVerified'],true);
+});
+test('admin reject and suspend preserve original emailVerified and remove teacher role',async()=>{
+ const updates=[];const userUpdates=[];
+ const db={ref:()=>({once:async()=>({val:()=>({displayName:'معلم مرفوض'})}),update:async x=>updates.push(x)})};
+ const m=load('api/account-request.js',{claims:{uid:'admin',role:'admin'},db,auth:{getUser:async()=>({emailVerified:false,customClaims:{role:'teacher'},email:'pending@yahoo.com'}),updateUser:async(uid,patch)=>userUpdates.push({uid,patch})}});
+ const resRej=response();
+ await m.handler(req({action:'reject',targetUid:'teacher',note:'غير مكتمل'}),resRej);
+ assert.equal(resRej.code,200);
+ assert.equal(userUpdates.length,0);
  assert.equal(updates[0]['scorear_account_requests/teacher/status'],'rejected');
+ assert.equal(updates[0]['scorear_account_requests/teacher/emailVerified'],false);
+ const resSusp=response();
+ await m.handler(req({action:'toggleTeacherStatus',targetUid:'teacher',isActive:false}),resSusp);
+ assert.equal(resSusp.code,200);
+ assert.equal(m.mutations[1][1].role,undefined);
+ assert.equal(updates[1]['scorear_account_requests/teacher/status'],'suspended');
+ assert.equal(updates[1]['scorear_account_requests/teacher/emailVerified'],false);
+});
+test('admin getEmailStatuses returns live Firebase Auth emailVerified statuses',async()=>{
+ const m=load('api/account-request.js',{claims:{uid:'admin',role:'admin'},auth:{getUsers:async reqs=>({users:reqs.map(r=>({uid:r.uid,email:r.uid+'@yahoo.com',emailVerified:r.uid==='t2'}))})}}),res=response();
+ await m.handler(req({action:'getEmailStatuses',uids:['t1','t2']}),res);
+ assert.equal(res.code,200);
+ assert.equal(res.body.statuses.t1.emailVerified,false);
+ assert.equal(res.body.statuses.t2.emailVerified,true);
 });
 test('Blob out-of-scope pathname is rejected before token creation',async()=>{
  const m=load('api/upload-token.js',{claims:{uid:'teacher',role:'teacher'},env:{BLOB_READ_WRITE_TOKEN:'mock'},imports:{'@vercel/blob/client':{handleUpload:async o=>o.onBeforeGenerateToken('quiz-images/another/image.webp')}}}),res=response();

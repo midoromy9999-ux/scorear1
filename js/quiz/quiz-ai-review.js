@@ -240,15 +240,18 @@
 
     closeReviewTable();
 
+    let summary = null;
     if (typeof reviewContext.onCommit === 'function') {
       reviewContext.onCommit(draftQuestions);
     } else if (global.ScoreARQuizBuilder && global.ScoreARQuizBuilder.importQuestions) {
-      global.ScoreARQuizBuilder.importQuestions(draftQuestions);
+      summary = global.ScoreARQuizBuilder.importQuestions(draftQuestions);
     } else if (global.ScoreARQuizImporter && global.ScoreARQuizImporter.handlePreloadedQuestions) {
       global.ScoreARQuizImporter.handlePreloadedQuestions(draftQuestions, 'توليد ذكي (AI)');
     }
 
-    if (global.toast) global.toast(`تم اعتماد وإضافة (${draftQuestions.length}) سؤالاً إلى المسابقة بنجاح ✓`);
+    if (global.toast && (!summary || summary.needsReviewCount === 0)) {
+      global.toast(`تم اعتماد وإضافة (${draftQuestions.length}) سؤالاً إلى المسابقة بنجاح ✓`);
+    }
   }
 
   global.ScoreARQuizAIReview = {

@@ -11,6 +11,7 @@
   let cachedRequests = [];
   let cachedTeachers = [];
   let cachedStudents = [];
+  let cachedEmailStatuses = {};
   let searchQuery = '';
   const uiIc = (n, s = 14) => global.ScoreARUI?.icon?.(n, { size: s }) || '';
   const uiBox = (n, t = 'violet', s = 'md') => global.ScoreARUI?.iconBox?.(n, { size: s, tone: t }) || '';
@@ -62,6 +63,26 @@
       throw new Error(data.error || 'حدث خطأ في الخادم (رمز ' + res.status + ')');
     }
     return data;
+  }
+
+  function renderEmailBadge(uid, fallbackVal) {
+    const cached = cachedEmailStatuses[uid];
+    const v = cached && typeof cached.emailVerified === 'boolean' ? cached.emailVerified : (typeof fallbackVal === 'boolean' ? fallbackVal : null);
+    if (v === true) return '<span class="adm-email-badge is-verified">البريد مؤكَّد</span>';
+    if (v === false) return '<span class="adm-email-badge is-unverified">البريد غير مؤكَّد</span>';
+    return '<span class="adm-email-badge is-unknown">حالة البريد غير متاحة</span>';
+  }
+
+  async function syncEmailStatuses(uids) {
+    const clean = [...new Set((uids || []).filter(Boolean))].slice(0, 100);
+    if (!clean.length) return;
+    try {
+      const data = await callApi({ action: 'getEmailStatuses', uids: clean });
+      if (data && data.statuses) {
+        Object.assign(cachedEmailStatuses, data.statuses);
+        renderTabContent();
+      }
+    } catch (_) {}
   }
 
   function openAdminHub() {
@@ -154,6 +175,7 @@
           b.style.display = pendingCount > 0 ? 'inline-block' : 'none';
         }
         if (currentTab === 'requests' || currentTab === 'audit') renderTabContent();
+        syncEmailStatuses(cachedRequests.map(r => r.uid));
       });
 
       // 2. Fetch Teachers Registry
@@ -161,6 +183,7 @@
         const val = snap.val() || {};
         cachedTeachers = Object.entries(val).map(([uid, t]) => ({ uid, ...t }));
         if (currentTab === 'teachers') renderTabContent();
+        syncEmailStatuses(cachedTeachers.map(t => t.uid));
       });
 
       // 3. Fetch Students
@@ -215,6 +238,7 @@
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                   <span class="adm-item-name">${esc(r.displayName)}</span>
                   <span class="launch-pill" style="padding:2px 10px;font-size:11px;">قيد المراجعة</span>
+                  ${renderEmailBadge(r.uid, r.emailVerified)}
                 </div>
                 <div class="adm-item-meta">
                   <b>${esc(r.email)}</b>
@@ -255,11 +279,12 @@
         ${list.filter(t => !searchQuery || (t.displayName||'').toLowerCase().includes(searchQuery.toLowerCase()) || (t.email||'').toLowerCase().includes(searchQuery.toLowerCase())).map(t => `
           <div class="scorear-spotlight-card adm-row-card" style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
             <div>
-              <div style="display:flex;align-items:center;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span class="adm-item-name is-md">${esc(t.displayName)}</span>
                 <span class="adm-status-badge ${t.status === 'suspended' ? 'is-bad' : 'is-ok'}">
-                  ${t.status === 'suspended' ? 'موقوف' : 'معتمد نشط'}
+                  ${t.status === 'suspended' ? 'موقوف إدارياً' : 'معتمد إدارياً'}
                 </span>
+                ${renderEmailBadge(t.uid, t.emailVerified)}
               </div>
               <div class="adm-item-meta">
                 <span>${esc(t.email)}</span>
@@ -334,11 +359,12 @@
         ${history.map(h => `
           <div class="scorear-spotlight-card adm-row-card" style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
             <div>
-              <div style="display:flex;align-items:center;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span class="adm-item-name is-sm">${esc(h.displayName)}</span>
                 <span class="adm-status-badge ${h.status === 'approved' ? 'is-ok' : h.status === 'rejected' ? 'is-bad' : 'is-muted'}">
-                  ${h.status === 'approved' ? 'معتمد' : h.status === 'rejected' ? 'مرفوض' : 'محذوف'}
+                  ${h.status === 'approved' ? 'معتمد إدارياً' : h.status === 'rejected' ? 'مرفوض' : 'محذوف'}
                 </span>
+                ${renderEmailBadge(h.uid, h.emailVerified)}
               </div>
               <div class="adm-item-meta is-sm">
                 ${esc(h.email)} · ملاحظة: <i>${esc(h.reviewNote || 'بدون ملاحظات')}</i>
@@ -358,7 +384,8 @@
     if (!confirm('هل تريد بالتأكيد اعتماد هذا المعلم وتفعيل صلاحيات الاستوديو له؟')) return;
     try {
       if (global.toast) global.toast('جاري معالجة الاعتماد...');
-      await callApi({ action: 'approve', targetUid: uid });
+      const res = await callApi({ action: 'approve', targetUid: uid });
+      if (res && typeof res.emailVerified === 'boolean') cachedEmailStatuses[uid] = { emailVerified: res.emailVerified };
       if (global.toast) global.toast('تم اعتماد حساب المعلم وضبط دوره بنجاح ✓');
     } catch (e) {
       alert('خطأ في الاعتماد: ' + e.message);
@@ -369,7 +396,8 @@
     const note = prompt(`يرجى كتابة سبب رفض طلب المعلم (${name}):`, 'البيانات غير مكتملة');
     if (note === null) return;
     try {
-      await callApi({ action: 'reject', targetUid: uid, note });
+      const res = await callApi({ action: 'reject', targetUid: uid, note });
+      if (res && typeof res.emailVerified === 'boolean') cachedEmailStatuses[uid] = { emailVerified: res.emailVerified };
       if (global.toast) global.toast('تم رفض الطلب بنجاح.');
     } catch (e) {
       alert('خطأ: ' + e.message);
@@ -378,7 +406,8 @@
 
   async function toggleTeacherStatus(uid, makeActive) {
     try {
-      await callApi({ action: 'toggleTeacherStatus', targetUid: uid, isActive: makeActive });
+      const res = await callApi({ action: 'toggleTeacherStatus', targetUid: uid, isActive: makeActive });
+      if (res && typeof res.emailVerified === 'boolean') cachedEmailStatuses[uid] = { emailVerified: res.emailVerified };
       if (global.toast) global.toast(makeActive ? 'تم تفعيل الحساب' : 'تم إيقاف الحساب');
     } catch (e) {
       alert('خطأ: ' + e.message);

@@ -53,7 +53,7 @@
   const OPTION_THEMES = [
     { bg: '#e21b3c', border: '#a31028', shape: '▲' },
     { bg: '#1368ce', border: '#0c478f', shape: '◆' },
-    { bg: '#d89e00', border: '#9c7200', shape: '●' },
+    { bg: '#9a5800', border: '#fbbf24', shape: '●' },
     { bg: '#26890c', border: '#185c06', shape: '■' }
   ];
 
