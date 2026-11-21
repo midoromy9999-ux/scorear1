@@ -338,13 +338,13 @@ body.is-logged-in .launch-nav {
 }
 
 .launch-hero {
-  min-height: 860px;
+  min-height: 780px;
   position: relative;
   isolation: isolate;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 135px 5.5vw 65px;
+  padding: 118px 5.5vw 48px;
   background: radial-gradient(ellipse at 15% 50%, #20275d60, transparent 55%), #0b0c1b;
 }
 
@@ -401,7 +401,7 @@ body.is-logged-in .launch-nav {
 }
 
 .launch-copy {
-  padding: 10px 0 70px;
+  padding: 10px 0 42px;
   z-index: 4;
 }
 
@@ -459,8 +459,9 @@ body.is-logged-in .launch-nav {
 .launch-ctas {
   display: flex;
   align-items: center;
-  gap: 30px;
-  margin-top: 32px;
+  flex-wrap: wrap;
+  gap: 18px 22px;
+  margin-top: 30px;
 }
 
 .launch-watch {
@@ -635,7 +636,8 @@ body.is-logged-in .launch-nav {
   position: absolute;
   z-index: 4;
   color: #c6a4ff;
-  text-shadow: 0 0 30px #b18aef66;
+  opacity: 0.68;
+  text-shadow: 0 0 24px #b18aef55;
   animation: float 5s ease-in-out infinite;
 }
 
@@ -648,7 +650,7 @@ body.is-logged-in .launch-nav {
   align-items: center;
   max-width: 1500px;
   width: 100%;
-  margin: 60px auto 0;
+  margin: 34px auto 0;
   font-size: 10px;
   color: #75738e;
   position: relative;
@@ -676,7 +678,7 @@ body.is-logged-in .launch-nav {
 
 .launch-section {
   max-width: 1500px;
-  padding: 95px 5.5vw;
+  padding: 64px 5.5vw 72px;
   margin: 0 auto;
 }
 
@@ -816,12 +818,12 @@ body.is-logged-in .launch-nav {
 
 .experience-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 1fr;
+  grid-template-columns: 1.15fr 1.05fr 1fr;
   gap: 20px;
 }
 
 .experience-card {
-  min-height: 420px;
+  min-height: 365px;
   position: relative;
   border: 1px solid #ffffff13;
   border-radius: 22px;
@@ -829,7 +831,7 @@ body.is-logged-in .launch-nav {
   display: flex;
   flex-direction: column;
   justify-content: end;
-  padding: 30px;
+  padding: 28px;
   isolation: isolate;
   transition: transform 0.5s, border-color 0.4s;
 }
@@ -865,6 +867,9 @@ body.is-logged-in .launch-nav {
   background: linear-gradient(transparent, #111226e8 65%, #131228);
   z-index: -1;
 }
+.teacher-card .experience-overlay {
+  background: linear-gradient(180deg, rgba(17, 18, 38, 0.14) 0%, rgba(17, 18, 38, 0.86) 54%, #131228 94%);
+}
 
 .teacher-card .experience-num {
   background: #100d29a6;
@@ -882,17 +887,93 @@ body.is-logged-in .launch-nav {
 .experience-link { display: flex; align-items: center; gap: 12px; font-size: 11px; font-weight: 700; color: #bca4ec; margin-top: 22px; }
 .experience-link svg { width: 16px; height: 16px; }
 
-.play-card { background: radial-gradient(ellipse at 50% 10%, #2b2668, transparent 70%), #111329; }
-.student-card { background: radial-gradient(ellipse at 50% 10%, #12494e99, transparent 65%), #10192a; }
+.play-card {
+  background: radial-gradient(ellipse at 50% 10%, #2b2668, transparent 70%), #111329;
+  padding-top: 196px;
+}
+.student-card {
+  background: radial-gradient(ellipse at 50% 10%, #12494e99, transparent 65%), #10192a;
+  padding-top: 175px;
+}
 
 .orb-display {
-  height: 165px;
+  height: 138px;
   width: 100%;
   position: absolute;
-  top: 36px;
+  top: 30px;
   left: 0;
   display: grid;
   place-items: center;
+}
+
+.mode-mini-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.mode-mini-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #cbeffd;
+  background: rgba(88, 220, 227, 0.08);
+  border: 1px solid rgba(88, 220, 227, 0.24);
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.launch-register-bar {
+  margin-top: 22px;
+  background: linear-gradient(135deg, rgba(24, 23, 46, 0.86), rgba(14, 16, 34, 0.94));
+  border: 1px solid rgba(172, 139, 242, 0.22);
+  border-radius: 18px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  backdrop-filter: blur(16px);
+}
+
+.launch-register-copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.launch-register-copy strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.launch-register-copy > div > span {
+  display: block;
+  font-size: 12px;
+  color: #a1a4be;
+  margin-top: 2px;
+}
+
+.launch-register-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.launch-register-actions .btn {
+  padding: 9px 15px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+body.is-logged-in #launchRegister {
+  display: none;
 }
 
 .orb-core {
@@ -1132,7 +1213,7 @@ body.is-logged-in .launch-nav {
   .experience-grid { grid-template-columns: 1fr 1fr; gap: 15px; }
   .teacher-card { grid-column: 1 / -1; min-height: 350px; }
   .teacher-card img { object-position: center 38%; }
-  .teacher-card .experience-overlay { background: linear-gradient(270deg, #111226e8, #11122630); }
+  .teacher-card .experience-overlay { background: linear-gradient(180deg, rgba(17, 18, 38, 0.24) 0%, rgba(17, 18, 38, 0.90) 52%, #131228 94%); }
   .teacher-card .experience-content { max-width: 65%; }
   .experience-card { min-height: 380px; padding: 24px; }
   .experience-card h3 { font-size: 24px; }
@@ -1191,7 +1272,7 @@ body.is-logged-in .launch-nav {
   .floating-question h3 { font-size: 12px; margin: 10px 0; }
   .floating-subject { font-size: 10px; padding: 8px 12px; right: 2%; top: -2%; }
   .floating-subject svg { width: 14px; }
-  .photo-label { font-size: 8px; bottom: 24px; right: 13px; padding: 6px 10px; }
+  .photo-label { font-size: 9px; top: 12px; right: 12px; bottom: auto; padding: 6px 11px; }
   .hero-bottom { margin-top: 30px; font-size: 8px; }
   .hero-bottom > button { font-size: 8px; }
   .launch-section { padding: 48px 16px; }
@@ -1201,7 +1282,12 @@ body.is-logged-in .launch-nav {
   .section-kicker { font-size: 9px; }
   .role-track-card { padding: 18px; }
   .experience-grid { grid-template-columns: 1fr !important; gap: 14px; }
-  .experience-card { padding: 20px; min-height: 320px; border-radius: 18px; }
+  .experience-card { padding: 20px; min-height: 310px; border-radius: 18px; }
+  .play-card { padding-top: 175px; }
+  .student-card { padding-top: 155px; }
+  .launch-register-bar { padding: 14px 16px; }
+  .launch-register-actions { width: 100%; }
+  .launch-register-actions .btn { flex: 1 1 auto; text-align: center; justify-content: center; }
   .teacher-card { min-height: 310px; }
   .teacher-card .experience-content { max-width: 85%; }
   .experience-card h3 { font-size: 20px; }

@@ -377,14 +377,14 @@
             <h1>محتواك المنظم، <span class="gradient-text">جاهز لكل حصة.</span></h1>
             <p>ارفع ملفات الشرح، أوراق العمل، والعروض التقديمية لاستخراج نصوصها وبناء مسابقات بالذكاء الاصطناعي في لحظات.</p>
           </div>
-          <span class="scorear-panel-index">01 — CONTENT LIBRARY</span>
+          <span class="scorear-panel-index">مكتبة الدروس</span>
         </header>
 
         <div class="scorear-lib-layout">
           <div>
             <div class="scorear-portal-drop spotlight" id="dropZone" tabindex="0" role="button" aria-label="رفع ملف إلى مكتبة المحتوى">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                <span class="scorear-panel-index">01 / UPLOAD ORBIT</span>
+                <span class="scorear-panel-index">رفع سريع</span>
                 <span class="launch-pill" style="padding:3px 10px;font-size:10px;">حد 20 MB</span>
               </div>
               ${uploadOrb}

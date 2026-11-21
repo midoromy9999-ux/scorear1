@@ -63,8 +63,8 @@
             <div class="gallery-brand" style="display:flex;align-items:center;gap:8px;text-decoration:none;color:#ffffff;min-width:0;">
               <img src="assets/mark.svg" alt="" width="30" height="30" style="filter:drop-shadow(0 0 10px rgba(117,80,239,0.5));flex-shrink:0;">
               <div>
-                <b style="font-family:Cairo,sans-serif;font-size:17px;font-weight:900;display:block;line-height:1.1;white-space:nowrap;">سكور آر<span style="color:#f59e0b;">.</span></b>
-                <small style="display:block;font-size:7.5px;letter-spacing:1.6px;color:#a1a4be;white-space:nowrap;">LEARN. PLAY. BECOME.</small>
+                <b style="font-family:Cairo,sans-serif;font-size:17px;font-weight:900;display:block;line-height:1.1;white-space:nowrap;">سكور آر<span style="color:#52d9ed;">.</span></b>
+                <small style="display:block;font-size:9px;letter-spacing:0.3px;color:#a1a4be;white-space:nowrap;font-weight:700;">تعلّم · نافس · تميّز</small>
               </div>
             </div>
           </div>

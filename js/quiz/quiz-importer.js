@@ -121,40 +121,27 @@
       let importError = null;
       if (/^\d+$/.test(rAns)) {
         const numAns = parseInt(rAns, 10);
-        if (numAns < 1 || numAns > 6) {
-          importError = 'رقم الإجابة الصحيحة خارج النطاق المسموح (1 إلى 4).';
-        } else if (!rawSlots[numAns - 1]) {
-          importError = `رقم الإجابة الصحيحة (${numAns}) يشير إلى عمود خيار فارغ.`;
-        } else {
-          cIdx = filledSlots.findIndex(s => s.origIdx === numAns - 1);
-        }
+        if (numAns < 1 || numAns > 6) importError = 'رقم الإجابة الصحيحة خارج النطاق المسموح (1 إلى 4).';
+        else if (!rawSlots[numAns - 1]) importError = `رقم الإجابة الصحيحة (${numAns}) يشير إلى عمود خيار فارغ.`;
+        else cIdx = filledSlots.findIndex(s => s.origIdx === numAns - 1);
       } else if (/^\d+(?:\s*[,،;&+]\s*\d+)+$/.test(rAns) || /^[a-fأ-د](?:\s*[,،;&+]\s*[a-fأ-د])+$/i.test(rAns)) {
         importError = 'المسابقة الحية تدعم إجابة صحيحة واحدة فقط لكل سؤال (لا تدعم تعدد الإجابات).';
       } else {
         const lMap = { 'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'أ': 0, 'ب': 1, 'ج': 2, 'د': 3 };
         const lKey = rAns.toLowerCase();
         if (lMap[lKey] !== undefined) {
-          if (!rawSlots[lMap[lKey]]) {
-            importError = 'حرف الإجابة الصحيحة يشير إلى عمود خيار فارغ.';
-          } else {
-            cIdx = filledSlots.findIndex(s => s.origIdx === lMap[lKey]);
-          }
+          if (!rawSlots[lMap[lKey]]) importError = 'حرف الإجابة الصحيحة يشير إلى عمود خيار فارغ.';
+          else cIdx = filledSlots.findIndex(s => s.origIdx === lMap[lKey]);
         } else {
           const m = rawOpts.findIndex(o => o.toLowerCase() === rAns.toLowerCase());
           if (m >= 0) cIdx = m;
         }
       }
       const item = {
-        id: 'imp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-        included: true,
-        q: qText,
+        id: 'imp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6), included: true, q: qText,
         opts: rawOpts.length >= 2 ? rawOpts : (rawOpts.length === 1 ? [rawOpts[0], ''] : ['', '']),
-        ans: cIdx,
-        timeLimit: pTime,
-        points: pPts,
-        explain: colMap.exp >= 0 ? String(row[colMap.exp] ?? '').trim() : '',
-        importError,
-        errors: []
+        ans: cIdx, timeLimit: pTime, points: pPts,
+        explain: colMap.exp >= 0 ? String(row[colMap.exp] ?? '').trim() : '', importError, errors: []
       };
       validateRow(item);
       importedRows.push(item);
@@ -165,20 +152,13 @@
   function validateRow(row) {
     const errs = [];
     if (row.importError) errs.push(row.importError);
-    if (Array.isArray(row.correct) && row.correct.length > 1) {
-      errs.push('المسابقة الحية تدعم إجابة صحيحة واحدة فقط لكل سؤال.');
-    }
+    if (Array.isArray(row.correct) && row.correct.length > 1) errs.push('المسابقة الحية تدعم إجابة صحيحة واحدة فقط لكل سؤال.');
     const indexedOpts = (row.opts || []).map((o, i) => ({ i, text: String(o || '').trim() })).filter(x => Boolean(x.text));
     const clean = indexedOpts.map(x => x.text);
     const remappedAns = indexedOpts.findIndex(x => x.i === Number(row.ans));
-    if (clean.length > 4) {
-      errs.push('الحد الأقصى للخيارات في المسابقة الحية هو 4 خيارات فقط.');
-    }
-    if (clean.length < 2) {
-      errs.push('يجب توفر إجابتين على الأقل');
-    } else if (row.ans === null || row.ans === undefined || isNaN(Number(row.ans)) || remappedAns < 0) {
-      errs.push('لم يتم تحديد الإجابة الصحيحة أو أن الخيار المحدد فارغ');
-    }
+    if (clean.length > 4) errs.push('الحد الأقصى للخيارات في المسابقة الحية هو 4 خيارات فقط.');
+    if (clean.length < 2) errs.push('يجب توفر إجابتين على الأقل');
+    else if (row.ans === null || row.ans === undefined || isNaN(Number(row.ans)) || remappedAns < 0) errs.push('لم يتم تحديد الإجابة الصحيحة أو أن الخيار المحدد فارغ');
     const evaluator = global.ScoreAREvaluator;
     if (evaluator && errs.length === 0) {
       try {
@@ -186,9 +166,7 @@
         const val = evaluator.validateQuestion(canonical);
         if (!val.valid) errs.push(val.error);
       } catch(e) { errs.push(e.message); }
-    } else if (!String(row.q || '').trim()) {
-      errs.push('نص السؤال فارغ');
-    }
+    } else if (!String(row.q || '').trim()) errs.push('نص السؤال فارغ');
     const t = Number(row.timeLimit);
     if (isNaN(t) || t < 5 || t > 120) errs.push('الزمن يجب أن يكون بين 5 و 120 ثانية');
     row.errors = errs;
@@ -299,81 +277,31 @@
         ` : ''}
         <div style="padding:16px 20px;overflow-y:auto;flex:1;">
           <table style="width:100%;border-collapse:collapse;color:#ffffff;font-size:12px;text-align:right;">
-            <thead>
-              <tr style="background:#111226;color:#c9baff;border-bottom:1px solid #ffffff1a;">
-                <th style="padding:8px 6px;width:34px;text-align:center;">#</th>
-                <th style="padding:8px 6px;width:40px;text-align:center;">تضمين</th>
-                <th style="padding:8px 6px;min-width:200px;">نص السؤال</th>
-                <th style="padding:8px 6px;min-width:300px;">الخيارات (انقر الدائرة لتحديد الإجابة الصحيحة)</th>
-                <th style="padding:8px 6px;width:65px;text-align:center;">الزمن</th>
-                <th style="padding:8px 6px;width:70px;text-align:center;">النقاط</th>
-                <th style="padding:8px 6px;min-width:120px;">الشرح</th>
-                <th style="padding:8px 6px;width:80px;text-align:center;">الحالة</th>
-                <th style="padding:8px 6px;width:40px;text-align:center;">حذف</th>
-              </tr>
-            </thead>
+            <thead><tr style="background:#111226;color:#c9baff;border-bottom:1px solid #ffffff1a;"><th style="padding:8px 6px;width:34px;text-align:center;">#</th><th style="padding:8px 6px;width:40px;text-align:center;">تضمين</th><th style="padding:8px 6px;min-width:200px;">نص السؤال</th><th style="padding:8px 6px;min-width:300px;">الخيارات (انقر الدائرة لتحديد الإجابة الصحيحة)</th><th style="padding:8px 6px;width:65px;text-align:center;">الزمن</th><th style="padding:8px 6px;width:70px;text-align:center;">النقاط</th><th style="padding:8px 6px;min-width:120px;">الشرح</th><th style="padding:8px 6px;width:80px;text-align:center;">الحالة</th><th style="padding:8px 6px;width:40px;text-align:center;">حذف</th></tr></thead>
             <tbody>
               ${importedRows.map((row, idx) => {
                 const isErr = (!row.isValid && row.included);
                 return `
                   <tr style="background:${isErr ? '#42233766' : (idx % 2 === 0 ? '#14152a' : '#0f1123')};border-bottom:1px solid ${isErr ? '#c38498' : '#ffffff10'};opacity:${row.included ? '1' : '0.45'};">
                     <td style="padding:6px;text-align:center;font-weight:800;color:#a1a4be;">${idx + 1}</td>
-                    <td style="padding:6px;text-align:center;">
-                      <input type="checkbox" ${row.included ? 'checked' : ''} onchange="ScoreARQuizImporter.toggleRowInclude(${idx}, this.checked)" style="cursor:pointer;accent-color:#7550ef;width:16px;height:16px;">
-                    </td>
-                    <td style="padding:6px;">
-                      <textarea oninput="ScoreARQuizImporter.updateRowText(${idx}, 'q', this.value)" style="width:100%;height:45px;background:#0c0d1d;border:1px solid ${isErr && !row.q.trim() ? '#c38498' : '#ffffff1c'};border-radius:8px;color:#fff;font-size:12px;font-family:inherit;padding:4px;resize:none;">${escapeHtml(row.q)}</textarea>
-                    </td>
-                    <td style="padding:6px;">
-                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
-                        ${row.opts.map((opt, oIdx) => {
-                          const isC = (row.ans === oIdx);
-                          return `
-                            <div style="display:flex;align-items:center;gap:4px;background:${isC ? '#163c39' : '#0c0d1d'};border:1px solid ${isC ? '#44b8a5' : '#ffffff16'};border-radius:6px;padding:2px 6px;">
-                              <button type="button" onclick="ScoreARQuizImporter.setRowCorrectAnswer(${idx}, ${oIdx})" style="width:15px;height:15px;border-radius:50%;background:${isC ? '#44b8a5' : 'transparent'};border:1px solid ${isC ? '#44b8a5' : '#6b7280'};cursor:pointer;flex-shrink:0;" title="${isC ? 'الإجابة الصحيحة' : 'اجعلها الصحيحة'}"></button>
-                              <input type="text" value="${escapeHtml(opt)}" oninput="ScoreARQuizImporter.updateRowOption(${idx}, ${oIdx}, this.value)" placeholder="خيار ${oIdx + 1}" style="background:transparent;border:none;color:#fff;font-size:11px;width:100%;font-family:inherit;outline:none;">
-                            </div>
-                          `;
-                        }).join('')}
-                      </div>
-                    </td>
-                    <td style="padding:6px;text-align:center;">
-                      <input type="number" min="5" max="120" value="${row.timeLimit}" oninput="ScoreARQuizImporter.updateRowText(${idx}, 'timeLimit', this.value)" style="width:50px;background:#0c0d1d;border:1px solid #ffffff1c;border-radius:6px;color:#fff;font-size:11px;text-align:center;padding:4px;">
-                    </td>
-                    <td style="padding:6px;text-align:center;">
-                      <select onchange="ScoreARQuizImporter.updateRowText(${idx}, 'points', this.value)" style="background:#0c0d1d;border:1px solid #ffffff1c;border-radius:6px;color:#fff;font-size:10px;padding:3px;font-family:inherit;">
-                        <option value="0" ${Number(row.points) === 0 ? 'selected' : ''}>0 (تدريبي)</option>
-                        <option value="100" ${Number(row.points) === 100 ? 'selected' : ''}>100</option>
-                        <option value="200" ${Number(row.points) === 200 ? 'selected' : ''}>200</option>
-                        <option value="500" ${Number(row.points) === 500 ? 'selected' : ''}>500</option>
-                        <option value="1000" ${Number(row.points) === 1000 ? 'selected' : ''}>1000</option>
-                        <option value="2000" ${Number(row.points) === 2000 ? 'selected' : ''}>2000</option>
-                      </select>
-                    </td>
-                    <td style="padding:6px;">
-                      <input type="text" value="${escapeHtml(row.explain || '')}" oninput="ScoreARQuizImporter.updateRowText(${idx}, 'explain', this.value)" placeholder="توضيح..." style="width:100%;background:#0c0d1d;border:1px solid #ffffff1c;border-radius:6px;color:#fff;font-size:11px;padding:4px;font-family:inherit;">
-                    </td>
-                    <td style="padding:6px;text-align:center;">
-                      ${row.isValid ? '<span style="color:#7fe7ce;font-weight:800;font-size:11px;">✓ سليم</span>' : `<span title="${row.errors.join(' | ')}" style="color:#ffd3e5;font-weight:800;font-size:10px;display:block;cursor:help;">خطأ</span>`}
-                    </td>
-                    <td style="padding:6px;text-align:center;">
-                      <button onclick="ScoreARQuizImporter.deleteRow(${idx})" style="background:none;border:none;color:#ffd3e5;cursor:pointer;display:inline-grid;place-items:center;" aria-label="حذف">${(global.ScoreARUI?.icon('trash', { size: 14 }) || '✕')}</button>
-                    </td>
-                  </tr>
-                `;
+                    <td style="padding:6px;text-align:center;"><input type="checkbox" ${row.included ? 'checked' : ''} onchange="ScoreARQuizImporter.toggleRowInclude(${idx}, this.checked)" style="cursor:pointer;accent-color:#7550ef;width:16px;height:16px;"></td>
+                    <td style="padding:6px;"><textarea oninput="ScoreARQuizImporter.updateRowText(${idx}, 'q', this.value)" style="width:100%;height:45px;background:#0c0d1d;border:1px solid ${isErr && !row.q.trim() ? '#c38498' : '#ffffff1c'};border-radius:8px;color:#fff;font-size:12px;font-family:inherit;padding:4px;resize:none;">${escapeHtml(row.q)}</textarea></td>
+                    <td style="padding:6px;"><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">${row.opts.map((opt, oIdx) => { const isC = (row.ans === oIdx); return `<div style="display:flex;align-items:center;gap:4px;background:${isC ? '#163c39' : '#0c0d1d'};border:1px solid ${isC ? '#44b8a5' : '#ffffff16'};border-radius:6px;padding:2px 6px;"><button type="button" onclick="ScoreARQuizImporter.setRowCorrectAnswer(${idx}, ${oIdx})" style="width:15px;height:15px;border-radius:50%;background:${isC ? '#44b8a5' : 'transparent'};border:1px solid ${isC ? '#44b8a5' : '#6b7280'};cursor:pointer;flex-shrink:0;" title="${isC ? 'الإجابة الصحيحة' : 'اجعلها الصحيحة'}"></button><input type="text" value="${escapeHtml(opt)}" oninput="ScoreARQuizImporter.updateRowOption(${idx}, ${oIdx}, this.value)" placeholder="خيار ${oIdx + 1}" style="background:transparent;border:none;color:#fff;font-size:11px;width:100%;font-family:inherit;outline:none;"></div>`; }).join('')}</div></td>
+                    <td style="padding:6px;text-align:center;"><input type="number" min="5" max="120" value="${row.timeLimit}" oninput="ScoreARQuizImporter.updateRowText(${idx}, 'timeLimit', this.value)" style="width:50px;background:#0c0d1d;border:1px solid #ffffff1c;border-radius:6px;color:#fff;font-size:11px;text-align:center;padding:4px;"></td>
+                    <td style="padding:6px;text-align:center;"><select onchange="ScoreARQuizImporter.updateRowText(${idx}, 'points', this.value)" style="background:#0c0d1d;border:1px solid #ffffff1c;border-radius:6px;color:#fff;font-size:10px;padding:3px;font-family:inherit;">${[0, 100, 200, 500, 1000, 2000].map(p => `<option value="${p}" ${Number(row.points) === p ? 'selected' : ''}>${p === 0 ? '0 (تدريبي)' : p}</option>`).join('')}</select></td>
+                    <td style="padding:6px;"><input type="text" value="${escapeHtml(row.explain || '')}" oninput="ScoreARQuizImporter.updateRowText(${idx}, 'explain', this.value)" placeholder="توضيح..." style="width:100%;background:#0c0d1d;border:1px solid #ffffff1c;border-radius:6px;color:#fff;font-size:11px;padding:4px;font-family:inherit;"></td>
+                    <td style="padding:6px;text-align:center;">${row.isValid ? '<span style="color:#7fe7ce;font-weight:800;font-size:11px;">✓ سليم</span>' : `<span title="${row.errors.join(' | ')}" style="color:#ffd3e5;font-weight:800;font-size:10px;display:block;cursor:help;">خطأ</span>`}</td>
+                    <td style="padding:6px;text-align:center;"><button onclick="ScoreARQuizImporter.deleteRow(${idx})" style="background:none;border:none;color:#ffd3e5;cursor:pointer;display:inline-grid;place-items:center;" aria-label="حذف">${(global.ScoreARUI?.icon('trash', { size: 14 }) || '✕')}</button></td>
+                  </tr>`;
               }).join('')}
             </tbody>
           </table>
         </div>
         <footer style="background:#111226;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #ffffff16;flex-wrap:wrap;gap:12px;">
-          <div style="color:#a1a4be;font-size:12px;font-weight:700;">
-            الملخص: <strong style="color:#7fe7ce;">${valid} سؤالاً سليماً</strong> | <strong style="color:${errors > 0 ? '#ffd3e5' : '#a1a4be'};">${errors} أخطاء</strong>
-          </div>
+          <div style="color:#a1a4be;font-size:12px;font-weight:700;">الملخص: <strong style="color:#7fe7ce;">${valid} سؤالاً سليماً</strong> | <strong style="color:${errors > 0 ? '#ffd3e5' : '#a1a4be'};">${errors} أخطاء</strong></div>
           <div style="display:flex;gap:10px;align-items:center;">
             <button onclick="ScoreARQuizImporter.closeImporter()" class="btn launch-outline" style="padding:8px 16px;font-size:12px;">إلغاء</button>
-            <button onclick="ScoreARQuizImporter.commitImportedQuestions()" ${canSave ? '' : 'disabled'} class="${canSave ? 'btn launch-primary' : 'btn launch-outline'}" style="padding:10px 22px;font-size:13px;cursor:${canSave ? 'pointer' : 'not-allowed'};opacity:${canSave ? '1' : '0.5'};">
-              ${(global.ScoreARUI?.icon('check', { size: 14 }) || '')} اعتماد وحفظ (${valid} سؤالاً)
-            </button>
+            <button onclick="ScoreARQuizImporter.commitImportedQuestions()" ${canSave ? '' : 'disabled'} class="${canSave ? 'btn launch-primary' : 'btn launch-outline'}" style="padding:10px 22px;font-size:13px;cursor:${canSave ? 'pointer' : 'not-allowed'};opacity:${canSave ? '1' : '0.5'};">${(global.ScoreARUI?.icon('check', { size: 14 }) || '')} اعتماد وحفظ (${valid} سؤالاً)</button>
           </div>
         </footer>
       </div>
@@ -448,18 +376,8 @@
             </div>
             <p style="color:#cbd5e1;font-size:12px;margin:0 0 10px 0;">تخزين الأسئلة مع تصنيف المادة والصف لإعادة استخدامها في أي مسابقة.</p>
             <div style="display:flex;gap:10px;" onclick="event.stopPropagation()">
-              <select id="impBankSubject" style="flex:1;background:#111228;border:1px solid rgba(88,220,227,0.35);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:inherit;">
-                <option value="لغة عربية - نحو">لغة عربية - نحو</option>
-                <option value="لغة عربية - بلاغة">لغة عربية - بلاغة</option>
-                <option value="لغة عربية - نصوص">لغة عربية - نصوص</option>
-                <option value="تربية إسلامية">تربية إسلامية</option>
-              </select>
-              <select id="impBankGrade" style="flex:1;background:#111228;border:1px solid rgba(88,220,227,0.35);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:inherit;">
-                <option value="الصف الأول الإعدادي">الصف الأول الإعدادي</option>
-                <option value="الصف الثاني الإعدادي">الصف الثاني الإعدادي</option>
-                <option value="الصف الثالث الإعدادي">الصف الثالث الإعدادي</option>
-                <option value="المرحلة الثانوية">المرحلة الثانوية</option>
-              </select>
+              <select id="impBankSubject" style="flex:1;background:#111228;border:1px solid rgba(88,220,227,0.35);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:inherit;">${['لغة عربية - نحو', 'لغة عربية - بلاغة', 'لغة عربية - نصوص', 'تربية إسلامية'].map(s => `<option value="${s}">${s}</option>`).join('')}</select>
+              <select id="impBankGrade" style="flex:1;background:#111228;border:1px solid rgba(88,220,227,0.35);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:inherit;">${['الصف الأول الإعدادي', 'الصف الثاني الإعدادي', 'الصف الثالث الإعدادي', 'المرحلة الثانوية'].map(g => `<option value="${g}">${g}</option>`).join('')}</select>
             </div>
           </div>
         </div>

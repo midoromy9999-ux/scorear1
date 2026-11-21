@@ -6,150 +6,93 @@ window.renderTeacherStudio = function () {
     cosmicBackdrop: () => '',
     softNote: txt => `<div class="scorear-soft-note"><span>${txt}</span></div>`
   };
+  const esc = s => (ui.escapeHtml ? ui.escapeHtml(s) : String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])));
   const ic = (name, size = 16) => ui.icon ? ui.icon(name, { size }) : (typeof window.icon === 'function' ? window.icon(name) : '');
-  const ib = (name, tone = 'violet', size = 'md') => ui.iconBox ? ui.iconBox(name, { size, tone, tilted: true }) : `<span class="tool-icon">${ic(name, 20)}</span>`;
+  const ib = (name, tone = 'violet', size = 'sm') => ui.iconBox ? ui.iconBox(name, { size, tone, tilted: true }) : `<span class="tool-icon">${ic(name, 20)}</span>`;
+  const authUser = window.ScoreARAuth && typeof window.ScoreARAuth.getUser === 'function' ? window.ScoreARAuth.getUser() : null;
+  const teacherName = esc(authUser?.displayName || 'أ. أحمد صلاح رميح');
   const launchWorlds = "window.ScoreARWorldFlow && window.ScoreARWorldFlow.openWorldPicker ? window.ScoreARWorldFlow.openWorldPicker({ onConfirm: function(wId){ renderLiveLobby(wId, null, true, false); } }) : renderLiveLobby('royal', null, false, false)";
 
-  const tools = [
-    ['edit', 'إنشاء مسابقة جديدة', 'أنشئ أسئلتك وخياراتها مع الحفظ التلقائي الفوري.', 'builder', 'violet', null],
-    ['spark', 'مساعد الأسئلة الذكي AI', 'توليد الأسئلة بالذكاء الاصطناعي مع مراجعة دقيقة.', 'ai', 'cyan', null],
-    ['layers', 'بنك الأسئلة الشامل', 'بنك أسئلة منظم ومكتبة مسابقات خاصة بالمعلم.', 'bank', 'violet', null],
-    ['users', 'صفوفي وواجبات الطلاب', 'أنشئ صفوفك واقبل طلابك وتابع واجباتهم.', 'classes', 'cyan', 'ScoreARClassrooms.openView()'],
-    ['spreadsheet', 'استيراد Excel / CSV', 'استيراد سريع بنفس ترتيب الأعمدة ومعاينة حية.', 'import', 'violet', null],
-    ['chart', 'تقارير القاعة والنتائج', 'تحليلات دقيقة لنسب الصواب وتشخيص الثغرات.', 'reports', 'cyan', null],
-    ['shield', 'إدارة المعلمين والمنصة', 'الموافقات والصلاحيات المتقدمة حسب الرتبة.', 'teachers', 'violet', null]
+  const contentTools = [
+    ['edit', 'إنشاء مسابقة جديدة', 'أنشئ أسئلتك وخياراتها مع الحفظ التلقائي الفوري.', "openToolModal('builder')", 'violet', 'محرر'],
+    ['spark', 'مساعد الأسئلة الذكي AI', 'توليد الأسئلة بالذكاء الاصطناعي مع مراجعة دقيقة.', "openToolModal('ai')", 'cyan', 'ذكي'],
+    ['layers', 'بنك الأسئلة ومسابقاتي', 'بنك أسئلة منظم ومكتبة مسابقات خاصة بالمعلم.', "openToolModal('bank')", 'violet', 'مكتبتك'],
+    ['spreadsheet', 'استيراد Excel / CSV', 'استيراد سريع بنفس ترتيب الأعمدة ومعاينة حية.', "openToolModal('import')", 'cyan', 'سريع']
   ];
+
+  const manageTools = [
+    ['users', 'صفوفي وواجبات الطلاب', 'أنشئ صفوفك واقبل طلابك وتابع واجباتهم.', 'ScoreARClassrooms.openView()', 'cyan', 'الفصول'],
+    ['chart', 'تقارير القاعة والنتائج', 'تحليلات دقيقة لنسب الصواب وتشخيص الثغرات.', "openToolModal('reports')", 'violet', 'تحليلات'],
+    ['shield', 'إدارة المعلمين والمنصة', 'الموافقات والصلاحيات المتقدمة حسب الرتبة.', "openToolModal('teachers')", 'violet', 'إدارة'],
+    ['sparkles', 'معرض الأبطال والكروت', 'استعرض ٢٠ بطلاً متحركاً و٢٠ كارتاً تكتيكياً.', "window.ScoreARUnifiedViews ? ScoreARUnifiedViews.openView('cards') : (window.location.href='cards.html')", 'cyan', '٢٠+٢٠']
+  ];
+
+  const renderGroup = (kicker, title, items, extraClass = '') => `
+    <section class="studio-tool-group reveal ${extraClass}">
+      <div class="studio-group-head">
+        <div>
+          <span class="section-kicker">${kicker}</span>
+          <h2>${title}</h2>
+        </div>
+      </div>
+      <div class="studio-tools-grid cols-4">
+        ${items.map(([iconName, cardTitle, desc, onclickCode, tone, badge]) => `
+          <button type="button" class="studio-tool-card spotlight tone-${tone}" onclick="${onclickCode}">
+            <div class="tool-card-top">
+              ${ib(iconName, tone, 'sm')}
+              <div class="tool-card-meta">
+                <span class="tool-badge tone-${tone}">${badge}</span>
+                <span class="tool-arrow" aria-hidden="true">${ic('arrow', 15)}</span>
+              </div>
+            </div>
+            <div class="tool-card-body">
+              <h4>${cardTitle}</h4>
+              <p>${desc}</p>
+            </div>
+          </button>
+        `).join('')}
+      </div>
+    </section>
+  `;
 
   return `<div class="page teacher-space scorear-open-page">
     ${ui.cosmicBackdrop ? ui.cosmicBackdrop() : ''}
 
-    <!-- STUDIO TOP EDITORIAL IDENTITY BAR -->
-    <div class="studio-heading reveal">
+    <header class="studio-heading studio-compact-head reveal">
       <div class="studio-identity">
         <div class="studio-avatar-wrap">
-          <img src="assets/characters/teacher_ahmed.webp?v=20261106_real" alt="أ. أحمد صلاح رميح">
+          <img src="assets/characters/teacher_ahmed.webp?v=20261106_real" alt="${teacherName}">
         </div>
         <div>
-          <div class="launch-pill" style="margin-bottom:10px;"><span class="live-dot"></span> مساحتك للإلهام · أ. أحمد صلاح رميح</div>
-          <h1 class="studio-main-title">كل حصة، <span class="gradient-text">فرصة جديدة.</span></h1>
-          <p class="studio-main-sub">محتواك وأدواتك في مكان واحد. ابدأ بخطوة، وكمّل بطريقتك وبأعلى معايير التفاعل.</p>
+          <div class="launch-pill" style="margin-bottom:8px;"><span class="live-dot"></span> استوديو المعلم · ${teacherName}</div>
+          <h1 class="studio-main-title">مساحة عملك، <span class="gradient-text">جاهزة للانطلاق.</span></h1>
+          <p class="studio-main-sub">أنشئ مسابقتك، أدر فصولك، وأطلق قاعتك الحية من شاشة واحدة واضحة.</p>
         </div>
       </div>
       <div class="studio-quick-actions">
-        <button type="button" class="btn launch-primary" onclick="${launchWorlds}">
-          ${ic('planet', 17)} قاعة المنافسات الحية
+        <button type="button" class="btn launch-primary" onclick="openToolModal('builder')">
+          ${ic('plus', 17)} مسابقة جديدة
         </button>
-        <button type="button" class="btn launch-outline" onclick="window.ScoreARClassrooms?.openView?.()">
-          ${ic('users', 16)} صفوفي وطلابي
+        <button type="button" class="btn launch-student-join" onclick="${launchWorlds}">
+          ${ic('planet', 17)} إطلاق قاعة حية
         </button>
-        <a href="characters.html" class="btn launch-outline">
-          ${ic('spark', 16)} الأبطال
-        </a>
-        <a href="cards.html" class="btn launch-outline">
-          ${ic('layers', 16)} الكروت
-        </a>
       </div>
-    </div>
+    </header>
 
     <div class="scorear-hairline-divider"></div>
 
-    <!-- TEACHER HERO BANNER -->
-    <section class="teacher-banner spotlight reveal">
-      <img src="assets/classroom.webp" alt="معلم مصري كرتوني مع طلابه وكتاب المعرفة">
-      <div class="teacher-banner-overlay"></div>
-      <div class="teacher-banner-content">
-        <div class="launch-pill" style="margin-bottom:14px;"><span class="live-dot"></span> استوديو المعلم المتقدم</div>
-        <h2>إنت تصنع الفكرة.<br><span class="gradient-text">وهم يعيشوا المغامرة.</span></h2>
-        <p>من أول سؤال في ملف الدرس إلى آخر لحظة اكتشاف وتتويج على منصة الأبطال.</p>
-        <div class="studio-banner-ctas">
-          <button type="button" class="btn launch-primary" onclick="openToolModal('builder')">
-            ${ic('edit', 17)} إنشاء مسابقة جديدة وبدء التحدي
-          </button>
-          <button type="button" class="btn launch-outline" onclick="${launchWorlds}">
-            ${ic('planet', 17)} فتح قاعة اللوبي المباشرة
-          </button>
-        </div>
+    ${renderGroup('٠١ — التحضير والأسئلة', 'صناعة المحتوى والأسئلة', contentTools)}
+    ${renderGroup('٠٢ — الإدارة والتحليل', 'إدارة الفصول والتشغيل والتحليلات', manageTools, 'studio-group-secondary')}
+
+    <div class="studio-quick-footer reveal">
+      <div class="studio-quick-note">
+        ${ui.softNote
+          ? ui.softNote('يمكنك إنشاء المسابقات أو إطلاق قاعة حية مباشرة في أي وقت؛ وتُحفظ فصولك وتقاريرك تلقائياً على حسابك.', 'info')
+          : '<div class="scorear-soft-note"><span>تُحفظ فصولك وتقاريرك تلقائياً على حسابك.</span></div>'}
       </div>
-    </section>
-
-    <!-- 3 STEPS JOURNEY -->
-    <div class="launch-section-heading reveal" style="margin-top:46px;margin-bottom:24px;">
-      <div>
-        <span class="section-kicker">٠١ — مسار الحصة المتكامل</span>
-        <h2 style="font-size:clamp(24px,3vw,34px);font-weight:900;color:#f6f3ff;">حصة كاملة.<br><span class="gradient-text">ثلاث خطوات سهلة ومباشرة.</span></h2>
-      </div>
-      <p style="color:#aaa9c1;font-size:13px;line-height:1.8;">اختر المهمة التي تحتاجها الآن للانطلاق مع فصولك.</p>
-    </div>
-
-    <div class="studio-steps">
-      <div class="studio-step spotlight reveal" onclick="openToolModal('bank')" style="cursor:pointer;">
-        <span class="experience-num">٠١ / للتحضير</span>
-        <div style="margin-bottom:14px;">${ib('book', 'violet', 'md')}</div>
-        <h3>جهّز المحتوى</h3>
-        <p>بنك الأسئلة الشامل ومكتبة مسابقاتي الخاصة مع أدوات المراجعة والحفظ التلقائي.</p>
-        <span class="experience-link">افتح مكتبتي وبنك الأسئلة ${ic('arrow', 15)}</span>
-      </div>
-
-      <div class="studio-step tone-cyan spotlight reveal" onclick="${launchWorlds}" style="cursor:pointer;">
-        <span class="experience-num">٠٢ / للانطلاق</span>
-        <div style="margin-bottom:14px;">${ib('planet', 'cyan', 'md')}</div>
-        <h3>أطلق المنافسة</h3>
-        <p>اختر نشاطك وعالمك الكرتوني، واجمع طلابك في اللوبي بانتظار 3D حي وتحدٍ فوري.</p>
-        <span class="experience-link" style="color:#7be8dc;">انطلاق القاعة فوراً ${ic('arrow', 15)}</span>
-      </div>
-
-      <div class="studio-step spotlight reveal" onclick="openToolModal('reports')" style="cursor:pointer;">
-        <span class="experience-num">٠٣ / للتحليل</span>
-        <div style="margin-bottom:14px;">${ib('chart', 'violet', 'md')}</div>
-        <h3>افهم النتائج</h3>
-        <p>نسب صواب الأسئلة الفعلية وتشخيص الأسئلة الأضعف ومتابعة مسودات وتقارير الطلاب.</p>
-        <span class="experience-link">افتح التقارير والتحليلات ${ic('arrow', 15)}</span>
-      </div>
-    </div>
-
-    <!-- STUDIO FAST TOOLS & ACADEMY TEASER -->
-    <div class="studio-bottom" style="margin-top:40px;">
-      <section class="studio-tools-panel reveal">
-        <div class="tools-head">
-          <div>
-            <span class="section-kicker">٠٢ — أدوات المعلم</span>
-            <h2 style="font-size:24px;font-weight:900;color:#ffffff;margin:4px 0 0;">أدوات الإعداد السريعة</h2>
-          </div>
-          <span class="launch-pill"><span class="live-dot"></span> منشئ المسابقات الحقيقي</span>
-        </div>
-
-        <div class="studio-tools-grid">
-          ${tools.map(([iconName, title, desc, route, tone, customClick]) => `
-            <button type="button" class="studio-tool-card spotlight" onclick="${customClick || `openToolModal('${route}')`}">
-              <div class="tool-card-top">
-                ${ib(iconName, tone, 'sm')}
-                <span class="tool-arrow" aria-hidden="true">${ic('arrow', 15)}</span>
-              </div>
-              <div class="tool-card-body">
-                <h4>${title}</h4>
-                <p>${desc}</p>
-              </div>
-            </button>
-          `).join('')}
-        </div>
-      </section>
-
-      <a href="#academy" class="academy-teaser spotlight reveal">
-        <img src="assets/academy.webp" alt="أكاديمية المعرفة العائمة">
-        <div class="academy-teaser-overlay"></div>
-        <div class="academy-teaser-content">
-          <span class="section-kicker" style="color:#52d9ed;">٠٣ — بوابة المعرفة</span>
-          <h2>وراء البوابة،<br><span class="gradient-text">حكاية تنتظر.</span></h2>
-          <p>استكشف تصميم الدخول والانتظار والسؤال والنتيجة ومنصة التتويج ثلاثية الأبعاد.</p>
-          <span class="experience-link" style="color:#7be8dc;">جرّب معاينة بوابة المعرفة ${ic('arrow', 15)}</span>
-        </div>
+      <a href="#academy" class="studio-mini-link">
+        ${ic('play', 14)} <span>معاينة تدفق القاعة</span> ${ic('arrow', 14)}
       </a>
-    </div>
-
-    <div class="reveal" style="margin-top:28px;">
-      ${ui.softNote
-        ? ui.softNote('تُفتح أدوات الحساب بعد تسجيل الدخول. يمكنك بدء المسابقات في أي وقت وتعديل خياراتها وتخصيص تجربة فصولك بحرية تامة.', 'info')
-        : '<div class="scorear-soft-note"><span>تُفتح أدوات الحساب بعد تسجيل الدخول.</span></div>'}
     </div>
   </div>`;
 };

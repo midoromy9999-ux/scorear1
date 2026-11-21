@@ -1,6 +1,6 @@
 /**
  * ScoreAR Launch Home Presentation (js/ui/launch.js)
- * Clean RTL Arabic landing experience with separated Student & Teacher tracks.
+ * Clean RTL Arabic landing experience preserving cosmic visual identity.
  */
 window.renderLaunchHome = function () {
   return `
@@ -15,8 +15,6 @@ window.renderLaunchHome = function () {
           <a href="#journey">للطالب</a>
           <a href="#classrooms">صفوفي</a>
           <a href="#worlds">العوالم</a>
-          <a href="characters.html">الأبطال</a>
-          <a href="cards.html">الكروت</a>
           <a href="#library">المحتوى</a>
         </nav>
         <div class="launch-nav-actions">
@@ -36,34 +34,33 @@ window.renderLaunchHome = function () {
             <h1 class="reveal">الحصة تبدأ هنا.<br><span class="gradient-text">والحكاية معاك.</span></h1>
             <p class="launch-description reveal">
               حوّل فضول طلابك إلى مشاركة، والمشاركة إلى معرفة.<br>
-              مسابقات حيّة، عوالم تفاعلية، ورحلة تعلّم لها معنى.
+              مسابقات حيّة، ٤ أوضاع تنافسية، ورحلة تعلّم لها معنى.
             </p>
             <div class="launch-ctas reveal">
-              <a href="#studio" class="btn launch-primary big">اصنع تجربتك ${icon('arrow')}</a>
+              <a href="#studio" class="btn launch-primary big">ابدأ كمعلم ${icon('arrow')}</a>
               <button type="button" class="btn launch-student-join big" data-action="join">${icon('key')} دخول القاعة بالرمز</button>
               <button class="launch-watch" data-action="intro">
                 <span>${icon('play')}</span>
                 <div>
                   <b>شاهد سكور آر</b>
-                  <small>الفيلم الجديد · ٢٤ ثانية</small>
+                  <small>العرض التعريفي · ٢٤ ثانية</small>
                 </div>
               </button>
             </div>
             <div class="launch-footnote reveal">
-              <span>${icon('book')} بالعربية</span>
+              <span>${icon('book')} بالعربية · RTL</span>
+              <span>${icon('trophy')} ٤ أوضاع منافسة حيّة</span>
               <span>${icon('users')} للمعلم والطالب</span>
-              <span>${icon('spark')} تعلّم وتفاعل</span>
             </div>
           </div>
 
           <div class="launch-visual">
             <div class="orbital-ring" aria-hidden="true"></div>
             <div class="student-photo" data-tilt>
-              <img src="assets/students.webp" alt="طلاب مصريون كرتونيون ينطلقون داخل عالم المعرفة — رسوم كرتونية مولّدة" width="1536" height="1024" fetchpriority="high">
+              <img src="assets/students.webp" alt="طلاب سكور آر يتفاعلون في مسابقة تعليمية حية" width="1536" height="1024" fetchpriority="high">
               <div class="photo-shade"></div>
               <div class="photo-label"><span class="live-dot"></span>هنا، كل طالب جزء من الحكاية</div>
             </div>
-            <div class="floating-subject">${icon('spark')} الفضول مُعدي.</div>
             <div class="floating-question spotlight">
               <div class="fq-top">
                 <span>${icon('book')} لحظة اكتشاف</span>
@@ -83,7 +80,7 @@ window.renderLaunchHome = function () {
 
         <div class="hero-bottom">
           <span>تجربة واحدة. احتمالات أكثر.</span>
-          <button data-action="scrollsection" data-target="launchExperiences" aria-label="استكشف التجربة">${icon('arrow')} اكتشف سكور آر</button>
+          <button data-action="scrollsection" data-target="launchExperiences" aria-label="استكشف مسارات المنصة">${icon('arrow')} مسارات المنصة</button>
           <div class="scroll-line" aria-hidden="true"></div>
         </div>
       </section>
@@ -91,21 +88,21 @@ window.renderLaunchHome = function () {
       <section class="launch-experiences launch-section" id="launchExperiences">
         <div class="launch-section-heading reveal">
           <div>
-            <span class="section-kicker">✦ مسارات المنصة · خطوتك القادمة</span>
-            <h2>مش كلنا بنبدأ من نفس المكان.<br><span>بس كلنا بنحب نكتشف.</span></h2>
+            <span class="section-kicker">✦ مسارات المنصة · خطوتك التالية</span>
+            <h2>اختر دورك،<br><span class="gradient-text">وانطلق في ثوانٍ.</span></h2>
           </div>
-          <p>اختر مسارك الواضح.<br>واترك الباقي لفضولك.</p>
+          <p>مسار واضح للمعلّم، قاعة حماسية للمنافسة،<br>ورحلة تعلّم هادئة للطالب.</p>
         </div>
 
         <div class="experience-grid">
           <a href="#studio" class="experience-card teacher-card spotlight reveal">
-            <img src="assets/classroom.webp" alt="معلم كرتوني مصري يحوّل الكتاب إلى عالم من الأسئلة" loading="lazy">
+            <img src="assets/classroom.webp" alt="معلم يدير نشاطاً تعليمياً تفاعلياً مع طلابه" loading="lazy">
             <div class="experience-overlay"></div>
             <span class="experience-num">٠١ / للمعلّم</span>
             <div class="experience-content">
               <span class="experience-icon">${icon('grid')}</span>
-              <h3>إنت صاحب<br>لحظة الإلهام.</h3>
-              <p>من ملف الدرس إلى نشاط يشارك فيه فصلك، مع إدارة الفصول والواجبات والتقارير.</p>
+              <h3>استوديو<br>المعلّم.</h3>
+              <p>ابنِ مسابقاتك بالذكاء الاصطناعي أو Excel، وأدر صفوفك وتقاريرك في مكان واحد.</p>
               <span class="experience-link">ادخل استوديو المعلم ${icon('arrow')}</span>
             </div>
           </a>
@@ -117,9 +114,15 @@ window.renderLaunchHome = function () {
               <span></span><span></span><span></span>
             </div>
             <div class="experience-content">
-              <h3>فصلك.<br>بقوانين المغامرة.</h3>
-              <p>عالم مختلف، ٢٠ بطلاً متحركاً، و٢٠ كارتاً تكتيكياً لمشاركة الجميع.</p>
-              <span class="experience-link">استكشف العوالم والأبطال ${icon('arrow')}</span>
+              <h3>قاعة<br>المنافسات الحية.</h3>
+              <p>٦ عوالم كرتونية، ٢٠ بطلاً، و٢٠ كارتاً تكتيكياً بأوضاع لعب جماعية فورية.</p>
+              <div class="mode-mini-pills" aria-label="أوضاع المنافسة">
+                <span class="mode-mini-pill">مواجهة الفرق</span>
+                <span class="mode-mini-pill">البقاء للأقوى</span>
+                <span class="mode-mini-pill">حرب البطاقات</span>
+                <span class="mode-mini-pill">التحدي الفردي</span>
+              </div>
+              <span class="experience-link">استكشف العوالم والأوضاع ${icon('arrow')}</span>
             </div>
           </a>
 
@@ -133,88 +136,27 @@ window.renderLaunchHome = function () {
               <div class="skill-node">${icon('trophy')}</div>
             </div>
             <div class="experience-content">
-              <h3>كل خطوة،<br>نسخة أقوى منك.</h3>
-              <p>تعلّم في رحلتك الفردية، تابع صفوفك، وراجع دفتر أخطائك على مهلك.</p>
+              <h3>رحلتك<br>التعليمية.</h3>
+              <p>تعلّم بالتدريج، تابع صفوفك وواجباتك، وراجع دفتر أخطائك على مهلك.</p>
               <span class="experience-link">ابدأ رحلتك التعليمية ${icon('arrow')}</span>
             </div>
           </a>
         </div>
 
-        <div id="launchRegister" class="reveal" style="margin-top:24px;background:linear-gradient(135deg, rgba(24,23,46,0.88), rgba(14,16,34,0.94));border:1px solid rgba(172,139,242,0.22);border-radius:20px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;backdrop-filter:blur(16px);">
-          <div style="display:flex;align-items:center;gap:12px;">
+        <div id="launchRegister" class="launch-register-bar reveal">
+          <div class="launch-register-copy">
             <span class="scorear-icon-box size-sm tone-violet">${icon('shield')}</span>
             <div>
-              <div style="font-size:15px;font-weight:900;color:#ffffff;">بوابة الدخول والتسجيل الموحدة</div>
-              <div style="font-size:12px;color:#a1a4be;">مكان واحد لدخول وتسجيل المعلم والطالب، أو الانضمام الفوري للقاعة بالرمز.</div>
+              <strong>بوابة الدخول والتسجيل الموحدة</strong>
+              <span>أنشئ حساب طالب أو معلّم، أو سجّل دخولك لمتابعة صفوفك ومسابقاتك.</span>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <button type="button" class="btn launch-primary" data-action="unified-login" style="padding:10px 18px;font-weight:800;font-size:12.5px;">تسجيل الدخول ${icon('arrow')}</button>
-            <button type="button" class="btn launch-outline" data-action="register-student" style="padding:10px 15px;font-weight:800;font-size:12px;">طالب جديد</button>
-            <button type="button" class="btn launch-outline" data-action="register-teacher" style="padding:10px 15px;font-weight:800;font-size:12px;">معلم جديد</button>
-            <button type="button" class="nav-join" data-action="join" style="padding:10px 15px;">${icon('key')} رمز القاعة</button>
+          <div class="launch-register-actions">
+            <button type="button" class="btn launch-primary" data-action="unified-login">تسجيل الدخول ${icon('arrow')}</button>
+            <button type="button" class="btn launch-outline" data-action="register-student">طالب جديد</button>
+            <button type="button" class="btn launch-outline" data-action="register-teacher">معلم جديد</button>
           </div>
         </div>
-      </section>
-
-      <section class="launch-film launch-section" id="launchFilm">
-        <div class="film-copy reveal">
-          <span class="section-kicker">✦ حكاية سكور آر · فيلم المنصة</span>
-          <h2>شوف الفكرة.<br><span class="gradient-text">حسّ التجربة.</span></h2>
-          <p>٢٤ ثانية من الفضول، والمشاركة، والاكتشاف.<br>فيلم موشن جرافيك جديد يعكس هوية سكور آر.</p>
-          <button class="btn launch-primary" data-action="intro">شغّل الفيلم بالصوت ${icon('play')}</button>
-          <span class="film-note">يمكن تشغيل الفيديو مباشرة من المشغّل.</span>
-        </div>
-        <div class="film-player spotlight reveal">
-          <div class="film-label">
-            <span>مشهد ٠١</span>
-            <span>${icon('play')} الفيلم التعريفي الجديد</span>
-            <span>٠٠:٢٤</span>
-          </div>
-          <video controls playsinline preload="metadata" poster="assets/film-poster.webp" src="assets/scorear-launch.mp4" aria-label="الفيلم التعريفي الجديد لسكور آر">
-            <track kind="captions" src="assets/launch-ar.vtt" srclang="ar" label="العربية">
-          </video>
-          <div class="film-bottom">
-            <span>شخصيات مصرية. خيال بلا حدود.</span>
-            <span>تعلّم · العب · تميّز</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="launch-worlds launch-section">
-        <div class="launch-section-heading reveal">
-          <div>
-            <span class="section-kicker">✦ عوالم المنافسة · اختر عالمك</span>
-            <h2>خارج حدود<br><span class="gradient-text">الحصة المعتادة.</span></h2>
-          </div>
-          <a href="#worlds" class="btn launch-outline">كل العوالم ${icon('arrow')}</a>
-        </div>
-        <div class="universe-grid">
-          ${worlds.map((w, i) => `
-            <button class="universe-card spotlight reveal" data-action="preview" data-world="${w.id}">
-              <img src="assets/${w.image}.webp" alt="${w.name}" loading="lazy">
-              <div class="universe-shade"></div>
-              <span class="universe-index">٠${i + 1}</span>
-              <div class="universe-copy">
-                <span>${w.tag}</span>
-                <h3>${w.name}</h3>
-                <p>${w.desc}</p>
-              </div>
-              <span class="universe-arrow">${icon('arrow')}</span>
-            </button>
-          `).join('')}
-        </div>
-      </section>
-
-      <section class="launch-final launch-section reveal">
-        <div class="aurora" aria-hidden="true"><span></span><span></span></div>
-        <span class="section-kicker">كل بداية تستحق فرصة</span>
-        <h2>جاهز تخلّي حصتك<br><span class="gradient-text">الحكاية اللي تتحكي؟</span></h2>
-        <div class="launch-ctas">
-          <button class="btn launch-primary big" data-action="quiz" data-course="naat">جرّب التحدي ${icon('spark')}</button>
-          <button class="btn launch-outline big" data-action="join">انضم برمز القاعة ${icon('key')}</button>
-        </div>
-        <small>سؤال. ابتسامة. لحظة فهم.</small>
       </section>
     </div>
   `;
