@@ -31,6 +31,9 @@ window.renderLaunchHome = function () {
 
         <div class="launch-hero-inner">
           <div class="launch-copy">
+            <div class="launch-copy-bg" aria-hidden="true">
+              <img src="assets/students.webp" alt="" loading="eager">
+            </div>
             <div class="launch-pill reveal"><span class="live-dot"></span>تعليم عربي. بروح جيل جديد. ${icon('spark')}</div>
             <h1 class="reveal">الحصة تبدأ هنا.<br><span class="gradient-text">والحكاية معاك.</span></h1>
             <p class="launch-description reveal">
@@ -187,10 +190,10 @@ window.initLaunch = function (page) {
 
   if (window.Motion && !reduce()) {
     const { animate, stagger, inView } = window.Motion;
-    animate('.launch-copy .reveal', { opacity: [0, 1], y: [24, 0] }, { duration: 0.8, delay: stagger(0.1), ease: [0.2, 0.7, 0.2, 1] });
-    animate('.launch-visual', { opacity: [0, 1], y: [30, 0] }, { duration: 1.1, delay: 0.15 });
+    animate('.launch-copy .reveal', { opacity: [1, 1], y: [16, 0] }, { duration: 0.65, delay: stagger(0.07), ease: [0.2, 0.7, 0.2, 1] });
+    animate('.launch-visual', { opacity: [1, 1], y: [20, 0] }, { duration: 0.85, delay: 0.08 });
     const stop = inView('.launch-section .reveal', el => {
-      const animation = animate(el, { opacity: [0, 1], y: [28, 0] }, { duration: 0.65, ease: [0.2, 0.7, 0.2, 1] });
+      const animation = animate(el, { opacity: [1, 1], y: [20, 0] }, { duration: 0.55, ease: [0.2, 0.7, 0.2, 1] });
       return () => animation.stop();
     }, { margin: '0px 0px -50px 0px' });
     launchCleanup.push(stop);

@@ -1593,3 +1593,91 @@ html[data-theme="day"] .photo-label small {
   color: #ffffff;
 }
 
+/* =====================================================================
+   HERO SPACING REFINEMENT & TRANSLUCENT ARTWORK BACKDROP BEHIND COPY
+   ===================================================================== */
+.launch-nav,
+.launch-copy,
+.launch-copy .reveal,
+.launch-visual,
+.launch-section .reveal {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.launch-hero {
+  min-height: 610px !important;
+  padding: 96px 4.5vw 34px !important;
+}
+
+.launch-hero-inner {
+  grid-template-columns: 1.06fr 1fr !important;
+  gap: 32px !important;
+  max-width: 1380px !important;
+}
+
+.launch-copy {
+  position: relative;
+  isolation: isolate;
+  padding: 28px 30px 30px !important;
+  border-radius: 28px;
+  border: 1px solid rgba(172, 139, 242, 0.22);
+  background: linear-gradient(135deg, rgba(16, 18, 42, 0.78) 0%, rgba(22, 20, 52, 0.62) 100%);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.34);
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.launch-copy-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.launch-copy-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  opacity: 0.18;
+  transform: scale(1.06);
+  filter: saturate(1.2) blur(1.5px);
+}
+
+.launch-copy-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, rgba(12, 13, 31, 0.88) 18%, rgba(18, 19, 46, 0.64) 68%, rgba(12, 13, 31, 0.82) 100%);
+}
+
+html[data-theme="day"] .launch-copy {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.84) 0%, rgba(230, 244, 255, 0.74) 100%);
+  border-color: rgba(14, 165, 233, 0.28);
+  box-shadow: 0 18px 46px rgba(14, 116, 190, 0.12);
+}
+
+html[data-theme="day"] .launch-copy-bg img {
+  opacity: 0.24;
+  filter: saturate(1.15) blur(1px);
+}
+
+html[data-theme="day"] .launch-copy-bg::after {
+  background: linear-gradient(115deg, rgba(250, 253, 255, 0.88) 20%, rgba(232, 245, 255, 0.66) 66%, rgba(220, 239, 255, 0.8) 100%);
+}
+
+@media (max-width: 900px) {
+  .launch-hero-inner {
+    grid-template-columns: 1fr !important;
+  }
+  .launch-copy {
+    padding: 22px 18px 24px !important;
+    border-radius: 22px;
+  }
+}
+
+

@@ -61,32 +61,47 @@
     if (s) s.style.display = 'none';
   }
 
+  const QUIZ_CARD_ARTS = [
+    'assets/classroom.webp',
+    'assets/academy.webp',
+    'assets/oasis.webp',
+    'assets/cosmic.webp',
+    'assets/magic.webp',
+    'assets/treasure.webp',
+    'assets/stadium.webp',
+    'assets/modes/mode_squads.jpg'
+  ];
+
   function renderHeroBanner(allQuizzes, allQuestions, allFolders) {
-    const { iconBox } = ui();
+    const { icon, iconBox } = ui();
     const publishedCount = allQuizzes.filter(q => q.status === 'published').length;
     return `
-      <header class="scorear-editorial-head" style="margin-bottom:14px;">
-        <div class="scorear-editorial-copy">
-          <span class="launch-pill"><span class="live-dot"></span> مركز المحتوى التعليمي</span>
-          <h2 style="margin:12px 0 6px;">مسابقاتي <span class="gradient-text">وبنك الأسئلة</span></h2>
-          <p>نظّم مسابقاتك ومجلداتك، وأطلق القاعة التفاعلية أو اجمع الأسئلة من الاستيراد والذكاء الاصطناعي.</p>
+      <header class="bank-cartoon-hero spotlight">
+        <div class="bank-cartoon-bg" aria-hidden="true"><img src="assets/academy.webp" alt=""></div>
+        <div class="bank-hero-grid">
+          <div class="scorear-editorial-copy">
+            <span class="launch-pill"><span class="live-dot"></span> مركز المحتوى والمسابقات الحية</span>
+            <h2 style="margin:10px 0 8px;">مسابقاتي <span class="gradient-text">وبنك الأسئلة</span></h2>
+            <p>نظّم مسابقاتك ومجلداتك بهوية بصرية واضحة، وأطلق القاعة التفاعلية أو اجمع الأسئلة من الاستيراد والذكاء الاصطناعي.</p>
+            <div class="bank-hero-chips">
+              <span class="bank-hero-chip">${icon('play', { size: 13 })} بث مباشر للقاعة</span>
+              <span class="bank-hero-chip">${icon('spark', { size: 13 })} توليد ذكي AI</span>
+              <span class="bank-hero-chip">${icon('spreadsheet', { size: 13 })} استيراد Excel فوري</span>
+            </div>
+          </div>
+          <div class="bank-hero-art" aria-hidden="true">
+            <img src="assets/classroom.webp" alt="" class="bank-scene-img">
+            <div class="bank-hero-art-shade"></div>
+            <img src="assets/characters/char_02.webp" alt="" class="bank-hero-companion">
+            <span class="bank-hero-tag"><span class="live-dot"></span> جاهز للإطلاق الفوري</span>
+          </div>
         </div>
-        <span class="scorear-panel-index">02 — QUIZ & BANK HUB</span>
-      </header>
-      <div class="scorear-stat-ribbon scorear-stat-ribbon--three" style="margin-bottom:12px;">
-        <div class="scorear-ribbon-item scorear-bank-stat-pill">
-          ${iconBox('book', { size: 'sm', tone: 'violet' })}
-          <div><b>${allQuizzes.length}</b><span>مسابقة (${publishedCount} منشورة)</span></div>
+        <div class="scorear-stat-ribbon scorear-stat-ribbon--three bank-stat-ribbon">
+          <div class="scorear-ribbon-item scorear-bank-stat-pill">${iconBox('book', { size: 'sm', tone: 'violet' })}<div><b>${allQuizzes.length}</b><span>مسابقة (${publishedCount} منشورة)</span></div></div>
+          <div class="scorear-ribbon-item scorear-bank-stat-pill">${iconBox('sparkles', { size: 'sm', tone: 'cyan' })}<div><b>${allQuestions.length}</b><span>سؤال في البنك</span></div></div>
+          <div class="scorear-ribbon-item scorear-bank-stat-pill">${iconBox('folder', { size: 'sm', tone: 'violet' })}<div><b>${allFolders.length}</b><span>مجلدات تنظيمية</span></div></div>
         </div>
-        <div class="scorear-ribbon-item scorear-bank-stat-pill">
-          ${iconBox('sparkles', { size: 'sm', tone: 'cyan' })}
-          <div><b>${allQuestions.length}</b><span>سؤال في البنك</span></div>
-        </div>
-        <div class="scorear-ribbon-item scorear-bank-stat-pill">
-          ${iconBox('folder', { size: 'sm', tone: 'violet' })}
-          <div><b>${allFolders.length}</b><span>مجلدات تنظيمية</span></div>
-        </div>
-      </div>`;
+      </header>`;
   }
 
   function renderBankHubView() {
@@ -202,42 +217,43 @@
     const { icon, iconBox } = u;
     if (!items.length) {
       const orb = u.orbShowcase ? u.orbShowcase('book', { tone: 'violet' }) : iconBox('book', { size: 'lg', tone: 'violet' });
-      return `
-        <div class="scorear-experience-panel spotlight" style="text-align:center;padding:38px 20px;">
-          ${orb}
-          <h3 style="color:#f6f3ff;font-size:19px;font-weight:900;margin:4px 0 6px;">لا توجد مسابقات تطابق البحث</h3>
-          <p style="color:#a1a4be;font-size:13px;margin:0 0 20px;">أنشئ مسابقة جديدة الآن أو استورد أسئلة عبر الذكاء الاصطناعي أو ملف Excel.</p>
-          <button onclick="ScoreARQuizBank.createNewQuiz()" class="btn launch-primary" style="padding:11px 22px;font-size:13px;">${icon('plus', { size: 14 })} إنشاء أول مسابقة</button>
-        </div>`;
+      return `<div class="scorear-experience-panel spotlight bank-empty-panel" style="text-align:center;padding:38px 20px;">${orb}<h3 class="bank-card-title" style="margin:4px 0 6px;">لا توجد مسابقات تطابق البحث</h3><p class="bank-card-sub" style="margin:0 0 20px;">أنشئ مسابقة جديدة الآن أو استورد أسئلة عبر الذكاء الاصطناعي أو ملف Excel.</p><button onclick="ScoreARQuizBank.createNewQuiz()" class="btn launch-primary" style="padding:11px 22px;font-size:13px;">${icon('plus', { size: 14 })} إنشاء أول مسابقة</button></div>`;
     }
-    const cls = viewMode === 'grid' ? 'scorear-bank-grid' : 'scorear-bank-list';
+    const cls = viewMode === 'grid' ? 'scorear-bank-grid is-quizzes-grid' : 'scorear-bank-list';
     return `<div class="${cls}">${items.map((qz, idx) => {
       const isSel = selectedItemIds.has(qz.id);
       const count = qz.questions ? qz.questions.length : 0;
       const isPub = qz.status === 'published';
+      const artSrc = QUIZ_CARD_ARTS[idx % QUIZ_CARD_ARTS.length];
+      const charNum = String((idx % 8) + 1).padStart(2, '0');
+      const metaText = (qz.subject || qz.grade) ? [qz.subject, qz.grade].filter(Boolean).map(esc).join(' • ') : 'مسابقة تفاعلية جاهزة للبث';
       return `
-        <article class="scorear-experience-panel ${isPub ? 'tone-cyan' : ''} scorear-bank-card spotlight" style="${isSel ? 'border-color:#9665ff;' : ''}">
-          <div>
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;">
-              <div style="display:flex;align-items:center;gap:10px;">
-                <input type="checkbox" ${isSel ? 'checked' : ''} onchange="ScoreARQuizBank.toggleSelectItem('${qz.id}')" style="accent-color:#7550ef;cursor:pointer;">
-                ${iconBox('book', { size: 'sm', tone: isPub ? 'cyan' : 'violet', tilted: true })}
-                <span class="scorear-panel-index">${String(idx + 1).padStart(2, '0')} / ${isPub ? 'LIVE' : 'DRAFT'}</span>
-              </div>
-              <span class="launch-pill" style="padding:2px 10px;font-size:10px;">${count} أسئلة</span>
+        <article class="scorear-experience-panel ${isPub ? 'tone-cyan' : ''} scorear-bank-card is-quiz-card spotlight" style="${isSel ? 'border-color:#9665ff;' : ''}">
+          <div class="bank-card-art">
+            <img src="${artSrc}" alt="" class="bank-card-cover" loading="lazy">
+            <div class="bank-card-art-shade"></div>
+            <div class="bank-card-art-top">
+              <label class="bank-card-status ${isPub ? 'is-live' : 'is-draft'}">
+                <input type="checkbox" ${isSel ? 'checked' : ''} onchange="ScoreARQuizBank.toggleSelectItem('${qz.id}')">
+                <span>${String(idx + 1).padStart(2, '0')} / ${isPub ? 'LIVE' : 'DRAFT'}</span>
+              </label>
+              <span class="bank-card-qcount">${icon('layers', { size: 12 })} ${count} أسئلة</span>
             </div>
-            <h3 style="color:#f6f3ff;font-size:16px;font-weight:900;margin:0 0 6px;line-height:1.5;">${esc(qz.title || 'مسابقة بدون عنوان')}</h3>
-            ${(qz.subject || qz.grade) ? `<div style="color:#a1a4be;font-size:11px;display:flex;gap:6px;flex-wrap:wrap;">${qz.subject ? `<span>${esc(qz.subject)}</span>` : ''}${qz.subject && qz.grade ? '<span>•</span>' : ''}${qz.grade ? `<span>${esc(qz.grade)}</span>` : ''}</div>` : ''}
+            <div class="bank-card-art-bottom">
+              <span class="bank-card-meta-pill">${metaText}</span>
+              <img src="assets/characters/char_${charNum}.webp" alt="" class="bank-card-avatar" loading="lazy">
+            </div>
           </div>
-          <div class="scorear-bank-card-actions" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
-            <button onclick="ScoreARQuizBank.launchQuiz('${qz.id}')" class="btn launch-primary" style="width:100%;padding:10px 16px;font-size:13.5px;font-weight:900;justify-content:center;box-shadow:0 4px 14px rgba(117,80,239,0.35);">
-              ${icon('play', { size: 15 })} إطلاق المسابقة الحية
-            </button>
-            <div class="scorear-bank-card-foot" style="display:flex;align-items:center;gap:6px;">
-              <button onclick="ScoreARQuizBank.sendAsClassHomework('${qz.id}')" class="btn launch-outline" style="flex:1;padding:6px 8px;font-size:11.5px;font-weight:700;justify-content:center;border-color:#38bdf855;color:#7dd3fc;" title="إرسال كواجب للصف">${icon('edit', { size: 12 })} واجب للصف</button>
-              <button onclick="ScoreARQuizBank.editQuiz('${qz.id}')" class="btn launch-outline" style="flex:1;padding:6px 8px;font-size:11.5px;font-weight:700;justify-content:center;">${icon('edit', { size: 12 })} تعديل</button>
-              <button onclick="ScoreARQuizBank.duplicateQuiz('${qz.id}')" class="scorear-gear-btn" style="padding:6px 9px;" title="تكرار">${icon('copy', { size: 13 })}</button>
-              <button onclick="ScoreARQuizBank.deleteQuizWithUndo('${qz.id}')" class="scorear-gear-btn" style="padding:6px 9px;color:#ffd3e5;" title="حذف">${icon('trash', { size: 13 })}</button>
+          <div class="bank-card-body">
+            <h3 class="bank-card-title">${esc(qz.title || 'مسابقة بدون عنوان')}</h3>
+          </div>
+          <div class="scorear-bank-card-actions">
+            <button onclick="ScoreARQuizBank.launchQuiz('${qz.id}')" class="btn launch-primary bank-launch-btn">${icon('play', { size: 16 })} إطلاق المسابقة الحية</button>
+            <div class="scorear-bank-card-foot">
+              <button onclick="ScoreARQuizBank.sendAsClassHomework('${qz.id}')" class="btn launch-outline bank-foot-btn is-hw" title="إرسال كواجب للصف">${icon('edit', { size: 13 })} واجب للصف</button>
+              <button onclick="ScoreARQuizBank.editQuiz('${qz.id}')" class="btn launch-outline bank-foot-btn">${icon('edit', { size: 13 })} تعديل</button>
+              <button onclick="ScoreARQuizBank.duplicateQuiz('${qz.id}')" class="scorear-gear-btn bank-icon-act" title="تكرار">${icon('copy', { size: 14 })}</button>
+              <button onclick="ScoreARQuizBank.deleteQuizWithUndo('${qz.id}')" class="scorear-gear-btn bank-icon-act is-del" title="حذف">${icon('trash', { size: 14 })}</button>
             </div>
           </div>
         </article>`;
@@ -249,38 +265,31 @@
     const { icon, iconBox } = u;
     if (!items.length) {
       const orb = u.orbShowcase ? u.orbShowcase('search', { tone: 'cyan' }) : iconBox('search', { size: 'lg', tone: 'muted' });
-      return `
-        <div class="scorear-experience-panel tone-cyan spotlight" style="text-align:center;padding:38px 20px;">
-          ${orb}
-          <h3 style="color:#f6f3ff;font-size:19px;font-weight:900;margin:4px 0 6px;">لا توجد أسئلة تطابق التصفية</h3>
-          <p style="color:#a1a4be;font-size:13px;margin:0 0 20px;">أضف سؤالاً جديداً يدوياً أو استورد أسئلة من Excel أو الاستوديو الذكي.</p>
-          <button onclick="ScoreARQuizBank.openAddQuestionModal()" class="btn launch-primary" style="padding:11px 22px;font-size:13px;">${icon('plus', { size: 14 })} إضافة سؤال للبنك</button>
-        </div>`;
+      return `<div class="scorear-experience-panel tone-cyan spotlight" style="text-align:center;padding:38px 20px;">${orb}<h3 class="bank-card-title" style="margin:4px 0 6px;">لا توجد أسئلة تطابق التصفية</h3><p class="bank-card-sub" style="margin:0 0 20px;">أضف سؤالاً جديداً يدوياً أو استورد أسئلة من Excel أو الاستوديو الذكي.</p><button onclick="ScoreARQuizBank.openAddQuestionModal()" class="btn launch-primary" style="padding:11px 22px;font-size:13px;">${icon('plus', { size: 14 })} إضافة سؤال للبنك</button></div>`;
     }
     const cls = viewMode === 'grid' ? 'scorear-bank-grid' : 'scorear-bank-list';
     return `<div class="${cls}">${items.map((q, idx) => {
       const isSel = selectedItemIds.has(q.id);
       const src = q.source === 'ai' ? 'توليد AI' : q.source === 'import' ? 'مستورد' : 'يدوي';
-      return `
-        <article class="scorear-experience-panel scorear-bank-card spotlight" style="${isSel ? 'border-color:#9665ff;' : ''}">
-          <div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
-              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                <input type="checkbox" ${isSel ? 'checked' : ''} onchange="ScoreARQuizBank.toggleSelectItem('${q.id}')" style="accent-color:#7550ef;cursor:pointer;">
-                <span class="launch-pill" style="padding:2px 9px;font-size:10px;">${src}</span>
-                ${q.subject ? `<span style="color:#58dce3;font-size:11px;font-weight:700;">${esc(q.subject)}</span>` : ''}
-              </div>
-              <span class="scorear-panel-index">${String(idx + 1).padStart(2, '0')} • ${q.timeLimit || 20}s</span>
+      return `<article class="scorear-experience-panel scorear-bank-card spotlight" style="${isSel ? 'border-color:#9665ff;' : ''}">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <input type="checkbox" ${isSel ? 'checked' : ''} onchange="ScoreARQuizBank.toggleSelectItem('${q.id}')" style="accent-color:#7550ef;cursor:pointer;">
+              <span class="launch-pill" style="padding:2px 9px;font-size:10px;">${src}</span>
+              ${q.subject ? `<span class="bank-q-subj" style="color:#58dce3;font-size:11px;font-weight:700;">${esc(q.subject)}</span>` : ''}
             </div>
-            <h4 style="color:#f6f3ff;font-size:14.5px;font-weight:800;margin:0 0 10px;line-height:1.6;">${esc(q.q || q.text)}</h4>
-            <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;background:#163c39;color:#7fe7ce;font-size:11px;font-weight:800;">${icon('check', { size: 12 })} ${esc(q.opts ? q.opts[q.ans] : '')}</div>
+            <span class="scorear-panel-index">${String(idx + 1).padStart(2, '0')} • ${q.timeLimit || 20}s</span>
           </div>
-          <div class="scorear-bank-card-foot">
-            <button onclick="ScoreARQuizBank.openPreview('${q.id}')" class="btn launch-outline" style="padding:6px 10px;font-size:11px;">${icon('eye', { size: 13 })} معاينة</button>
-            <button onclick="ScoreARQuizBank.addToActiveQuiz('${q.id}')" class="btn launch-primary" style="flex:1;padding:6px 10px;font-size:11px;">${icon('plus', { size: 13 })} للمسابقة</button>
-            <button onclick="ScoreARQuizBank.deleteQuestionWithUndo('${q.id}')" class="icon-btn" style="padding:6px 8px;color:#ffd3e5;" title="حذف">${icon('trash', { size: 13 })}</button>
-          </div>
-        </article>`;
+          <h4 class="bank-card-title" style="font-size:15px;margin:0 0 10px;line-height:1.6;">${esc(q.q || q.text)}</h4>
+          <div class="bank-q-ans-pill" style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;background:#163c39;color:#7fe7ce;font-size:11px;font-weight:800;">${icon('check', { size: 12 })} ${esc(q.opts ? q.opts[q.ans] : '')}</div>
+        </div>
+        <div class="scorear-bank-card-foot">
+          <button onclick="ScoreARQuizBank.openPreview('${q.id}')" class="btn launch-outline" style="padding:6px 10px;font-size:11px;">${icon('eye', { size: 13 })} معاينة</button>
+          <button onclick="ScoreARQuizBank.addToActiveQuiz('${q.id}')" class="btn launch-primary" style="flex:1;padding:6px 10px;font-size:11px;">${icon('plus', { size: 13 })} للمسابقة</button>
+          <button onclick="ScoreARQuizBank.deleteQuestionWithUndo('${q.id}')" class="icon-btn bank-icon-act is-del" style="padding:6px 8px;" title="حذف">${icon('trash', { size: 13 })}</button>
+        </div>
+      </article>`;
     }).join('')}</div>`;
   }
 
@@ -289,59 +298,30 @@
     const { icon, iconBox } = u;
     if (!folders.length) {
       const orb = u.orbShowcase ? u.orbShowcase('folderOpen', { tone: 'violet' }) : iconBox('folderOpen', { size: 'lg', tone: 'violet' });
-      return `
-        <div class="scorear-experience-panel spotlight" style="text-align:center;padding:38px 20px;">
-          ${orb}
-          <h3 style="color:#f6f3ff;font-size:19px;font-weight:900;margin:4px 0 6px;">لا توجد مجلدات تنظيمية بعد</h3>
-          <p style="color:#a1a4be;font-size:13px;margin:0 0 20px;">أنشئ مجلدات حسب الصف أو المادة لتنظيم مسابقاتك وأسئلتك بسهولة.</p>
-          <button onclick="ScoreARQuizBank.openCreateFolderModal()" class="btn launch-primary" style="padding:11px 22px;font-size:13px;">${icon('plus', { size: 14 })} إنشاء أول مجلد</button>
-        </div>`;
+      return `<div class="scorear-experience-panel spotlight" style="text-align:center;padding:38px 20px;">${orb}<h3 class="bank-card-title" style="margin:4px 0 6px;">لا توجد مجلدات تنظيمية بعد</h3><p class="bank-card-sub" style="margin:0 0 20px;">أنشئ مجلدات حسب الصف أو المادة لتنظيم مسابقاتك وأسئلتك بسهولة.</p><button onclick="ScoreARQuizBank.openCreateFolderModal()" class="btn launch-primary" style="padding:11px 22px;font-size:13px;">${icon('plus', { size: 14 })} إنشاء أول مجلد</button></div>`;
     }
-    return `<div class="scorear-bank-grid">${folders.map(f => `
-      <div class="scorear-experience-panel spotlight" style="padding:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <div onclick="ScoreARQuizBank.openFolder('${f.id}')" style="display:flex;align-items:center;gap:12px;cursor:pointer;min-width:0;flex:1;">
-          ${iconBox('folder', { size: 'md', tone: 'violet', tilted: true })}
-          <div style="min-width:0;">
-            <h4 style="color:#f6f3ff;font-size:14px;font-weight:900;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(f.name)}</h4>
-            <small style="color:#a1a4be;font-size:11px;">انقر لتصفية الأسئلة داخل المجلد</small>
-          </div>
-        </div>
-        <button onclick="ScoreARQuizBank.deleteFolder('${f.id}')" class="icon-btn" style="padding:6px 8px;color:#ffd3e5;" title="حذف المجلد">${icon('trash', { size: 13 })}</button>
-      </div>`).join('')}</div>`;
+    return `<div class="scorear-bank-grid">${folders.map(f => `<div class="scorear-experience-panel spotlight" style="padding:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;"><div onclick="ScoreARQuizBank.openFolder('${f.id}')" style="display:flex;align-items:center;gap:12px;cursor:pointer;min-width:0;flex:1;">${iconBox('folder', { size: 'md', tone: 'violet', tilted: true })}<div style="min-width:0;"><h4 class="bank-card-title" style="font-size:15px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(f.name)}</h4><small class="bank-card-sub" style="font-size:11.5px;">انقر لتصفية الأسئلة داخل المجلد</small></div></div><button onclick="ScoreARQuizBank.deleteFolder('${f.id}')" class="icon-btn bank-icon-act is-del" style="padding:6px 8px;" title="حذف المجلد">${icon('trash', { size: 13 })}</button></div>`).join('')}</div>`;
   }
 
   function renderPagination(pData) {
-    return `
-      <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:8px;">
-        <button onclick="ScoreARQuizBank.changePage(${pData.currentPage - 1})" ${pData.currentPage <= 1 ? 'disabled' : ''} class="btn launch-outline" style="padding:6px 14px;font-size:12px;">السابق</button>
-        <span style="color:#a1a4be;font-size:12px;">صفحة ${pData.currentPage} من ${pData.totalPages}</span>
-        <button onclick="ScoreARQuizBank.changePage(${pData.currentPage + 1})" ${pData.currentPage >= pData.totalPages ? 'disabled' : ''} class="btn launch-outline" style="padding:6px 14px;font-size:12px;">التالي</button>
-      </div>`;
+    return `<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-top:8px;"><button onclick="ScoreARQuizBank.changePage(${pData.currentPage - 1})" ${pData.currentPage <= 1 ? 'disabled' : ''} class="btn launch-outline" style="padding:6px 14px;font-size:12px;">السابق</button><span class="bank-card-sub" style="font-size:12px;">صفحة ${pData.currentPage} من ${pData.totalPages}</span><button onclick="ScoreARQuizBank.changePage(${pData.currentPage + 1})" ${pData.currentPage >= pData.totalPages ? 'disabled' : ''} class="btn launch-outline" style="padding:6px 14px;font-size:12px;">التالي</button></div>`;
   }
 
   function renderPreviewDrawer(q) {
     const { icon } = ui();
-    return `
-      <div style="position:fixed;inset:0;background:rgba(5,6,15,0.74);backdrop-filter:blur(8px);z-index:999999;display:flex;justify-content:flex-end;">
-        <div style="background:#0c0d1d;border-right:1px solid #9665ff55;width:100%;max-width:400px;height:100%;padding:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow-y:auto;">
-          <div>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-              <span class="launch-pill" style="padding:4px 12px;font-size:11px;">معاينة السؤال</span>
-              <button onclick="ScoreARQuizBank.closePreview()" class="icon-btn" aria-label="إغلاق">${icon('close', { size: 15 })}</button>
-            </div>
-            <h3 style="color:#f6f3ff;font-size:15px;font-weight:900;line-height:1.65;margin-bottom:14px;">${esc(q.q || q.text)}</h3>
-            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-              ${(q.opts || []).map((opt, i) => `
-                <div style="background:${i === q.ans ? '#163c39' : '#18172e'};border:1px solid ${i === q.ans ? '#44b8a5' : '#ffffff16'};padding:9px 12px;border-radius:10px;color:#fff;font-size:12px;display:flex;align-items:center;gap:8px;">
-                  <span style="color:${i === q.ans ? '#7fe7ce' : '#8e8ca8'};">${i === q.ans ? icon('check', { size: 14 }) : '○'}</span>
-                  <span>${esc(opt)}</span>
-                </div>`).join('')}
-            </div>
-            ${q.explain ? `<div style="background:#18172e;border:1px solid #9665ff33;border-radius:12px;padding:10px 12px;color:#c9baff;font-size:12px;line-height:1.7;">${icon('info', { size: 14 })} ${esc(q.explain)}</div>` : ''}
+    return `<div style="position:fixed;inset:0;background:rgba(5,6,15,0.74);backdrop-filter:blur(8px);z-index:999999;display:flex;justify-content:flex-end;">
+      <div class="bank-preview-drawer" style="background:#0c0d1d;border-right:1px solid #9665ff55;width:100%;max-width:400px;height:100%;padding:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow-y:auto;">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><span class="launch-pill" style="padding:4px 12px;font-size:11px;">معاينة السؤال</span><button onclick="ScoreARQuizBank.closePreview()" class="icon-btn" aria-label="إغلاق">${icon('close', { size: 15 })}</button></div>
+          <h3 class="bank-card-title" style="font-size:15.5px;line-height:1.65;margin-bottom:14px;">${esc(q.q || q.text)}</h3>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+            ${(q.opts || []).map((opt, i) => `<div class="bank-preview-opt ${i === q.ans ? 'is-ans' : ''}" style="background:${i === q.ans ? '#163c39' : '#18172e'};border:1px solid ${i === q.ans ? '#44b8a5' : '#ffffff16'};padding:9px 12px;border-radius:10px;color:#fff;font-size:12px;display:flex;align-items:center;gap:8px;"><span style="color:${i === q.ans ? '#7fe7ce' : '#8e8ca8'};">${i === q.ans ? icon('check', { size: 14 }) : '○'}</span><span>${esc(opt)}</span></div>`).join('')}
           </div>
-          <button onclick="ScoreARQuizBank.addToActiveQuiz('${q.id}');ScoreARQuizBank.closePreview();" class="btn launch-primary" style="padding:11px;font-size:13px;width:100%;">${icon('plus', { size: 15 })} إضافة لمسابقتي</button>
+          ${q.explain ? `<div class="bank-preview-exp" style="background:#18172e;border:1px solid #9665ff33;border-radius:12px;padding:10px 12px;color:#c9baff;font-size:12px;line-height:1.7;">${icon('info', { size: 14 })} ${esc(q.explain)}</div>` : ''}
         </div>
-      </div>`;
+        <button onclick="ScoreARQuizBank.addToActiveQuiz('${q.id}');ScoreARQuizBank.closePreview();" class="btn launch-primary" style="padding:11px;font-size:13px;width:100%;">${icon('plus', { size: 15 })} إضافة لمسابقتي</button>
+      </div>
+    </div>`;
   }
 
   function showFormDialog(id, title, iconName, fieldsHtml, onSubmit) {

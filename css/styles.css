@@ -3594,6 +3594,410 @@ html[data-theme="day"] .scorear-back-home-btn:hover {
   color: #4f46e5 !important;
 }
 
+/* =====================================================================
+   QUIZ & QUESTION BANK HUB — CARTOON HERO & 3-COLUMN ENLARGED CARDS
+   ===================================================================== */
+.bank-cartoon-hero {
+  position: relative;
+  border-radius: 26px;
+  padding: 26px 28px;
+  border: 1px solid rgba(172, 139, 242, 0.28);
+  background: radial-gradient(ellipse at 18% 12%, rgba(88, 220, 227, 0.16), transparent 56%),
+    radial-gradient(ellipse at 86% 24%, rgba(117, 80, 239, 0.24), transparent 62%),
+    linear-gradient(160deg, #171836 0%, #101126 100%);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.42);
+  overflow: hidden;
+  direction: rtl;
+  text-align: right;
+}
+.bank-cartoon-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.bank-cartoon-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  opacity: 0.2;
+  filter: saturate(1.18);
+}
+.bank-cartoon-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(112deg, rgba(16, 17, 38, 0.92) 22%, rgba(16, 17, 38, 0.65) 70%, rgba(16, 17, 38, 0.82) 100%);
+}
+.bank-hero-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.85fr);
+  gap: 24px;
+  align-items: center;
+}
+.bank-hero-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.bank-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(117, 80, 239, 0.2);
+  border: 1px solid rgba(172, 139, 242, 0.35);
+  color: #e8e0ff;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+.bank-hero-art {
+  position: relative;
+  height: 162px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1.5px solid rgba(88, 220, 227, 0.35);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+}
+.bank-hero-art .bank-scene-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.bank-hero-art-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 12, 30, 0.1) 0%, rgba(10, 12, 30, 0.82) 100%);
+}
+.bank-hero-companion {
+  position: absolute;
+  bottom: 6px;
+  left: 12px;
+  width: 82px;
+  height: 82px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.55));
+  z-index: 2;
+}
+.bank-hero-tag {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(12, 14, 34, 0.82);
+  border: 1px solid rgba(88, 220, 227, 0.45);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  backdrop-filter: blur(6px);
+}
+.bank-stat-ribbon {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+}
+
+/* 3-Column Enlarged Quiz Cards Grid */
+.scorear-bank-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 22px !important;
+}
+@media (max-width: 1080px) {
+  .scorear-bank-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+  .bank-hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 680px) {
+  .scorear-bank-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+  .bank-cartoon-hero {
+    padding: 18px 16px;
+  }
+}
+
+.scorear-bank-card.is-quiz-card {
+  padding: 18px !important;
+  border-radius: 22px !important;
+  gap: 14px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+}
+.scorear-bank-card.is-quiz-card:hover {
+  transform: translateY(-4px);
+}
+.bank-card-art {
+  position: relative;
+  height: 144px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.bank-card-art .bank-card-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+.scorear-bank-card.is-quiz-card:hover .bank-card-cover {
+  transform: scale(1.05);
+}
+.bank-card-art-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 12, 32, 0.32) 0%, rgba(10, 12, 32, 0.18) 45%, rgba(10, 12, 32, 0.88) 100%);
+}
+.bank-card-art-top {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  left: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bank-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(12, 14, 34, 0.84);
+  border: 1px solid rgba(172, 139, 242, 0.45);
+  color: #ffffff !important;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+.bank-card-status.is-live {
+  border-color: rgba(88, 220, 227, 0.65);
+  color: #85f3d8 !important;
+}
+.bank-card-status input {
+  accent-color: #7550ef;
+  cursor: pointer;
+  margin: 0;
+}
+.bank-card-qcount {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(117, 80, 239, 0.85);
+  border: 1px solid rgba(196, 168, 255, 0.5);
+  color: #ffffff !important;
+  font-size: 11.5px;
+  font-weight: 900;
+  backdrop-filter: blur(6px);
+}
+.bank-card-art-bottom {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  left: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bank-card-meta-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(15, 17, 38, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #e2e8f0 !important;
+  font-size: 11px;
+  font-weight: 800;
+  max-width: calc(100% - 56px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bank-card-avatar {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: rgba(15, 17, 38, 0.72);
+  border: 1.5px solid rgba(88, 220, 227, 0.45);
+  padding: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+.bank-card-body {
+  padding: 2px 2px 4px;
+}
+.bank-card-title {
+  color: #f6f3ff;
+  font-size: 18.5px;
+  font-weight: 900;
+  margin: 0;
+  line-height: 1.5;
+}
+.bank-card-sub {
+  color: #a1a4be;
+  font-size: 13px;
+}
+.scorear-bank-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bank-launch-btn {
+  width: 100%;
+  padding: 12px 18px !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  justify-content: center;
+  border-radius: 14px !important;
+  box-shadow: 0 6px 18px rgba(117, 80, 239, 0.34);
+}
+.bank-foot-btn {
+  flex: 1;
+  padding: 8px 10px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  justify-content: center;
+}
+.bank-foot-btn.is-hw {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #7dd3fc;
+}
+.bank-icon-act {
+  padding: 8px 10px !important;
+}
+.bank-icon-act.is-del {
+  color: #fda4af;
+}
+
+/* Day Mode Overrides for Quiz & Question Bank Hub (#scorearQuizBankStage) */
+html[data-theme="day"] .bank-cartoon-hero {
+  background: radial-gradient(ellipse at 18% 12%, rgba(56, 189, 248, 0.25), transparent 56%),
+    radial-gradient(ellipse at 86% 24%, rgba(129, 140, 248, 0.2), transparent 62%),
+    linear-gradient(160deg, #ffffff 0%, #e5f3ff 62%, #d4ebff 100%) !important;
+  border-color: rgba(14, 165, 233, 0.28) !important;
+  box-shadow: 0 18px 44px rgba(14, 116, 190, 0.14) !important;
+}
+html[data-theme="day"] .bank-cartoon-bg img {
+  opacity: 0.3;
+}
+html[data-theme="day"] .bank-cartoon-bg::after {
+  background: linear-gradient(112deg, rgba(248, 252, 255, 0.9) 24%, rgba(235, 246, 255, 0.6) 68%, rgba(220, 240, 255, 0.82) 100%);
+}
+html[data-theme="day"] .bank-hero-chip {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(14, 165, 233, 0.3);
+  color: #0d1b3e;
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-card-title,
+html[data-theme="day"] #scorearQuizBankStage .scorear-bank-card h3,
+html[data-theme="day"] #scorearQuizBankStage .scorear-bank-card h4 {
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] label.bank-card-status {
+  color: #ffffff !important;
+}
+html[data-theme="day"] label.bank-card-status.is-live {
+  color: #85f3d8 !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-card-sub,
+html[data-theme="day"] #scorearQuizBankStage .scorear-bank-card small,
+html[data-theme="day"] #scorearQuizBankStage .scorear-bank-card p {
+  color: #334e7b !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .scorear-bank-topbar .btn.launch-outline {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(14, 165, 233, 0.34) !important;
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .scorear-bank-topbar .btn.launch-outline:hover {
+  background: #ffffff !important;
+  border-color: #6339e8 !important;
+  color: #4f46e5 !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .scorear-bank-card-foot {
+  border-top-color: rgba(14, 165, 233, 0.2) !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-foot-btn {
+  background: rgba(240, 248, 255, 0.95) !important;
+  border-color: rgba(14, 165, 233, 0.3) !important;
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-foot-btn.is-hw {
+  background: rgba(224, 242, 254, 0.95) !important;
+  border-color: rgba(2, 132, 199, 0.38) !important;
+  color: #0369a1 !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-foot-btn:hover {
+  background: #ffffff !important;
+  border-color: #6339e8 !important;
+  color: #4f46e5 !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-icon-act.is-del {
+  color: #e11d48 !important;
+  border-color: rgba(225, 29, 72, 0.25) !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-q-subj {
+  color: #0284c7 !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-q-ans-pill {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-preview-drawer {
+  background: linear-gradient(170deg, #ffffff 0%, #e8f4ff 100%) !important;
+  border-right-color: rgba(14, 165, 233, 0.3) !important;
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-preview-opt {
+  background: #f0f8ff !important;
+  border-color: rgba(14, 165, 233, 0.26) !important;
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-preview-opt.is-ans {
+  background: #dcfce7 !important;
+  border-color: #10b981 !important;
+  color: #065f46 !important;
+}
+html[data-theme="day"] #scorearQuizBankStage .bank-preview-exp {
+  background: rgba(139, 92, 246, 0.1) !important;
+  border-color: rgba(139, 92, 246, 0.3) !important;
+  color: #2e1065 !important;
+}
+html[data-theme="day"] dialog .modal-head strong {
+  color: #0d1b3e !important;
+}
+
+
 
 
 

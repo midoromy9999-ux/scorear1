@@ -779,55 +779,180 @@
 
 /* ===== Day Mode Overrides for Standalone Galleries (Characters / Cards / Podium) ===== */
 html[data-theme="day"] .character-gallery-page {
-  color: #0d1b3e;
-}
-html[data-theme="day"] .scorear-unified-header {
-  background: rgba(244, 250, 255, 0.94) !important;
-  border-bottom-color: rgba(14, 165, 233, 0.22) !important;
-}
-html[data-theme="day"] .scorear-unified-tabs {
-  background: rgba(232, 244, 255, 0.92) !important;
-  border-color: rgba(14, 165, 233, 0.24) !important;
-}
-html[data-theme="day"] .scorear-unified-tab {
-  color: #1e3a6e !important;
-}
-html[data-theme="day"] .scorear-unified-tab.is-active {
-  color: #ffffff !important;
-}
-html[data-theme="day"] .scorear-unified-action-btn {
-  background: rgba(255, 255, 255, 0.92) !important;
-  border-color: rgba(14, 165, 233, 0.28) !important;
   color: #0d1b3e !important;
 }
-html[data-theme="day"] .character-stage {
-  background: radial-gradient(ellipse at 50% 50%, rgba(56, 189, 248, 0.22), transparent 68%),
-    linear-gradient(160deg, #ffffff, #e4f2ff) !important;
+html[data-theme="day"] .scorear-unified-header {
+  background: rgba(244, 250, 255, 0.96) !important;
+  border-bottom-color: rgba(14, 165, 233, 0.24) !important;
+  box-shadow: 0 6px 22px rgba(14, 116, 190, 0.08) !important;
+}
+html[data-theme="day"] .scorear-unified-header .gallery-brand,
+html[data-theme="day"] .scorear-unified-header .gallery-brand b {
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .scorear-unified-header .gallery-brand b span {
+  color: #0284c7 !important;
+}
+html[data-theme="day"] .scorear-unified-header .gallery-brand small {
+  color: #334e7b !important;
+}
+html[data-theme="day"] .scorear-unified-header .btn-gallery-back {
+  background: rgba(99, 57, 232, 0.12) !important;
+  border-color: rgba(99, 57, 232, 0.34) !important;
+  color: #4f46e5 !important;
+}
+html[data-theme="day"] .scorear-unified-header .btn-gallery-back:hover {
+  background: #6339e8 !important;
+  color: #ffffff !important;
+}
+html[data-theme="day"] .scorear-unified-actions,
+html[data-theme="day"] .scorear-unified-tabs {
+  background: rgba(226, 240, 255, 0.95) !important;
   border-color: rgba(14, 165, 233, 0.28) !important;
 }
+html[data-theme="day"] .scorear-unified-tab,
+html[data-theme="day"] .scorear-unified-action-btn {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(14, 165, 233, 0.26) !important;
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .scorear-unified-tab.is-active,
+html[data-theme="day"] .scorear-unified-action-btn.is-active-cards,
+html[data-theme="day"] .scorear-unified-action-btn.is-active-heroes,
+html[data-theme="day"] .scorear-unified-action-btn.is-active-podium {
+  background: linear-gradient(110deg, #6339e8, #0284c7) !important;
+  border-color: rgba(99, 57, 232, 0.5) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(99, 57, 232, 0.25) !important;
+}
+html[data-theme="day"] .scorear-unified-close-btn {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.32) !important;
+  color: #b91c1c !important;
+}
+html[data-theme="day"] .scorear-unified-close-btn:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+html[data-theme="day"] .gallery-title-area h1 {
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .gallery-title-area p {
+  color: #334e7b !important;
+}
+html[data-theme="day"] .gallery-title-area .eyebrow {
+  color: #0284c7 !important;
+}
+html[data-theme="day"] .character-section-head h4 {
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .character-section-head span {
+  background: rgba(99, 57, 232, 0.1) !important;
+  border-color: rgba(99, 57, 232, 0.28) !important;
+  color: #4f46e5 !important;
+}
+html[data-theme="day"] .character-stage {
+  background: radial-gradient(ellipse at 50% 50%, rgba(56, 189, 248, 0.2), transparent 68%),
+    linear-gradient(160deg, #ffffff, #e4f2ff) !important;
+  border-color: rgba(14, 165, 233, 0.3) !important;
+  box-shadow: 0 16px 38px rgba(14, 116, 190, 0.12) !important;
+}
+html[data-theme="day"] .character-stage > small {
+  color: #4f46e5 !important;
+}
 html[data-theme="day"] #studentCustomPreviewTitle h3,
-html[data-theme="day"] .character-card h3 {
+html[data-theme="day"] .character-card h3,
+html[data-theme="day"] .character-card h4,
+html[data-theme="day"] .character-card b,
+html[data-theme="day"] .character-card strong {
   color: #0d1b3e !important;
 }
 html[data-theme="day"] #studentCustomPreviewTitle p,
+html[data-theme="day"] #studentCustomPreviewDesc,
 html[data-theme="day"] .character-stage p,
 html[data-theme="day"] .character-card p,
-html[data-theme="day"] .character-card small {
+html[data-theme="day"] .character-card small,
+html[data-theme="day"] .character-card > span {
   color: #334e7b !important;
 }
-html[data-theme="day"] .character-card,
-html[data-theme="day"] #studentProfileSetup {
-  background: linear-gradient(160deg, #ffffff, #ebf5ff) !important;
-  border-color: rgba(14, 165, 233, 0.25) !important;
+html[data-theme="day"] .character-controls button {
+  background: rgba(235, 245, 255, 0.96) !important;
+  border-color: rgba(14, 165, 233, 0.28) !important;
   color: #0d1b3e !important;
 }
+html[data-theme="day"] .character-controls button:hover {
+  background: #dbeeff !important;
+  border-color: #6339e8 !important;
+  color: #4f46e5 !important;
+}
+html[data-theme="day"] .character-controls button[aria-pressed="true"] {
+  background: linear-gradient(110deg, #6339e8, #8e64ef) !important;
+  border-color: #6339e8 !important;
+  color: #ffffff !important;
+}
+html[data-theme="day"] .character-card,
+html[data-theme="day"] .scorear-card-thumb,
+html[data-theme="day"] #studentProfileSetup {
+  background: linear-gradient(160deg, #ffffff, #ebf5ff) !important;
+  border-color: rgba(14, 165, 233, 0.26) !important;
+  color: #0d1b3e !important;
+  box-shadow: 0 8px 22px rgba(14, 116, 190, 0.08) !important;
+}
+html[data-theme="day"] .scorear-card-thumb.active,
+html[data-theme="day"] .character-card[aria-pressed="true"] {
+  background: linear-gradient(160deg, #ffffff, #e0f0ff) !important;
+  border-color: #6339e8 !important;
+  box-shadow: 0 12px 28px rgba(99, 57, 232, 0.18) !important;
+}
 html[data-theme="day"] .character-tabs button {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border-color: rgba(14, 165, 233, 0.24) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(14, 165, 233, 0.26) !important;
   color: #1e3a6e !important;
 }
 html[data-theme="day"] .character-tabs button[aria-selected="true"],
+html[data-theme="day"] .character-tabs button[aria-pressed="true"],
 html[data-theme="day"] .character-tabs button.active {
+  background: linear-gradient(110deg, #6339e8, #8e64ef) !important;
+  border-color: #6339e8 !important;
   color: #ffffff !important;
+}
+html[data-theme="day"] #cardPreviewInfo h2 {
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] #cardPreviewInfo h2 small {
+  color: #4f46e5 !important;
+}
+html[data-theme="day"] #cardPreviewInfo span[style*="color:#fcd34d"] {
+  color: #b45309 !important;
+}
+html[data-theme="day"] #cardPreviewInfo div[style*="rgba(255,255,255,0.03)"] {
+  background: #f0f8ff !important;
+  border-color: rgba(14, 165, 233, 0.28) !important;
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] #cardPreviewInfo div[style*="rgba(255,255,255,0.03)"] b {
+  color: #0284c7 !important;
+}
+html[data-theme="day"] #cardPreviewInfo div[style*="rgba(142,100,239"] {
+  background: rgba(139, 92, 246, 0.1) !important;
+  border-color: rgba(139, 92, 246, 0.3) !important;
+  color: #1e1b4b !important;
+}
+html[data-theme="day"] #cardPreviewInfo div[style*="rgba(142,100,239"] b {
+  color: #6339e8 !important;
+}
+html[data-theme="day"] #cardPreviewInfo div[style*="rgba(56,189,248"] {
+  background: rgba(14, 165, 233, 0.1) !important;
+  border-color: rgba(14, 165, 233, 0.3) !important;
+  color: #0c4a6e !important;
+}
+html[data-theme="day"] #cardPreviewInfo div[style*="rgba(56,189,248"] b {
+  color: #0369a1 !important;
+}
+html[data-theme="day"] #hologramCardWrapper h3 {
+  color: #ffffff !important;
+}
+html[data-theme="day"] #hologramCardWrapper small {
+  color: #e2e8f0 !important;
 }
 
