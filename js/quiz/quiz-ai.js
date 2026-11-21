@@ -117,12 +117,12 @@
           <div style="display:flex;align-items:center;gap:12px;">
             ${uiBox('spark', 'violet', 'md')}
             <div>
-              <h2 style="color:#ffffff;font-size:17px;font-weight:900;margin:0;">توليد الأسئلة الذكي من المستندات (Gemini Engine)</h2>
-              <p style="color:#a1a4be;font-size:12px;margin:2px 0 0 0;">استخراج محلي سريع، تصنيف ضد الحشو، ومطابقة اقتباسات موثقة من المصدر.</p>
+              <h2 class="ai-modal-title">توليد الأسئلة الذكي من المستندات (Gemini Engine)</h2>
+              <p class="ai-modal-sub">استخراج محلي سريع، تصنيف ضد الحشو، ومطابقة اقتباسات موثقة من المصدر.</p>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div class="scorear-control-pill" style="color:${isExhausted ? '#fca5a5' : '#7fe7ce'};border-color:${isExhausted ? 'rgba(239,68,68,0.45)' : 'rgba(88,220,227,0.32)'};">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div class="scorear-control-pill ai-quota-pill ${isExhausted ? 'is-exhausted' : ''}">
               ${uiIc('zap', 13)} <span>الحصة اليومية: ${quota.remaining} / ${quota.limit} متبقية</span>
             </div>
             <button type="button" onclick="ScoreARQuizAI.closeAiStudio()" class="scorear-gear-btn" aria-label="إغلاق">${uiIc('close', 15)}</button>
@@ -132,14 +132,14 @@
         <!-- Body Form -->
         <div class="scorear-modal-body" style="display:flex;flex-direction:column;gap:16px;">
           ${isExhausted ? `
-            <div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.42);border-radius:12px;padding:12px 16px;color:#fca5a5;font-size:13px;font-weight:800;display:flex;align-items:center;gap:10px;">
+            <div class="ai-quota-warn">
               ${uiIc('alert', 16)}
               <span>تنبيه الحصة: لقد استنفدت حصتك اليومية (${quota.limit}/${quota.limit}). تتجدد الحصة تلقائياً منتصف الليل.</span>
             </div>
           ` : ''}
 
           <!-- Source Tabs -->
-          <div class="scorear-segmented-tabs" style="width:fit-content;">
+          <div class="scorear-segmented-tabs" style="width:fit-content;max-width:100%;">
             <button type="button" onclick="ScoreARQuizAI.switchTab('text')" class="scorear-segmented-tab ${activeTab==='text'?'active':''}">${uiIc('edit', 14)}<span>كتابة نص / درس</span></button>
             <button type="button" onclick="ScoreARQuizAI.switchTab('file')" class="scorear-segmented-tab ${activeTab==='file'?'active':''}">${uiIc('upload', 14)}<span>رفع مستند (PDF / Word / PPTX / صورة)</span></button>
           </div>
@@ -147,47 +147,47 @@
           <!-- Input Mode Content -->
           ${activeTab === 'text' ? `
             <div>
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <label style="color:#ddd8ff;font-size:13px;font-weight:800;">نص الدرس أو الفقرة التعليمية:</label>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+                <label class="ai-field-label">نص الدرس أو الفقرة التعليمية:</label>
                 <div style="display:flex;gap:6px;">
                   <button type="button" onclick="ScoreARQuizAI.loadSampleText('nahw')" class="scorear-gear-btn" style="font-size:11px;padding:3px 9px;">مثال نحو</button>
                   <button type="button" onclick="ScoreARQuizAI.loadSampleText('balagha')" class="scorear-gear-btn" style="font-size:11px;padding:3px 9px;">مثال بلاغة</button>
                 </div>
               </div>
-              <textarea id="aiTextInput" placeholder="الصق نص الدرس أو القواعد النحوية أو الشرح هنا (20 حرفاً على الأقل)..." style="width:100%;height:120px;background:#111226;border:1px solid rgba(255,255,255,0.12);border-radius:14px;color:#fff;font-size:13px;font-family:inherit;padding:12px;box-sizing:border-box;resize:vertical;line-height:1.5;"></textarea>
+              <textarea id="aiTextInput" class="ai-textarea" placeholder="الصق نص الدرس أو القواعد النحوية أو الشرح هنا (20 حرفاً على الأقل)..."></textarea>
             </div>
           ` : `
             <div>
-              <label style="display:block;color:#ddd8ff;font-size:13px;font-weight:800;margin-bottom:6px;">رفع المستند (استخراج محلي سريع دون تخزين الملف في الخادم):</label>
-              <div id="aiFileDropZone" onclick="document.getElementById('aiFileInput').click()" style="border:1px dashed rgba(172,139,242,0.45);border-radius:16px;padding:24px 16px;text-align:center;background:rgba(17,18,38,0.72);cursor:pointer;">
+              <label class="ai-field-label" style="display:block;margin-bottom:6px;">رفع المستند (استخراج محلي سريع دون تخزين الملف في الخادم):</label>
+              <div id="aiFileDropZone" class="ai-drop-box" onclick="document.getElementById('aiFileInput').click()">
                 <input type="file" id="aiFileInput" accept=".docx, .pptx, .pdf, .png, .jpg, .jpeg, .webp, .txt, .md" style="display:none;" onchange="ScoreARQuizAI.handleFileUpload(this.files[0])">
                 <div style="display:flex;justify-content:center;margin-bottom:8px;">${uiBox('folderOpen', 'violet', 'lg')}</div>
-                <div style="color:#fff;font-size:14px;font-weight:800;">${selectedFile ? `الملف المختار: ${fileName} (${fileSizeMb} MB)` : 'اضغط لاختيار ملف PDF أو Word أو PowerPoint أو صورة'}</div>
-                <p style="color:#94a3b8;font-size:11px;margin:4px 0 0 0;">المعالجة تتم محلياً صفحة بصفحة حتى 100MB دون إجهاد الذاكرة.</p>
+                <div class="ai-drop-title">${selectedFile ? `الملف المختار: ${fileName} (${fileSizeMb} MB)` : 'اضغط لاختيار ملف PDF أو Word أو PowerPoint أو صورة'}</div>
+                <p class="ai-drop-sub">المعالجة تتم محلياً صفحة بصفحة حتى 100MB دون إجهاد الذاكرة.</p>
               </div>
 
               ${isLargeFile ? `
-                <div style="margin-top:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.4);border-radius:10px;padding:8px 12px;color:#fbbf24;font-size:11px;display:flex;align-items:center;gap:8px;">
+                <div class="ai-large-warn">
                   ${uiIc('info', 14)}
                   <span>تقدير مسبق: ملف كبير (${fileSizeMb} MB). يقدر زمن الاستخراج بنحو 15-30 ثانية. يوصى بتحديد نطاق صفحات مخصص أدناه.</span>
                 </div>
               ` : ''}
 
               <!-- Page Range Controls -->
-              <div style="display:flex;gap:12px;align-items:center;margin-top:10px;background:rgba(20,21,42,0.75);border:1px solid rgba(255,255,255,0.08);padding:8px 14px;border-radius:10px;flex-wrap:wrap;">
-                <span style="color:#c4b5fd;font-size:11px;font-weight:800;">نطاق الصفحات / الشرائح (اختياري):</span>
-                <input type="number" id="aiStartPage" placeholder="من صفحة (1)" min="1" style="width:90px;background:#111226;border:1px solid rgba(255,255,255,0.14);color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;">
-                <span style="color:#94a3b8;font-size:11px;">إلى:</span>
-                <input type="number" id="aiEndPage" placeholder="إلى صفحة" min="1" style="width:90px;background:#111226;border:1px solid rgba(255,255,255,0.14);color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;">
+              <div class="ai-range-box">
+                <span class="ai-range-label">نطاق الصفحات / الشرائح (اختياري):</span>
+                <input type="number" id="aiStartPage" class="ai-mini-input" placeholder="من صفحة (1)" min="1">
+                <span class="ai-range-sep">إلى:</span>
+                <input type="number" id="aiEndPage" class="ai-mini-input" placeholder="إلى صفحة" min="1">
               </div>
             </div>
           `}
 
           <!-- Settings Grid -->
-          <div style="background:rgba(20,21,42,0.7);border-radius:16px;padding:14px;border:1px solid rgba(255,255,255,0.08);display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:10px;">
+          <div class="ai-settings-box">
             <div>
-              <label style="display:block;color:#a89bff;font-size:11px;font-weight:800;margin-bottom:4px;">عدد الأسئلة:</label>
-              <select id="aiOptCount" style="width:100%;background:#181936;border:1px solid rgba(255,255,255,0.14);color:#fff;padding:6px;border-radius:8px;font-size:11px;font-family:inherit;">
+              <label class="ai-opt-label">عدد الأسئلة:</label>
+              <select id="aiOptCount" class="ai-opt-select">
                 <option value="3">3 أسئلة سريعة</option>
                 <option value="5" selected>5 أسئلة (موصى به)</option>
                 <option value="10">10 أسئلة شاملة</option>
@@ -196,8 +196,8 @@
               </select>
             </div>
             <div>
-              <label style="display:block;color:#a89bff;font-size:11px;font-weight:800;margin-bottom:4px;">مستوى الصعوبة:</label>
-              <select id="aiOptDiff" style="width:100%;background:#181936;border:1px solid rgba(255,255,255,0.14);color:#fff;padding:6px;border-radius:8px;font-size:11px;font-family:inherit;">
+              <label class="ai-opt-label">مستوى الصعوبة:</label>
+              <select id="aiOptDiff" class="ai-opt-select">
                 <option value="سهل">سهل (تذكر وفهم مباشر)</option>
                 <option value="متوسط" selected>متوسط (فهم وتطبيق)</option>
                 <option value="متقدم">متقدم (تحليل واستنتاج)</option>
@@ -205,16 +205,16 @@
               </select>
             </div>
             <div>
-              <label style="display:block;color:#a89bff;font-size:11px;font-weight:800;margin-bottom:4px;">مزيج الأنواع:</label>
-              <select id="aiOptFormat" style="width:100%;background:#181936;border:1px solid rgba(255,255,255,0.14);color:#fff;padding:6px;border-radius:8px;font-size:11px;font-family:inherit;">
+              <label class="ai-opt-label">مزيج الأنواع:</label>
+              <select id="aiOptFormat" class="ai-opt-select">
                 <option value="mcq" selected>اختيار من متعدد فقط (4 خيارات)</option>
                 <option value="tf">صح أو خطأ فقط</option>
                 <option value="mixed">مزيج (اختيار متعدد + صح وخطأ)</option>
               </select>
             </div>
             <div>
-              <label style="display:block;color:#a89bff;font-size:11px;font-weight:800;margin-bottom:4px;">لغة التوليد:</label>
-              <select id="aiOptLang" style="width:100%;background:#181936;border:1px solid rgba(255,255,255,0.14);color:#fff;padding:6px;border-radius:8px;font-size:11px;font-family:inherit;">
+              <label class="ai-opt-label">لغة التوليد:</label>
+              <select id="aiOptLang" class="ai-opt-select">
                 <option value="العربية الفصحى" selected>العربية الفصحى</option>
                 <option value="English">English</option>
               </select>
@@ -223,27 +223,27 @@
 
           <!-- Free Teacher Instructions -->
           <div>
-            <label style="display:block;color:#cbd5e1;font-size:11px;font-weight:800;margin-bottom:4px;">تعليمات وتوجيهات خاصة للمعلم (اختياري):</label>
-            <input type="text" id="aiOptInstructions" placeholder="مثال: ركّز على إعراب الفاعل والمفعول به، تجنب الأسئلة المباشرة..." style="width:100%;background:#111226;border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:12px;padding:8px 12px;box-sizing:border-box;">
+            <label class="ai-opt-label" style="margin-bottom:4px;">تعليمات وتوجيهات خاصة للمعلم (اختياري):</label>
+            <input type="text" id="aiOptInstructions" class="ai-inst-input" placeholder="مثال: ركّز على إعراب الفاعل والمفعول به، تجنب الأسئلة المباشرة...">
           </div>
 
           <!-- Honest Progress Box (Hidden by default) -->
-          <div id="aiProgressBox" style="display:none;background:rgba(20,22,46,0.9);border:1px solid rgba(172,139,242,0.4);border-radius:14px;padding:16px;">
+          <div id="aiProgressBox" class="ai-progress-box" style="display:none;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-              <span id="aiProgressStageText" style="color:#52d9ed;font-size:13px;font-weight:800;">جارٍ تحضير البيانات...</span>
-              <button type="button" onclick="ScoreARQuizAI.cancelGeneration()" class="scorear-gear-btn" style="border-color:rgba(239,68,68,0.4);color:#fca5a5;">${uiIc('close', 12)} <span>إلغاء</span></button>
+              <span id="aiProgressStageText" class="ai-progress-stage">جارٍ تحضير البيانات...</span>
+              <button type="button" onclick="ScoreARQuizAI.cancelGeneration()" class="scorear-gear-btn topbar-logout-btn">${uiIc('close', 12)} <span>إلغاء</span></button>
             </div>
-            <div style="background:#0c0d1d;border-radius:6px;height:8px;overflow:hidden;">
+            <div class="ai-progress-track">
               <div id="aiProgressBar" style="background:linear-gradient(90deg, #7550ef, #58dce3);height:100%;width:5%;transition:width 0.3s;"></div>
             </div>
-            <div id="aiProgressDetail" style="color:#94a3b8;font-size:11px;margin-top:6px;">جاهز للبدء</div>
+            <div id="aiProgressDetail" class="ai-progress-detail">جاهز للبدء</div>
           </div>
         </div>
 
         <!-- Footer Actions -->
-        <footer class="scorear-modal-head" style="border-top:1px solid rgba(255,255,255,0.09);border-bottom:none;">
-          <span class="scorear-inline-icon" style="color:#94a3b8;font-size:11px;">${uiIc('info', 14)} المسودة تُعرض في جدول مراجعة مفصل لاعتمادها أو تعديلها قبل الحفظ.</span>
-          <div style="display:flex;gap:10px;">
+        <footer class="scorear-modal-head ai-modal-foot">
+          <span class="scorear-inline-icon ai-foot-note">${uiIc('info', 14)} المسودة تُعرض في جدول مراجعة مفصل لاعتمادها أو تعديلها قبل الحفظ.</span>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
             <button type="button" onclick="ScoreARQuizAI.closeAiStudio()" class="scorear-gear-btn" style="padding:8px 16px;">إلغاء</button>
             <button type="button" id="btnTriggerAiGen" onclick="ScoreARQuizAI.triggerGeneration()" ${isExhausted ? 'disabled' : ''} class="btn launch-primary" style="padding:10px 22px;font-size:13px;opacity:${isExhausted ? '0.45' : '1'};cursor:${isExhausted ? 'not-allowed' : 'pointer'};">
               ${uiIc('spark', 15)} <span>بدء التحليل والتوليد الذكي</span>

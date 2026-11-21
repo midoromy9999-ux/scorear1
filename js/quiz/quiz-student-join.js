@@ -87,21 +87,21 @@
   function render() {
     if (!containerEl) return;
     containerEl.innerHTML = `
-      <div class="student-join-flow" style="display:flex;flex-direction:column;gap:14px;color:#fff;direction:rtl;text-align:right;">
-        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:2px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${state.step>=1?'#7550ef':'#222442'};color:#fff;font-size:11.5px;font-weight:900;">1</span>
-            <span style="font-size:12px;font-weight:800;color:${state.step===1?'#eceeff':'#878aa6'};">رمز القاعة</span>
+      <div class="student-join-flow">
+        <div class="sj-steps">
+          <div class="sj-step">
+            <span class="sj-step-circle ${state.step>=1?'is-done':''}">1</span>
+            <span class="sj-step-label ${state.step===1?'is-active':''}">رمز القاعة</span>
           </div>
-          <div style="width:24px;height:1px;background:${state.step>=2?'#7550ef':'rgba(255,255,255,0.12)'};"></div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${state.step>=2?'#7550ef':'#222442'};color:#fff;font-size:11.5px;font-weight:900;">2</span>
-            <span style="font-size:12px;font-weight:800;color:${state.step===2?'#eceeff':'#878aa6'};">الاسم والبطل</span>
+          <div class="sj-step-divider ${state.step>=2?'is-done':''}"></div>
+          <div class="sj-step">
+            <span class="sj-step-circle ${state.step>=2?'is-done':''}">2</span>
+            <span class="sj-step-label ${state.step===2?'is-active':''}">الاسم والبطل</span>
           </div>
         </div>
 
         ${state.error ? `
-          <div id="studentStepError" style="background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.38);color:#fca5a5;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:800;line-height:1.5;text-align:center;">
+          <div id="studentStepError" class="sj-error-box">
             ${escapeHtml(state.error)}
           </div>` : ''}
 
@@ -149,7 +149,8 @@
     const boxes = disp.querySelectorAll('.pin-digit-box');
     boxes.forEach((box, i) => {
       box.textContent = digits[i] || '';
-      box.style.borderColor = (i === digits.length) ? '#58dce3' : (digits[i] ? '#7550ef' : 'rgba(255,255,255,0.14)');
+      box.classList.toggle('is-active', i === digits.length);
+      box.classList.toggle('is-filled', Boolean(digits[i]));
     });
   }
 
@@ -158,22 +159,25 @@
     return `
       <div style="text-align:center;">
         <span class="launch-pill" style="margin-bottom:8px;"><span class="live-dot"></span> دخول القاعة المباشر</span>
-        <h3 style="font-size:20px;font-weight:900;color:#ffffff;margin:2px 0 4px;">أدخل رمز القاعة (PIN)</h3>
-        <p style="font-size:12px;color:#a1a4be;margin:0 0 14px;">اكتب الرمز المكون من ٦ أرقام والظاهر على شاشة المعلم</p>
+        <h3 class="sj-heading">أدخل رمز القاعة (PIN)</h3>
+        <p class="sj-sub">اكتب الرمز المكون من ٦ أرقام والظاهر على شاشة المعلم</p>
         ${state.savedActiveSession ? `
-          <div style="background:rgba(117,80,239,0.16);border:1px solid rgba(172,139,242,0.38);border-radius:14px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div class="sj-reconnect-box">
             <div style="text-align:right;">
-              <div style="font-size:12px;font-weight:900;color:#58dce3;">استعادة الاتصال السريع</div>
-              <div style="font-size:11px;color:#e2e8f0;">القاعة: <b>${state.savedActiveSession.pin}</b> | الطالب: <b>${escapeHtml(state.savedActiveSession.name)}</b></div>
+              <div class="sj-reconnect-title">استعادة الاتصال السريع</div>
+              <div class="sj-reconnect-meta">القاعة: <b>${state.savedActiveSession.pin}</b> | الطالب: <b>${escapeHtml(state.savedActiveSession.name)}</b></div>
             </div>
             <button type="button" onclick="ScoreARStudentJoin.fastReconnect()" class="btn launch-primary" style="border-radius:10px;padding:6px 12px;font-weight:900;font-size:12px;cursor:pointer;">دخول سريع</button>
           </div>` : ''}
-        <div id="studentPinDisplay" onclick="const inp=document.getElementById('studentJoinPinInput'); if(inp) inp.focus();" style="display:flex;justify-content:center;gap:7px;margin-bottom:14px;direction:ltr;cursor:pointer;width:100%;">
-          ${[0,1,2,3,4,5].map(i => `<div class="pin-digit-box" style="flex:1;max-width:46px;min-width:34px;height:clamp(46px,11vw,54px);background:#12142a;border:1.5px solid ${i===digits.length?'#58dce3':(digits[i]?'#7550ef':'rgba(255,255,255,0.14)')};border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:clamp(20px,5.2vw,26px);font-weight:900;color:#58dce3;font-family:Montserrat,monospace;box-shadow:inset 0 1px 8px rgba(0,0,0,0.4);">${digits[i]||''}</div>`).join('')}
+        <div id="studentPinDisplay" class="sj-pin-display" onclick="const inp=document.getElementById('studentJoinPinInput'); if(inp) inp.focus();">
+          ${[0,1,2,3,4,5].map(i => `<div class="pin-digit-box ${i===digits.length?'is-active':(digits[i]?'is-filled':'')}">${digits[i]||''}</div>`).join('')}
         </div>
         <input id="studentJoinPinInput" type="text" inputmode="numeric" maxlength="6" value="${escapeHtml(state.pin)}" style="opacity:0;position:absolute;pointer-events:none;height:0;width:0;">
-        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;max-width:320px;margin:0 auto 14px;direction:ltr;">
-          ${['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(k => `<button type="button" onclick="ScoreARStudentJoin.handleKeypad('${k}')" class="keypad-btn" style="height:48px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.11);border-radius:12px;color:${k==='C'?'#fca5a5':k==='⌫'?'#58dce3':'#ffffff'};font-size:${k==='⌫'?'18px':'20px'};font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;transition:background 0.15s;">${k}</button>`).join('')}
+        <div class="sj-keypad-grid">
+          ${['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(k => {
+            const cls = k === 'C' ? 'is-clear' : (k === '⌫' ? 'is-back' : '');
+            return `<button type="button" onclick="ScoreARStudentJoin.handleKeypad('${k}')" class="keypad-btn ${cls}">${k}</button>`;
+          }).join('')}
         </div>
         <button type="button" id="studentStep1NextBtn" onclick="ScoreARStudentJoin.submitStep1()" ${state.loading?'disabled':''} class="btn launch-primary full" style="padding:13px;font-size:15px;font-weight:900;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
           ${state.loading ? '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></span> جارٍ التحقق من القاعة...' : `<span>دخول القاعة</span> ${uiIcon('arrow', 16)}`}
@@ -188,35 +192,35 @@
     return `
       <div>
         <div style="text-align:center;margin-bottom:10px;">
-          <div class="launch-pill" style="border-color:rgba(88,220,227,0.35);color:#c7f9ff;margin-bottom:6px;">
+          <div class="launch-pill sj-pin-badge" style="margin-bottom:6px;">
             <span class="live-dot"></span>
-            <span>متصل بالقاعة رقم: <b style="font-family:Montserrat,monospace;font-size:13px;color:#fff;">${escapeHtml(state.pin)}</b></span>
+            <span>متصل بالقاعة رقم: <b class="sj-pin-num">${escapeHtml(state.pin)}</b></span>
           </div>
-          <h3 style="font-size:19px;font-weight:900;color:#ffffff;margin:2px 0;">سجّل اسمك واختر بطلك الكرتوني</h3>
+          <h3 class="sj-heading" style="font-size:19px;">سجّل اسمك واختر بطلك الكرتوني</h3>
         </div>
 
         <div style="margin-bottom:12px;">
-          <label style="display:block;font-size:12px;font-weight:800;color:#ddd8ff;margin-bottom:5px;">١. اكتب اسمك للمشاركة في القاعة:</label>
+          <label class="sj-field-label">١. اكتب اسمك للمشاركة في القاعة:</label>
           <input id="studentJoinNameInput" class="field" type="text" maxlength="40" placeholder="مثال: أحمد محمد، أو 3/1 رقم 15..." style="width:100%;box-sizing:border-box;border-radius:12px;padding:11px 14px;font-size:14.5px;font-weight:800;" onkeydown="if(event.key==='Enter'){event.preventDefault();ScoreARStudentJoin.submitStep2();}">
         </div>
 
         <div style="margin-bottom:12px;">
-          <label style="display:block;font-size:12px;font-weight:800;color:#58dce3;margin-bottom:6px;">٢. اختر بطلك المفضل (٢٠ بطلاً):</label>
-          <div style="background:rgba(18,20,44,0.9);border:1px solid rgba(172,139,242,0.32);border-radius:16px;padding:8px 12px;display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-            <div style="width:56px;height:68px;display:flex;align-items:flex-end;justify-content:center;background:rgba(255,255,255,0.04);border-radius:10px;padding:2px;flex-shrink:0;">
-              <img id="studentAvatarLiveImg" src="assets/characters/animated/${escapeHtml(state.avatarId)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="البطل" style="height:64px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.6));">
+          <label class="sj-field-label is-cyan">٢. اختر بطلك المفضل (٢٠ بطلاً):</label>
+          <div class="sj-hero-preview">
+            <div class="sj-hero-preview-avatar">
+              <img id="studentAvatarLiveImg" src="assets/characters/animated/${escapeHtml(state.avatarId)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="البطل" style="height:64px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.45));">
             </div>
             <div>
-              <div id="studentAvatarLiveName" style="font-size:15px;font-weight:900;color:#ffffff;">${escapeHtml(currentHero.name)}</div>
-              <div id="studentAvatarLiveTitle" style="font-size:11px;color:#a1a4be;font-weight:700;">${escapeHtml(currentHero.title)}</div>
+              <div id="studentAvatarLiveName" class="sj-hero-preview-name">${escapeHtml(currentHero.name)}</div>
+              <div id="studentAvatarLiveTitle" class="sj-hero-preview-title">${escapeHtml(currentHero.title)}</div>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:6px;max-height:165px;overflow-y:auto;padding:2px;">
+          <div class="sj-avatar-grid">
             ${list.map((c) => {
               const isSel = (c.code === state.avatarId);
-              return `<div class="avatar-card-picker ${isSel?'selected':''}" onclick="ScoreARStudentJoin.selectAvatar('${c.code}')" style="display:flex;flex-direction:column;align-items:center;background:${isSel?'rgba(117,80,239,0.28)':'#15172a'};border:1.5px solid ${isSel?'#a855f7':'rgba(255,255,255,0.09)'};border-radius:11px;padding:5px 2px;cursor:pointer;">
+              return `<div class="avatar-card-picker ${isSel?'selected':''}" onclick="ScoreARStudentJoin.selectAvatar('${c.code}')">
                 <img src="assets/characters/animated/${c.code}-idle.webp" loading="lazy" alt="${escapeHtml(c.name)}" style="width:42px;height:50px;object-fit:contain;">
-                <span style="font-size:9.5px;font-weight:800;color:#fff;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:48px;">${escapeHtml(c.name)}</span>
+                <span>${escapeHtml(c.name)}</span>
               </div>`;
             }).join('')}
           </div>
@@ -243,11 +247,11 @@
     ];
     return `
       <div style="margin-bottom:12px;">
-        <label style="display:block;font-size:12px;font-weight:800;color:#fde68a;margin-bottom:6px;">٣. اختر فريقك في المواجهة (فريقان فقط):</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <label class="sj-team-label">٣. اختر فريقك في المواجهة (فريقان فقط):</label>
+        <div class="sj-team-grid">
           ${teams.map(t => {
             const sel = state.teamId === t.id;
-            return `<button type="button" data-team-choice="${t.id}" onclick="ScoreARStudentJoin.selectTeam('${t.id}')" style="padding:10px 8px;border-radius:14px;border:2px solid ${sel ? '#fde047' : 'rgba(255,255,255,0.14)'};background:${sel ? t.bg : 'rgba(18,20,44,0.88)'};color:#fff;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13.5px;font-weight:900;box-shadow:${sel ? `0 6px 18px ${t.color}55` : 'none'};transition:all 0.18s;">
+            return `<button type="button" data-team-choice="${t.id}" onclick="ScoreARStudentJoin.selectTeam('${t.id}')" class="sj-team-btn ${sel ? 'is-selected' : ''}" style="${sel ? `background:${t.bg};box-shadow:0 6px 18px ${t.color}55;` : ''}">
               <span style="font-size:20px;">${t.emoji}</span>
               <span>${escapeHtml(t.name)}</span>
               ${sel ? '<span style="font-size:12px;color:#fde047;">✓</span>' : ''}
@@ -457,9 +461,10 @@
 
     const cards = containerEl ? containerEl.querySelectorAll('.avatar-card-picker') : [];
     cards.forEach(card => {
-      const isSel = card.getAttribute('onclick')?.includes(avatarId);
-      card.style.borderColor = isSel ? '#a855f7' : 'rgba(255,255,255,0.09)';
-      card.style.background = isSel ? 'rgba(117,80,239,0.28)' : '#15172a';
+      const isSel = Boolean(card.getAttribute('onclick')?.includes(avatarId));
+      card.classList.toggle('selected', isSel);
+      card.style.borderColor = '';
+      card.style.background = '';
     });
   }
 

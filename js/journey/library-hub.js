@@ -72,7 +72,7 @@
     host.innerHTML = `
       <div class="scorear-lib-panel" style="margin-top:16px;padding:14px 16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">
-          <span style="display:inline-flex;align-items:center;gap:8px;color:#e2d4fb;font-size:12px;font-weight:700;">
+          <span style="display:inline-flex;align-items:center;gap:8px;color:var(--lilac);font-size:12px;font-weight:700;">
             ${icon('refresh', { size: 15 })} ${escapeHtml(state.statusText || 'جارٍ تحليل الملف...')}
           </span>
           <button type="button" class="btn launch-outline" id="libCancelExtractBtn" style="padding:5px 10px;font-size:11px;">إلغاء</button>
@@ -236,8 +236,8 @@
         <div style="display:flex;align-items:center;gap:12px;min-width:0;">
           ${fileIconBox(item.name, { ext: item.ext, size: 'sm' })}
           <div style="min-width:0;">
-            <strong style="display:block;color:#f6f3ff;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(item.name)}</strong>
-            <small style="color:#a1a4be;font-size:11px;">${escapeHtml(formatBytes(item.size))} • ${item.pagesCount || 1} صفحة • ${text.length} حرف</small>
+            <strong style="display:block;color:var(--ink);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(item.name)}</strong>
+            <small style="color:var(--muted);font-size:11px;">${escapeHtml(formatBytes(item.size))} • ${item.pagesCount || 1} صفحة • ${text.length} حرف</small>
           </div>
         </div>
         <button type="button" class="icon-btn" id="libDlgCloseBtn" aria-label="إغلاق">${icon('close', { size: 17 })}</button>
@@ -279,8 +279,8 @@
     dlg.innerHTML = `
       <div class="modal-body-pad" style="padding:24px;text-align:center;">
         <div style="margin-bottom:14px;">${iconBox('trash', { size: 'lg', tone: 'danger' })}</div>
-        <h3 style="color:#f6f3ff;font-size:18px;font-weight:900;margin-bottom:8px;">حذف الملف من المكتبة؟</h3>
-        <p style="color:#a1a4be;font-size:13px;line-height:1.8;margin-bottom:20px;">سيتم إزالة <strong style="color:#e2d4fb;">${escapeHtml(item.name)}</strong> من قائمة ملفاتك المحفوظة محلياً.</p>
+        <h3 style="color:var(--ink);font-size:18px;font-weight:900;margin-bottom:8px;">حذف الملف من المكتبة؟</h3>
+        <p style="color:var(--muted);font-size:13px;line-height:1.8;margin-bottom:20px;">سيتم إزالة <strong style="color:var(--lilac);">${escapeHtml(item.name)}</strong> من قائمة ملفاتك المحفوظة محلياً.</p>
         <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
           <button type="button" class="btn launch-outline" id="libDelCancelBtn">${icon('close', { size: 15 })} تراجع</button>
           <button type="button" class="btn launch-primary" id="libDelConfirmBtn" style="background:linear-gradient(110deg,#6a364e,#944769);border-color:#c3849866;">${icon('trash', { size: 15 })} تأكيد الحذف</button>
@@ -315,8 +315,8 @@
       listEl.innerHTML = `
         <div style="text-align:center;padding:34px 16px;">
           ${orbHtml}
-          <h4 style="color:#f6f3ff;font-size:17px;font-weight:900;margin:8px 0 6px;">${q ? 'لا توجد نتائج مطابقة' : 'مكتبتك جاهزة لأول درس'}</h4>
-          <p style="color:#a1a4be;font-size:13px;line-height:1.85;max-width:380px;margin:0 auto;">${q ? 'جرّب البحث باسم ملف مختلف أو مسح كلمة البحث.' : 'ارفع ملف PDF أو Word أو PowerPoint أو Excel من البوابة المجاورة لاستخراج نصوصه والبدء فوراً.'}</p>
+          <h4 style="color:var(--ink);font-size:17px;font-weight:900;margin:8px 0 6px;">${q ? 'لا توجد نتائج مطابقة' : 'مكتبتك جاهزة لأول درس'}</h4>
+          <p style="color:var(--muted);font-size:13px;line-height:1.85;max-width:380px;margin:0 auto;">${q ? 'جرّب البحث باسم ملف مختلف أو مسح كلمة البحث.' : 'ارفع ملف PDF أو Word أو PowerPoint أو Excel من البوابة المجاورة لاستخراج نصوصه والبدء فوراً.'}</p>
         </div>`;
       return;
     }
@@ -388,8 +388,8 @@
                 <span class="launch-pill" style="padding:3px 10px;font-size:10px;">حد 20 MB</span>
               </div>
               ${uploadOrb}
-              <h3 style="color:#f6f3ff;font-size:21px;font-weight:900;margin:6px 0 8px;">اسحب الملفات هنا أو اختر من جهازك</h3>
-              <p style="color:#aaa9c1;font-size:13px;line-height:1.8;max-width:380px;margin:0 auto;">تحليل فوري للنصوص والملفات الممسوحة ضوئياً وتمريرها مباشرة لصناعة الأسئلة</p>
+              <h3 style="color:var(--ink);font-size:21px;font-weight:900;margin:6px 0 8px;">اسحب الملفات هنا أو اختر من جهازك</h3>
+              <p style="color:var(--muted);font-size:13px;line-height:1.8;max-width:380px;margin:0 auto;">تحليل فوري للنصوص والملفات الممسوحة ضوئياً وتمريرها مباشرة لصناعة الأسئلة</p>
               <div class="scorear-lib-formats">
                 <span class="scorear-format-tag">PDF</span>
                 <span class="scorear-format-tag">Word .docx</span>
@@ -411,8 +411,8 @@
               <div style="display:flex;align-items:center;gap:12px;">
                 ${iconBox('layers', { size: 'sm', tone: 'cyan' })}
                 <div>
-                  <h3 style="color:#f6f3ff;font-size:17px;font-weight:900;margin:0;">ملفاتي المحفوظة</h3>
-                  <small id="libraryFilesCount" style="color:#85f3d8;font-size:11px;font-weight:700;">0 ملف</small>
+                  <h3 style="color:var(--ink);font-size:17px;font-weight:900;margin:0;">ملفاتي المحفوظة</h3>
+                  <small id="libraryFilesCount" style="color:var(--emerald);font-size:11px;font-weight:800;">0 ملف</small>
                 </div>
               </div>
               <div class="scorear-lib-search">

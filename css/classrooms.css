@@ -521,34 +521,100 @@
   50% { opacity: 0.5; transform: scale(1.1); }
 }
 
+/* --- Semantic Text & Action Roles (Night Defaults) --- */
+.scorear-classrooms-view .profile-avatar-title { display: block; font-size: 14px; font-weight: 900; color: #ffffff; }
+.scorear-classrooms-view .profile-avatar-sub { display: block; font-size: 12px; color: #58dce3; margin-top: 2px; }
+.scorear-classrooms-view .classrooms-guest-title { font-size: 22px; font-weight: 900; margin: 0 0 8px; color: #ffffff; }
+.scorear-classrooms-view .classrooms-guest-desc { color: #b3b1cc; font-size: 14px; max-width: 440px; margin: 0 auto 24px; line-height: 1.7; }
+.scorear-classrooms-view .classrooms-join-btn { border-color: rgba(88, 220, 227, 0.45); color: #7dd3fc; }
+.scorear-classrooms-view .classrooms-invite-btn { border-color: rgba(88, 220, 227, 0.35); color: #7dd3fc; }
+.scorear-classrooms-view .class-card-status-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 12.5px; }
+.scorear-classrooms-view .class-card-status-label { color: #94a3b8; }
+.scorear-classrooms-view .teacher-pending-alert { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(251, 191, 36, 0.42); border-radius: 16px; padding: 14px 20px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; backdrop-filter: blur(12px); }
+.scorear-classrooms-view .pending-alert-title { color: #fde68a; font-size: 14.5px; display: block; }
+.scorear-classrooms-view .pending-alert-sub { color: #cbd5e1; font-size: 12px; }
+.scorear-classrooms-view .pending-alert-btn { border-color: rgba(251, 191, 36, 0.5); color: #fde68a; font-weight: 900; padding: 8px 16px; }
+.scorear-classrooms-view .class-card-counts { display: flex; justify-content: space-between; color: #94a3b8; font-size: 12px; margin: 10px 0; }
+.scorear-classrooms-view .cnt-students { color: #58dce3; }
+.scorear-classrooms-view .cnt-pending { color: #fbbf24; }
+.scorear-classrooms-view .class-pending-strip { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 10px; padding: 6px 10px; margin: 8px 0; display: flex; align-items: center; justify-content: space-between; }
+.scorear-classrooms-view .class-pending-strip-text { color: #fcd34d; font-size: 12px; font-weight: 800; }
+.scorear-classrooms-view .class-pending-strip-btn { padding: 2px 8px; font-size: 11px; border-color: rgba(251, 191, 36, 0.45); color: #fcd34d; }
+.scorear-classrooms-view .badge-pending { background: rgba(245, 158, 11, 0.12); border-color: rgba(251, 191, 36, 0.4); color: #fcd34d; }
+.scorear-classrooms-view .badge-approved { background: rgba(16, 185, 129, 0.12); border-color: rgba(52, 211, 153, 0.4); color: #6ee7b7; }
+.scorear-classrooms-view .roster-subhead { font-size: 14px; font-weight: 900; margin: 0 0 10px; }
+.scorear-classrooms-view .roster-subhead.is-pending { color: #fbbf24; }
+.scorear-classrooms-view .roster-subhead.is-approved { color: #58dce3; }
+.scorear-classrooms-view .roster-empty-msg { color: #94a3b8; font-size: 13px; margin: 8px 0; }
+.scorear-classrooms-view .btn-approve-member { padding: 6px 14px; font-size: 12px; background: rgba(16, 185, 129, 0.2); border-color: #34d399; color: #6ee7b7; }
+.scorear-classrooms-view .btn-reject-member { padding: 6px 12px; font-size: 12px; border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; }
+.scorear-classrooms-view .xp-pill { color: #fde68a; border-color: rgba(251, 191, 36, 0.3); font-size: 12px; }
+.scorear-classrooms-view .review-dialog-title { margin: 0 0 8px; font-size: 19px; font-weight: 900; text-align: center; color: #ffffff; }
+.scorear-classrooms-view .review-dialog-desc { color: #b3b1cc; font-size: 13.5px; margin: 0 0 22px; text-align: center; line-height: 1.7; }
+.scorear-classrooms-view .review-dialog-desc b { color: #ffffff; }
+
+/* Homework Page & Modal Classes */
+.scorear-classrooms-view .hw-page-title { font-size: 22px; font-weight: 900; margin: 0; color: #ffffff; }
+.scorear-classrooms-view .hw-page-sub { color: #a1a4be; font-size: 13px; margin: 4px 0 0; }
+.hw-code-accent { font-family: monospace; color: #58dce3; }
+.scorear-classrooms-view .hw-deadline-chip { font-size: 11px; color: #fbbf24; display: inline-flex; align-items: center; gap: 4px; }
+.scorear-classrooms-view .hw-task-prompt { font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin: 0 0 10px; white-space: pre-wrap; }
+.scorear-classrooms-view .hw-task-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; margin-top: 8px; }
+.scorear-classrooms-view .hw-task-foot-student { border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; margin-top: 8px; }
+.scorear-classrooms-view .hw-sub-summary { font-size: 12.5px; color: #a1a4be; }
+.scorear-classrooms-view .hw-sub-summary b { color: #58dce3; }
+.scorear-classrooms-view .hw-sub-summary strong { color: #ffffff; }
+.scorear-classrooms-view .hw-whatsapp-btn { border-color: rgba(52, 211, 153, 0.4); color: #6ee7b7; }
+.scorear-classrooms-view .hw-submitted-ok { color: #34d399; font-weight: 800; font-size: 13px; }
+.scorear-classrooms-view .hw-grade-badge { font-size: 13px; font-weight: 900; color: #a1a4be; }
+.scorear-classrooms-view .hw-grade-badge.is-graded { color: #fcd34d; }
+.scorear-classrooms-view .hw-answer-preview { background: rgba(0, 0, 0, 0.25); padding: 10px 14px; border-radius: 8px; margin-top: 8px; font-size: 12.5px; color: #cbd5e1; white-space: pre-wrap; }
+.hw-modal-shell { color: #ffffff; }
+.hw-modal-sub { color: #cbd5e1; font-size: 13.5px; margin: 0 0 14px; }
+.hw-report-count { color: #fcd34d; font-weight: 800; font-size: 12.5px; margin: 4px 0 0; }
+.hw-report-row { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); padding: 10px 14px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.hw-report-name { display: block; font-size: 13.5px; color: #ffffff; }
+.hw-report-meta { color: #a1a4be; }
+.hw-report-meta.is-sub { color: #34d399; }
+.hw-grade-input { width: 65px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(172, 139, 242, 0.4); background: #0c0d1d; color: #ffffff; text-align: center; font-weight: 900; }
+
 /* --- Responsive Adaptations --- */
 @media (max-width: 760px) {
   .scorear-classrooms-view {
-    padding: 16px 14px 50px;
+    padding: 16px 12px 50px;
   }
   .scorear-classrooms-view .learning-intro {
     grid-template-columns: 1fr;
     text-align: center;
-    padding: 24px 20px;
-    gap: 16px;
+    padding: 22px 16px;
+    gap: 14px;
+    border-radius: 22px;
+  }
+  .scorear-classrooms-view .learning-intro h1 {
+    font-size: clamp(22px, 6.4vw, 28px);
   }
   .scorear-classrooms-view .intro-copy p {
     margin: 0 auto;
+    font-size: 13.5px;
   }
   .scorear-classrooms-view .intro-visual {
     order: -1;
   }
   .scorear-classrooms-view .orbit {
-    width: 160px;
-    height: 160px;
+    width: 150px;
+    height: 150px;
   }
   .scorear-classrooms-view .orbit-character {
-    width: 125px;
-    height: 125px;
+    width: 118px;
+    height: 118px;
   }
   .scorear-classrooms-view .learning-layout {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 18px;
+  }
+  .scorear-classrooms-view .classrooms-card {
+    padding: 18px 15px;
+    border-radius: 20px;
   }
   .scorear-classrooms-view .member-row {
     flex-direction: column;
@@ -559,50 +625,214 @@
     justify-content: flex-end;
   }
 }
+@media (max-width: 480px) {
+  .scorear-classrooms-view .companion-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .scorear-classrooms-view .card-head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
 
-/* ===== Day Mode Overrides for Virtual Classrooms ===== */
+/* ===== Complete Day Mode Overrides for Virtual Classrooms & Homework ===== */
 html[data-theme="day"] .scorear-classrooms-view {
   color: #0d1b3e;
 }
-html[data-theme="day"] .scorear-classrooms-view .learning-intro,
-html[data-theme="day"] .scorear-classrooms-view .card-panel,
-html[data-theme="day"] .scorear-classrooms-view .class-card {
-  background: linear-gradient(170deg, rgba(255, 255, 255, 0.95) 0%, rgba(235, 246, 255, 0.93) 100%) !important;
-  border-color: rgba(14, 165, 233, 0.24) !important;
-  box-shadow: 0 14px 36px rgba(14, 116, 190, 0.12) !important;
+html[data-theme="day"] .scorear-classrooms-view .learning-intro {
+  background: radial-gradient(circle at 80% 20%, rgba(14, 165, 233, 0.16) 0%, rgba(255, 255, 255, 0.96) 72%) !important;
+  border-color: rgba(14, 165, 233, 0.28) !important;
+  box-shadow: 0 18px 44px rgba(14, 116, 190, 0.14) !important;
 }
-html[data-theme="day"] .scorear-classrooms-view .intro-copy h1,
-html[data-theme="day"] .scorear-classrooms-view .panel-header h3,
-html[data-theme="day"] .scorear-classrooms-view .class-name,
-html[data-theme="day"] .scorear-classrooms-view .member-name {
+html[data-theme="day"] .scorear-classrooms-view .intro-pill {
+  background: rgba(99, 57, 232, 0.12) !important;
+  border-color: rgba(99, 57, 232, 0.32) !important;
+  color: #4f46e5 !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .classrooms-card,
+html[data-theme="day"] .scorear-classrooms-view .class-card,
+html[data-theme="day"] .scorear-classrooms-view .dialog-box {
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.96) 0%, rgba(235, 246, 255, 0.94) 100%) !important;
+  border-color: rgba(14, 165, 233, 0.26) !important;
+  box-shadow: 0 14px 36px rgba(14, 116, 190, 0.12) !important;
   color: #0d1b3e !important;
 }
-html[data-theme="day"] .scorear-classrooms-view .intro-copy p,
-html[data-theme="day"] .scorear-classrooms-view .form-group label,
-html[data-theme="day"] .scorear-classrooms-view .class-meta,
-html[data-theme="day"] .scorear-classrooms-view .member-meta {
+html[data-theme="day"] .scorear-classrooms-view .card-head {
+  border-bottom-color: rgba(14, 165, 233, 0.18) !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .learning-intro h1,
+html[data-theme="day"] .scorear-classrooms-view .card-title,
+html[data-theme="day"] .scorear-classrooms-view .class-card-title,
+html[data-theme="day"] .scorear-classrooms-view .member-name,
+html[data-theme="day"] .scorear-classrooms-view .profile-avatar-title,
+html[data-theme="day"] .scorear-classrooms-view .classrooms-guest-title,
+html[data-theme="day"] .scorear-classrooms-view .review-dialog-title,
+html[data-theme="day"] .scorear-classrooms-view .review-dialog-desc b,
+html[data-theme="day"] .scorear-classrooms-view .hw-page-title,
+html[data-theme="day"] .scorear-classrooms-view .hw-sub-summary strong {
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .learning-intro p,
+html[data-theme="day"] .scorear-classrooms-view .form-label,
+html[data-theme="day"] .scorear-classrooms-view .member-meta,
+html[data-theme="day"] .scorear-classrooms-view .class-card-status-label,
+html[data-theme="day"] .scorear-classrooms-view .class-card-counts,
+html[data-theme="day"] .scorear-classrooms-view .roster-empty-msg,
+html[data-theme="day"] .scorear-classrooms-view .classrooms-guest-desc,
+html[data-theme="day"] .scorear-classrooms-view .review-dialog-desc,
+html[data-theme="day"] .scorear-classrooms-view .hw-page-sub,
+html[data-theme="day"] .scorear-classrooms-view .hw-task-prompt,
+html[data-theme="day"] .scorear-classrooms-view .hw-sub-summary {
   color: #334e7b !important;
 }
-html[data-theme="day"] .scorear-classrooms-view .intro-badge,
-html[data-theme="day"] .scorear-classrooms-view .icon-chip {
+html[data-theme="day"] .scorear-classrooms-view .profile-avatar-sub,
+html[data-theme="day"] .scorear-classrooms-view .class-card-subject,
+html[data-theme="day"] .scorear-classrooms-view .cnt-students,
+html[data-theme="day"] .scorear-classrooms-view .hw-sub-summary b,
+html[data-theme="day"] .scorear-classrooms-view .roster-subhead.is-approved,
+html[data-theme="day"] .hw-code-accent {
+  color: #0369a1 !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .card-title .title-icon {
+  background: linear-gradient(140deg, rgba(99, 57, 232, 0.16), rgba(14, 165, 233, 0.16)) !important;
+  border-color: rgba(99, 57, 232, 0.28) !important;
+  color: #4f46e5 !important;
+  box-shadow: none !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .card-badge {
   background: rgba(99, 57, 232, 0.1) !important;
-  border-color: rgba(99, 57, 232, 0.25) !important;
+  border-color: rgba(99, 57, 232, 0.26) !important;
   color: #4f46e5 !important;
 }
 html[data-theme="day"] .scorear-classrooms-view .form-input,
+html[data-theme="day"] .scorear-classrooms-view .form-select,
 html[data-theme="day"] .scorear-classrooms-view .member-row,
-html[data-theme="day"] .scorear-classrooms-view .stat-box {
+html[data-theme="day"] .scorear-classrooms-view .profile-avatar-preview {
   background: #ffffff !important;
-  border-color: rgba(14, 165, 233, 0.22) !important;
+  border-color: rgba(14, 165, 233, 0.26) !important;
   color: #0d1b3e !important;
 }
-html[data-theme="day"] .scorear-classrooms-view .code-badge {
-  background: rgba(2, 132, 199, 0.12) !important;
+html[data-theme="day"] .scorear-classrooms-view .profile-avatar-img {
+  background: #e8f4ff !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .companion-grid {
+  background: rgba(226, 242, 255, 0.85) !important;
+  border: 1px solid rgba(14, 165, 233, 0.22);
+}
+html[data-theme="day"] .scorear-classrooms-view .companion-thumb {
+  background: #ffffff !important;
+  border-color: rgba(14, 165, 233, 0.24) !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .companion-thumb.selected {
+  background: #eef2ff !important;
+  border-color: #d97706 !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .classrooms-join-btn,
+html[data-theme="day"] .scorear-classrooms-view .classrooms-invite-btn {
+  background: #e0f2fe !important;
+  border-color: rgba(2, 132, 199, 0.45) !important;
+  color: #0369a1 !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .class-code {
+  background: rgba(2, 132, 199, 0.1) !important;
   border-color: #0284c7 !important;
   color: #0369a1 !important;
 }
-html[data-theme="day"] .scorear-classrooms-view .code-badge:hover {
+html[data-theme="day"] .scorear-classrooms-view .class-code:hover {
   background: #0284c7 !important;
   color: #ffffff !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .notice.info {
+  background: rgba(224, 242, 254, 0.9) !important;
+  border-color: rgba(2, 132, 199, 0.3) !important;
+  color: #0c4a6e !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .teacher-pending-alert,
+html[data-theme="day"] .scorear-classrooms-view .class-pending-strip {
+  background: #fef3c7 !important;
+  border-color: rgba(217, 119, 6, 0.45) !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .pending-alert-title,
+html[data-theme="day"] .scorear-classrooms-view .pending-alert-btn,
+html[data-theme="day"] .scorear-classrooms-view .class-pending-strip-text,
+html[data-theme="day"] .scorear-classrooms-view .class-pending-strip-btn,
+html[data-theme="day"] .scorear-classrooms-view .badge-pending,
+html[data-theme="day"] .scorear-classrooms-view .roster-subhead.is-pending,
+html[data-theme="day"] .scorear-classrooms-view .cnt-pending,
+html[data-theme="day"] .scorear-classrooms-view .hw-deadline-chip {
+  color: #92400e !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .pending-alert-sub {
+  color: #78350f !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .badge-approved,
+html[data-theme="day"] .scorear-classrooms-view .btn-approve-member,
+html[data-theme="day"] .scorear-classrooms-view .hw-submitted-ok,
+html[data-theme="day"] .scorear-classrooms-view .hw-whatsapp-btn {
+  background: #d1fae5 !important;
+  border-color: rgba(5, 150, 105, 0.45) !important;
+  color: #065f46 !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .btn-reject-member {
+  background: #ffe4e6 !important;
+  border-color: rgba(225, 29, 72, 0.4) !important;
+  color: #be123c !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .xp-pill {
+  color: #92400e !important;
+  background: #fef3c7 !important;
+  border-color: rgba(217, 119, 6, 0.4) !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .hw-task-foot,
+html[data-theme="day"] .scorear-classrooms-view .hw-task-foot-student {
+  border-top-color: rgba(14, 165, 233, 0.18) !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .hw-answer-preview {
+  background: #f0f8ff !important;
+  border: 1px solid rgba(14, 165, 233, 0.24);
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .hw-grade-badge {
+  color: #334e7b !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .hw-grade-badge.is-graded {
+  color: #92400e !important;
+}
+html[data-theme="day"] .hw-modal-shell {
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .hw-modal-sub {
+  color: #334e7b !important;
+}
+html[data-theme="day"] .hw-report-count {
+  color: #b45309 !important;
+}
+html[data-theme="day"] .hw-report-row {
+  background: #ffffff !important;
+  border-color: rgba(14, 165, 233, 0.24) !important;
+}
+html[data-theme="day"] .hw-report-name {
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .hw-report-meta {
+  color: #334e7b !important;
+}
+html[data-theme="day"] .hw-report-meta.is-sub {
+  color: #065f46 !important;
+}
+html[data-theme="day"] .hw-grade-input {
+  background: #ffffff !important;
+  border-color: rgba(14, 165, 233, 0.35) !important;
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .class-card-status-val[style*="#10b981"] {
+  color: #047857 !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .class-card-status-val[style*="#d97706"] {
+  color: #b45309 !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .class-card-status-val[style*="#ef4444"] {
+  color: #b91c1c !important;
 }
 

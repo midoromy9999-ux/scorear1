@@ -265,6 +265,7 @@
   </div>
   <div class="side-bottom">
     <button class="quiet scorear-theme-side-btn" type="button" data-action="toggle-theme"><i data-icon="sun"></i><span>نهاري</span></button>
+    <button class="quiet sidebar-logout-btn" type="button" data-action="logout"><i data-icon="logOut"></i><span>تسجيل الخروج</span></button>
     <button class="quiet" data-action="motion" id="motionButton"><i data-icon="motion"></i><span>تقليل الحركة</span></button>
     <a class="quiet" href="#about"><i data-icon="info"></i><span>عن سكور آر</span></a>
     <div class="maker">بفكرة وإشراف <b>أ. أحمد رميح</b></div>
@@ -279,21 +280,21 @@
     </div>
     <span id="connectionStatusText" class="connection-status-pill" aria-live="polite" title="حالة الاتصال بالخادم المباشر"></span>
     <div class="top-actions" id="topActionsArea">
-      <button class="nav-join join-top" data-action="join"><i data-icon="key"></i> دخول القاعة بالرمز</button>
-      <button class="btn launch-primary small" data-action="unified-login">دخول <i data-icon="arrow"></i></button>
+      <button class="nav-join join-top" data-action="join"><i data-icon="key"></i> <span class="join-label-full">دخول القاعة بالرمز</span><span class="join-label-short">رمز قاعة</span></button>
+      <button class="btn launch-primary small topbar-login-btn" data-action="unified-login">دخول <i data-icon="arrow"></i></button>
     </div>
   </header>
   <main id="main" tabindex="-1"></main>
-  <footer class="footer" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding:22px 32px;border-top:1px solid rgba(142,100,239,0.2);background:rgba(10,12,26,0.85);font-size:13px;color:#94a3b8;direction:rtl;">
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-      <span style="color:#ffffff;font-weight:900;font-size:14px;">سكور آر (ScoreAR)</span>
-      <span style="color:#7550ef;">|</span>
-      <span style="color:#cbd5e1;font-weight:700;">إعداد وتصميم: <b style="color:#fff;">أ. أحمد رميح</b> — معلم أول (أ) لغة عربية</span>
+  <footer class="footer scorear-footer">
+    <div class="footer-brand-row">
+      <span class="footer-brand">سكور آر (ScoreAR)</span>
+      <span class="footer-sep">|</span>
+      <span class="footer-author">إعداد وتصميم: <b>أ. أحمد رميح</b> — معلم أول (أ) لغة عربية</span>
     </div>
-    <div style="display:flex;align-items:center;gap:14px;color:#94a3b8;font-size:12px;flex-wrap:wrap;">
+    <div class="footer-meta-row">
       <span>جميع حقوق الطبع والنشر محفوظة © 2026/2027</span>
-      <span style="color:rgba(255,255,255,0.2);">·</span>
-      <span style="color:#b1a2e9;">صُنع بشغف للتعليم العربي</span>
+      <span class="footer-dot">·</span>
+      <span class="footer-tagline">صُنع بشغف للتعليم العربي</span>
     </div>
   </footer>
 </div>

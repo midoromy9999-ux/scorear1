@@ -284,7 +284,7 @@ body.is-logged-in .launch-nav {
 }
 
 .btn.launch-primary {
-  background: linear-gradient(110deg, #7550ef 0%, #9665ff 52%, #aa70f2 100%);
+  background: linear-gradient(110deg, #5b21b6 0%, #6d28d9 52%, #7c3aed 100%);
   color: white;
   border: 1px solid #c4a8ff50;
   box-shadow: 0 8px 28px #7c4cf92b, inset 0 1px #ffffff38;
@@ -851,6 +851,7 @@ body.is-logged-in .launch-nav {
   z-index: 2;
 }
 
+.teacher-card { background: #131228; }
 .teacher-card > img {
   position: absolute;
   inset: 0;
@@ -1678,6 +1679,65 @@ html[data-theme="day"] .launch-copy-bg::after {
     padding: 22px 18px 24px !important;
     border-radius: 22px;
   }
+}
+
+@media (max-width: 640px) {
+  .launch-nav {
+    padding: 0 12px !important;
+    height: 64px !important;
+    gap: 6px !important;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .launch-brand {
+    gap: 8px !important;
+    min-width: 0;
+  }
+  .launch-brand img {
+    width: 32px !important;
+    height: 32px !important;
+    flex-shrink: 0;
+  }
+  .launch-brand > span {
+    font-size: 17px !important;
+    white-space: nowrap;
+  }
+  .launch-nav-actions {
+    gap: 6px !important;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+  .launch-nav-actions .nav-join,
+  .launch-nav-actions .launch-nav-logout {
+    display: none !important;
+  }
+  .launch-nav-actions .scorear-theme-toggle {
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  .launch-nav-actions .btn {
+    padding: 7px 10px !important;
+    font-size: 11px !important;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 460px) {
+  .launch-brand small {
+    display: none !important;
+  }
+}
+
+html[data-theme="day"] .section-kicker {
+  color: #0369a1 !important;
+}
+html[data-theme="day"] .floating-spark {
+  color: #4f46e5 !important;
+  opacity: 0.78;
+}
+html[data-theme="day"] .fq-top {
+  color: #334e7b !important;
 }
 
 

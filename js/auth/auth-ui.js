@@ -177,40 +177,40 @@
 
         <div style="text-align:center;margin-bottom:4px;">
           <span class="launch-pill" style="margin-bottom:8px;"><span class="live-dot"></span> بوابة الحسابات الموحدة</span>
-          <h3 style="color:#ffffff;font-size:20px;font-weight:900;margin-bottom:4px;">تسجيل الدخول الموحد</h3>
-          <p style="color:#a1a4be;font-size:12px;margin-bottom:0;">للمعلمين والطلاب والإدارة المسجلين في مكان واحد</p>
+          <h3 class="auth-modal-title">تسجيل الدخول الموحد</h3>
+          <p class="auth-modal-sub">للمعلمين والطلاب والإدارة المسجلين في مكان واحد</p>
         </div>
 
         <form id="unifiedLoginForm" onsubmit="ScoreARAuthUI.submitLogin(event)" style="display:flex;flex-direction:column;gap:12px;">
           <div>
-            <label style="display:block;color:#ddd8ff;font-size:12px;font-weight:700;margin-bottom:6px;">البريد الإلكتروني (للمعلم) أو اسم المستخدم (للطالب):</label>
-            <input class="field" id="loginIdentifier" type="text" placeholder="ahmed@example.com أو omar_2026" autocomplete="username" required dir="ltr" style="text-align:right;font-weight:700;font-size:14px;background:#111426;border-radius:12px;width:100%;">
+            <label class="auth-field-label">البريد الإلكتروني (للمعلم) أو اسم المستخدم (للطالب):</label>
+            <input class="field auth-field-input" id="loginIdentifier" type="text" placeholder="ahmed@example.com أو omar_2026" autocomplete="username" required dir="ltr" style="text-align:right;font-size:14px;">
           </div>
 
           <div>
-            <label style="display:block;color:#ddd8ff;font-size:12px;font-weight:700;margin-bottom:6px;">كلمة المرور السرية:</label>
+            <label class="auth-field-label">كلمة المرور السرية:</label>
             <div style="position:relative;">
-              <input class="field" id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" required dir="ltr" style="text-align:left;letter-spacing:2px;font-weight:800;font-size:16px;background:#111426;border-radius:12px;padding-inline-end:44px;width:100%;">
-              <button type="button" id="toggleLoginPasswordBtn" onclick="ScoreARAuthUI.togglePassword()" style="position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#a1a4be;cursor:pointer;padding:6px;display:inline-flex;align-items:center;" aria-label="إظهار أو إخفاء كلمة المرور">
+              <input class="field auth-field-input" id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" required dir="ltr" style="text-align:left;letter-spacing:2px;font-weight:800;font-size:16px;padding-inline-end:44px;">
+              <button type="button" id="toggleLoginPasswordBtn" class="auth-pass-toggle" onclick="ScoreARAuthUI.togglePassword()" aria-label="إظهار أو إخفاء كلمة المرور">
                 ${uiIcon('eye', 16)}
               </button>
             </div>
           </div>
 
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">
-            <span class="scorear-inline-icon" style="color:#878aa6;font-size:11px;">${uiIcon('lock', 13)} جلسة آمنة تنتهي مع إغلاق التبويب</span>
-            <button type="button" onclick="ScoreARAuthUI.forgotPassword()" style="background:none;border:none;color:#58dce3;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline;">نسيت كلمة المرور؟</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;flex-wrap:wrap;gap:6px;">
+            <span class="scorear-inline-icon auth-meta-note">${uiIcon('lock', 13)} جلسة آمنة تنتهي مع إغلاق التبويب</span>
+            <button type="button" class="auth-forgot-link" onclick="ScoreARAuthUI.forgotPassword()">نسيت كلمة المرور؟</button>
           </div>
 
-          <div id="loginErrorBox" style="display:none;color:#ff8a8a;font-size:13px;text-align:center;background:rgba(255,107,107,0.12);padding:10px;border-radius:12px;border:1px solid rgba(255,107,107,0.28);line-height:1.5;"></div>
+          <div id="loginErrorBox" class="auth-error-box" style="display:none;"></div>
 
           <button class="btn launch-primary full" id="loginSubmitBtn" type="submit" style="margin-top:6px;font-weight:900;font-size:15px;padding:13px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;gap:8px;">
             <span>تسجيل الدخول</span> ${uiIcon('arrow', 16)}
           </button>
         </form>
 
-        <div style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-          <span style="font-size:11.5px;color:#878aa6;font-weight:700;">مستخدم جديد؟ انتقل للتسجيل المباشر:</span>
+        <div class="auth-footer-bar">
+          <span class="auth-meta-note" style="font-size:11.5px;font-weight:700;">مستخدم جديد؟ انتقل للتسجيل المباشر:</span>
           <div style="display:flex;gap:8px;">
             <button type="button" onclick="ScoreARRegisterUI.openStudentRegistrationModal()" class="scorear-gear-btn">${uiIcon('spark', 13)} <span>طالب جديد</span></button>
             <button type="button" onclick="ScoreARRegisterUI.openTeacherRegistrationModal()" class="scorear-gear-btn">${uiIcon('graduation', 13)} <span>معلم جديد</span></button>
@@ -232,25 +232,25 @@
     const area = document.getElementById('topActionsArea');
     if (area) {
       if (isTeacher) {
-        area.innerHTML = `<div style="display:flex;align-items:center;gap:8px;">
-          <a href="#studio" class="scorear-control-pill" style="text-decoration:none;border-color:rgba(172,139,242,0.38);">
-            ${uiIcon('graduation', 15)} <span>${escapeHtml(user.displayName || 'أ. أحمد رميح')} · الاستوديو</span>
+        area.innerHTML = `<div class="topbar-user-actions">
+          <a href="#studio" class="scorear-control-pill topbar-studio-pill">
+            ${uiIcon('graduation', 15)} <span class="topbar-teacher-prefix">${escapeHtml(user.displayName || 'أ. أحمد رميح')} · </span><span>الاستوديو</span>
           </a>
-          <button class="scorear-gear-btn" data-action="logout" style="border-color:rgba(255,107,107,0.35);color:#fca5a5;">${uiIcon('logOut', 14)} <span>خروج</span></button>
+          <button class="scorear-gear-btn topbar-logout-btn" data-action="logout" aria-label="خروج">${uiIcon('logOut', 14)} <span class="topbar-logout-text">خروج</span></button>
         </div>`;
       } else if (isStudent) {
-        area.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <button class="nav-join" data-action="join" style="padding:6px 11px;font-size:11.5px;">${uiIcon('key', 14)} <span>رمز قاعة</span></button>
-          <a href="#journey" class="scorear-control-pill" style="text-decoration:none;border-color:rgba(88,220,227,0.35);">
+        area.innerHTML = `<div class="topbar-user-actions">
+          <button class="nav-join topbar-join-compact" data-action="join">${uiIcon('key', 14)} <span>رمز قاعة</span></button>
+          <a href="#journey" class="scorear-control-pill topbar-desktop-only" style="border-color:rgba(88,220,227,0.35);">
             ${uiIcon('route', 14)} <span>رحلتي</span>
           </a>
-          <a href="#classrooms" class="scorear-control-pill" style="text-decoration:none;border-color:rgba(172,139,242,0.35);">
+          <a href="#classrooms" class="scorear-control-pill topbar-desktop-only" style="border-color:rgba(172,139,242,0.35);">
             ${uiIcon('school', 14)} <span>${escapeHtml(user.displayName || 'البطل')}</span>
           </a>
-          <button class="scorear-gear-btn" data-action="logout" style="border-color:rgba(255,107,107,0.35);color:#fca5a5;">${uiIcon('logOut', 13)} <span>خروج</span></button>
+          <button class="scorear-gear-btn topbar-logout-btn" data-action="logout" aria-label="خروج">${uiIcon('logOut', 13)} <span class="topbar-logout-text">خروج</span></button>
         </div>`;
       } else {
-        area.innerHTML = `<button class="nav-join join-top" data-action="join">${uiIcon('key', 14)} <span>دخول القاعة بالرمز</span></button><button class="btn launch-primary small" data-action="unified-login" style="padding:7px 14px;border-radius:10px;font-weight:800;">دخول ${uiIcon('arrow', 14)}</button>`;
+        area.innerHTML = `<button class="nav-join join-top" data-action="join">${uiIcon('key', 14)} <span class="join-label-full">دخول القاعة بالرمز</span><span class="join-label-short">رمز قاعة</span></button><button class="btn launch-primary small topbar-login-btn" data-action="unified-login">دخول ${uiIcon('arrow', 14)}</button>`;
       }
       if (global.hydrate) global.hydrate(area);
     }
@@ -263,7 +263,7 @@
           ${themeBtn}
           <button class="nav-join" data-action="join">${uiIcon('key', 14)} <span>دخول القاعة بالرمز</span></button>
           <a href="#studio" class="btn launch-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:12px;font-weight:800;font-size:13px;">${uiIcon('grid', 15)} <span>استوديو المعلم</span></a>
-          <button class="scorear-gear-btn" data-action="logout" style="border-color:rgba(255,107,107,0.4);color:#fca5a5;padding:8px 12px;">${uiIcon('logOut', 14)} <span>خروج</span></button>
+          <button class="scorear-gear-btn launch-nav-logout topbar-logout-btn" data-action="logout" style="padding:8px 12px;">${uiIcon('logOut', 14)} <span>خروج</span></button>
           <button class="icon-btn launch-menu" data-action="menu" aria-label="فتح القائمة">${uiIcon('menu', 18)}</button>
         `;
       } else if (isStudent) {
@@ -271,7 +271,7 @@
           ${themeBtn}
           <button class="nav-join" data-action="join">${uiIcon('key', 14)} <span>دخول القاعة بالرمز</span></button>
           <a href="#journey" class="btn launch-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:12px;font-weight:800;font-size:13px;">${uiIcon('route', 15)} <span>رحلتي التعليمية</span></a>
-          <button class="scorear-gear-btn" data-action="logout" style="border-color:rgba(255,107,107,0.4);color:#fca5a5;padding:8px 12px;">${uiIcon('logOut', 14)} <span>خروج</span></button>
+          <button class="scorear-gear-btn launch-nav-logout topbar-logout-btn" data-action="logout" style="padding:8px 12px;">${uiIcon('logOut', 14)} <span>خروج</span></button>
           <button class="icon-btn launch-menu" data-action="menu" aria-label="فتح القائمة">${uiIcon('menu', 18)}</button>
         `;
       } else {

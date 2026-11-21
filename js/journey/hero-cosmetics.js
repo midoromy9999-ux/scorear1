@@ -143,8 +143,8 @@
           <div style="display:flex;align-items:center;gap:10px;min-width:0;">
             <span style="width:38px;height:38px;border-radius:11px;background:${it.color}22;border:1px solid ${it.color}55;display:grid;place-items:center;font-size:19px;flex-shrink:0;">${it.icon}</span>
             <div style="min-width:0;">
-              <b style="display:block;color:#f6f3ff;font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(it.title)}</b>
-              <small style="display:block;color:${it.unlocked ? '#85f3d8' : '#a1a4be'};font-size:10.5px;font-weight:700;">${it.unlocked ? 'مفتوح بالتعلّم ✓' : esc(it.req)}</small>
+              <b class="sc-cosmetic-title">${esc(it.title)}</b>
+              <small class="sc-cosmetic-sub ${it.unlocked ? 'is-unlocked' : 'is-locked'}">${it.unlocked ? 'مفتوح بالتعلّم ✓' : esc(it.req)}</small>
             </div>
           </div>
           <button type="button" data-cosmetic-kind="${kind}" data-cosmetic-id="${it.id}" ${it.unlocked ? '' : 'disabled'} style="background:${btnBg};border:1px solid ${btnBorder};color:#fff;border-radius:10px;padding:5px 11px;font-size:11px;font-weight:900;cursor:${it.unlocked ? 'pointer' : 'not-allowed'};flex-shrink:0;font-family:inherit;">${btnText}</button>
@@ -164,24 +164,24 @@
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
           <div>
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-              <h3 style="color:#f6f3ff;font-size:17px;font-weight:900;margin:0;">خزانة مقتنيات التعلّم العادلة (Zero Pay-to-Win)</h3>
-              <span class="launch-pill" style="font-size:10.5px;padding:3px 10px;border-color:rgba(88,220,227,0.4);color:#85f3d8;">مفتوح ${unlockedCount} / ${st.entries.length + st.auras.length}</span>
+              <h3 class="sc-locker-heading">خزانة مقتنيات التعلّم العادلة (Zero Pay-to-Win)</h3>
+              <span class="launch-pill sc-locker-pill">مفتوح ${unlockedCount} / ${st.entries.length + st.auras.length}</span>
             </div>
-            <small style="color:#a1a4be;font-size:11.5px;display:block;margin-top:3px;">تُفتح التأثيرات تلقائياً من نقاط الخبرة وسلسلة حضورك وتظهر مع بطلك حين تصعد منصة التتويج.</small>
+            <small class="sc-locker-note">تُفتح التأثيرات تلقائياً من نقاط الخبرة وسلسلة حضورك وتظهر مع بطلك حين تصعد منصة التتويج.</small>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;background:rgba(12,14,32,0.86);border:1px solid rgba(172,139,242,0.3);border-radius:14px;padding:7px 12px;">
+          <div class="sc-locker-preview-box">
             <div id="scLockerHeroPreview" style="position:relative;width:44px;height:52px;display:flex;align-items:center;justify-content:center;isolation:isolate;">
               <img src="assets/characters/animated/${compId}-idle.webp" onerror="this.src='assets/characters/char_01.webp'" alt="معاينة البطل" style="width:42px;height:50px;object-fit:contain;position:relative;z-index:2;">
             </div>
             <div style="font-size:11px;line-height:1.5;">
-              <div style="color:#fde68a;font-weight:900;">${curEntry.icon} ${esc(curEntry.title)}</div>
-              <div style="color:#c7f9ff;font-weight:800;">${curAura.icon} ${esc(curAura.title)}</div>
+              <div class="sc-locker-cur-entry">${curEntry.icon} ${esc(curEntry.title)}</div>
+              <div class="sc-locker-cur-aura">${curAura.icon} ${esc(curAura.title)}</div>
             </div>
           </div>
         </div>
-        <div style="font-size:12px;font-weight:900;color:#c9baff;margin:10px 0 7px;">١. تأثيرات الصعود لمنصة التتويج:</div>
+        <div class="sc-locker-subhead is-violet">١. تأثيرات الصعود لمنصة التتويج:</div>
         <div class="scorear-cosmetics-grid">${renderCardRow('entry', st.entries)}</div>
-        <div style="font-size:12px;font-weight:900;color:#58dce3;margin:14px 0 7px;">٢. الهالات البصرية للبطل:</div>
+        <div class="sc-locker-subhead is-cyan">٢. الهالات البصرية للبطل:</div>
         <div class="scorear-cosmetics-grid">${renderCardRow('aura', st.auras)}</div>
       </section>`;
   }
@@ -192,16 +192,16 @@
     const unlockedEntries = st.entries.filter(e => e.unlocked);
     const unlockedAuras = st.auras.filter(a => a.unlocked);
     return `
-      <div id="studentJoinCosmeticsBox" style="background:rgba(16,18,42,0.84);border:1px solid rgba(88,220,227,0.28);border-radius:14px;padding:8px 10px;margin-bottom:10px;">
+      <div id="studentJoinCosmeticsBox" class="sc-compact-cosmetics">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px;">
-          <span style="font-size:11px;font-weight:900;color:#fde68a;">✨ تجهيز مؤثرات بطلك للمنصة:</span>
-          <span style="font-size:10px;color:#85f3d8;font-weight:800;">${unlockedEntries.length + unlockedAuras.length}/8 مفتوح</span>
+          <span class="sc-compact-title">✨ تجهيز مؤثرات بطلك للمنصة:</span>
+          <span class="sc-compact-count">${unlockedEntries.length + unlockedAuras.length}/8 مفتوح</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px;">
-          ${st.entries.map(e => `<button type="button" data-cosmetic-kind="entry" data-cosmetic-id="${e.id}" ${e.unlocked ? '' : 'disabled'} title="${esc(e.req)}" style="padding:3px 8px;border-radius:999px;font-size:10.5px;font-weight:800;border:1px solid ${e.active ? e.color : 'rgba(255,255,255,0.14)'};background:${e.active ? e.color + '33' : 'rgba(255,255,255,0.04)'};color:${e.unlocked ? '#fff' : '#64748b'};cursor:${e.unlocked ? 'pointer' : 'not-allowed'};font-family:inherit;">${e.unlocked ? e.icon : '🔒'} ${esc(e.title)}</button>`).join('')}
+          ${st.entries.map(e => `<button type="button" data-cosmetic-kind="entry" data-cosmetic-id="${e.id}" ${e.unlocked ? '' : 'disabled'} title="${esc(e.req)}" class="sc-cosmetic-chip ${e.unlocked ? 'is-unlocked' : 'is-locked'} ${e.active ? 'is-active' : ''}" style="${e.active ? `border-color:${e.color};background:${e.color}33;` : ''}">${e.unlocked ? e.icon : '🔒'} ${esc(e.title)}</button>`).join('')}
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;">
-          ${st.auras.map(a => `<button type="button" data-cosmetic-kind="aura" data-cosmetic-id="${a.id}" ${a.unlocked ? '' : 'disabled'} title="${esc(a.req)}" style="padding:3px 8px;border-radius:999px;font-size:10.5px;font-weight:800;border:1px solid ${a.active ? a.color : 'rgba(255,255,255,0.14)'};background:${a.active ? a.color + '33' : 'rgba(255,255,255,0.04)'};color:${a.unlocked ? '#fff' : '#64748b'};cursor:${a.unlocked ? 'pointer' : 'not-allowed'};font-family:inherit;">${a.unlocked ? a.icon : '🔒'} ${esc(a.title)}</button>`).join('')}
+          ${st.auras.map(a => `<button type="button" data-cosmetic-kind="aura" data-cosmetic-id="${a.id}" ${a.unlocked ? '' : 'disabled'} title="${esc(a.req)}" class="sc-cosmetic-chip ${a.unlocked ? 'is-unlocked' : 'is-locked'} ${a.active ? 'is-active' : ''}" style="${a.active ? `border-color:${a.color};background:${a.color}33;` : ''}">${a.unlocked ? a.icon : '🔒'} ${esc(a.title)}</button>`).join('')}
         </div>
       </div>`;
   }

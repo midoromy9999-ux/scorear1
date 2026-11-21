@@ -912,8 +912,8 @@ html[data-theme="day"] .character-tabs button {
 html[data-theme="day"] .character-tabs button[aria-selected="true"],
 html[data-theme="day"] .character-tabs button[aria-pressed="true"],
 html[data-theme="day"] .character-tabs button.active {
-  background: linear-gradient(110deg, #6339e8, #8e64ef) !important;
-  border-color: #6339e8 !important;
+  background: linear-gradient(110deg, #5b21b6, #6d28d9) !important;
+  border-color: #5b21b6 !important;
   color: #ffffff !important;
 }
 html[data-theme="day"] #cardPreviewInfo h2 {
@@ -922,8 +922,44 @@ html[data-theme="day"] #cardPreviewInfo h2 {
 html[data-theme="day"] #cardPreviewInfo h2 small {
   color: #4f46e5 !important;
 }
-html[data-theme="day"] #cardPreviewInfo span[style*="color:#fcd34d"] {
+html[data-theme="day"] #cardPreviewInfo span[style*="color:#fcd34d"],
+html[data-theme="day"] .scorear-card-thumb span[style*="color:#fcd34d"],
+html[data-theme="day"] .character-tabs button[style*="color:#fcd34d"] {
+  color: #92400e !important;
+}
+html[data-theme="day"] .character-tabs [style*="color:#f59e0b"],
+html[data-theme="day"] .cards-picker-layout [style*="color:#f59e0b"],
+html[data-theme="day"] .scorear-card-thumb [style*="color:#f59e0b"],
+html[data-theme="day"] #cardPreviewInfo [style*="color:#f59e0b"] {
   color: #b45309 !important;
+}
+html[data-theme="day"] .scorear-card-thumb span[style*="background:#f59e0b"],
+html[data-theme="day"] #cardPreviewInfo span[style*="background:#f59e0b"] {
+  background: #b45309 !important;
+  color: #ffffff !important;
+}
+html[data-theme="day"] .scorear-card-thumb span[style*="background:#38bdf8"],
+html[data-theme="day"] #cardPreviewInfo span[style*="background:#38bdf8"] {
+  background: #0369a1 !important;
+  color: #ffffff !important;
+}
+html[data-theme="day"] .scorear-card-thumb span[style*="background:#10b981"],
+html[data-theme="day"] #cardPreviewInfo span[style*="background:#10b981"] {
+  background: #047857 !important;
+  color: #ffffff !important;
+}
+html[data-theme="day"] .scorear-card-thumb span[style*="background:#ef4444"],
+html[data-theme="day"] #cardPreviewInfo span[style*="background:#ef4444"] {
+  background: #b91c1c !important;
+  color: #ffffff !important;
+}
+html[data-theme="day"] .scorear-card-thumb [style*="color:#38bdf8"],
+html[data-theme="day"] #cardPreviewInfo [style*="color:#38bdf8"] {
+  color: #0369a1 !important;
+}
+html[data-theme="day"] .scorear-card-thumb [style*="color:#10b981"],
+html[data-theme="day"] #cardPreviewInfo [style*="color:#10b981"] {
+  color: #047857 !important;
 }
 html[data-theme="day"] #cardPreviewInfo div[style*="rgba(255,255,255,0.03)"] {
   background: #f0f8ff !important;

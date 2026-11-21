@@ -4,7 +4,7 @@
  * Ensures resilient classroom gameplay on slow or intermittent school networks.
  */
 
-const CACHE_NAME = 'scorear-v30-survival-exit-mobile-sync';
+const CACHE_NAME = 'scorear-v31-mobile-day-audit-fix';
 const STATIC_ASSETS = [
   './',
   './index.html',

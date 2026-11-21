@@ -93,16 +93,20 @@
       }
       @media (max-width: 640px) {
         .scorear-back-home-btn {
-          padding: 5px 9px;
+          padding: 5px 8px;
           font-size: 11px;
           gap: 4px;
         }
       }
-      @media (max-width: 380px) {
+      @media (max-width: 440px) {
         .scorear-back-home-btn {
-          padding: 4px 8px;
-          font-size: 10.5px;
-          gap: 3px;
+          padding: 6px;
+          width: 32px;
+          height: 32px;
+          justify-content: center;
+        }
+        .scorear-back-home-btn span {
+          display: none;
         }
       }
     `;
@@ -384,7 +388,8 @@
     if (!navSlot) {
       navSlot = document.createElement('div');
       navSlot.id = 'scorearTopbarNavSlot';
-      navSlot.style.cssText = 'display:inline-flex;align-items:center;gap:6px;flex-shrink:0;';
+      navSlot.className = 'topbar-nav-slot';
+      navSlot.style.cssText = 'display:inline-flex;align-items:center;gap:5px;flex-shrink:0;';
       if (typeof topbarTitle.insertAdjacentElement === 'function' && topbarTitle.parentElement) {
         topbarTitle.insertAdjacentElement('afterend', navSlot);
       } else {
@@ -405,7 +410,7 @@
 
     navSlot.style.display = 'inline-flex';
     navSlot.innerHTML = `
-      ${isHome ? '' : `<button type="button" class="scorear-back-home-btn" onclick="ScoreARNav.goBackOrHome()" title="العودة للرئيسية">${homeIcon}<span>الرئيسية</span></button>`}
+      ${isHome ? '' : `<button type="button" class="scorear-back-home-btn" onclick="ScoreARNav.goBackOrHome()" aria-label="الرئيسية" title="العودة للرئيسية">${homeIcon}<span>الرئيسية</span></button>`}
       <button type="button" class="scorear-theme-toggle" data-action="toggle-theme" aria-pressed="${curMode === 'day' ? 'true' : 'false'}" title="${curMode === 'day' ? 'التبديل للوضع الليلي الكوني' : 'التبديل للوضع النهاري السماوي'}">
         ${buildThemeBtnInner(curMode)}
       </button>
