@@ -4,7 +4,7 @@
  * Ensures resilient classroom gameplay on slow or intermittent school networks.
  */
 
-const CACHE_NAME = 'scorear-v29-day-contrast-bank-3col';
+const CACHE_NAME = 'scorear-v30-survival-exit-mobile-sync';
 const STATIC_ASSETS = [
   './',
   './index.html',

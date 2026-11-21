@@ -308,6 +308,14 @@
       });
     }
 
+    function emitHallReveal(slot, p, allRevealed) {
+      try {
+        const payload = { slot, rank: p?._rank || slot || 1, playerId: String(p?.id || ''), playerName: p?.name || '', allRevealed: Boolean(allRevealed) };
+        if (global.ScoreARHostEvents?.publishPodiumReveal) global.ScoreARHostEvents.publishPodiumReveal(payload);
+        else global.ScoreARRealtime?.publish?.('PODIUM_REVEAL', payload);
+      } catch (_) {}
+    }
+
     function playStep(slot) {
       const target = tierTargets[slot];
       if (!target) return;
@@ -320,12 +328,14 @@
       worldSpec.onStep?.(slot, ctx);
 
       if (slot === 3) {
+        emitHallReveal(3, top3[2], false);
         showPhase(`🥉 المركز الثالث · ${top3[2]?.name || ''}`);
         camDir.setShot([-2.15, 2.0, 7.2], [target.x, 1.42, Math.max(target.z, 0.5)], 2.7);
         sfx('rank3Reveal', 0.90); cinAudio.playChime(440, 0.75);
         spotRig.setMode('rank3', { x: target.x, y: target.topY, z: target.z });
         startHeroPath(3);
       } else if (slot === 2) {
+        emitHallReveal(2, top3[1], false);
         showPhase(`🥈 المركز الثاني · ${top3[1]?.name || ''}`);
         camDir.setShot([2.15, 2.05, 7.2], [target.x, 1.50, Math.max(target.z, 0.5)], 2.7);
         sfx('rank2Reveal', 0.92); cinAudio.playChime(523.25, 0.8);
@@ -365,6 +375,7 @@
           });
           audienceActors.forEach((a, i) => a.setAction(i % 2 === 0 ? 'clap' : 'wave', true));
           worldData.revealPlaque?.(1);
+          emitHallReveal(1, top3[0], true);
           showPhase(`🥇 بطل المركز الأول · ${top3[0]?.name || ''}`);
           camDir.setShot([0, 2.08, 7.8], [0, 1.65, 1.2], 2.4);
           startHeroPath(1);
@@ -377,6 +388,7 @@
       activePaths = [];
       crowned = true;
       currentStep = revealOrder.length;
+      emitHallReveal(0, top3[0], true);
       ensureCelebrationMusic();
       global.ScoreARAudio?.unduckMusic?.(250);
       if (!withFx) global.ScoreARAudio?.stopAllSfx?.();

@@ -86,6 +86,15 @@
     if (!state || !state.active || state.revealed) return;
     state.revealed = true;
     state.suspenseActive = false;
+    try {
+      const payload = {
+        mode: 'DUEL_TEAMS',
+        winnerTeamId: state.isTie ? 'tie' : (state.winner?.id || ''),
+        allRevealed: true
+      };
+      if (global.ScoreARHostEvents?.publishPodiumReveal) global.ScoreARHostEvents.publishPodiumReveal(payload);
+      else global.ScoreARRealtime?.publish?.('PODIUM_REVEAL', payload);
+    } catch (_) {}
 
     state.timers.forEach(id => clearTimeout(id));
     state.timers = [];
@@ -175,6 +184,7 @@
   }
 
   function mount2DFallback(wrap, slots, sb, isTie, winner) {
+    if (!wrap) return;
     const grid = document.createElement('div');
     grid.id = 'scDuelCoronationFallback';
     grid.style.cssText = 'position:absolute;inset:0;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:center;gap:14px;padding:120px 28px 92px;z-index:8;pointer-events:none;';

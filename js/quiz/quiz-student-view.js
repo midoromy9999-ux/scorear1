@@ -14,6 +14,89 @@
     { bg: '#26890c', border: '#5cdb3b', shape: '■' }
   ];
 
+  let _sessionTotalQuestions = null;
+  let _pendingFinalPodium = null;
+  let _podiumSubUnsub = null;
+  const _podiumRevealState = {
+    revealedSlots: new Set(),
+    revealedPlayerIds: new Set(),
+    allRevealed: false
+  };
+
+  function resetPodiumRevealSync() {
+    _pendingFinalPodium = null;
+    _podiumRevealState.revealedSlots.clear();
+    _podiumRevealState.revealedPlayerIds.clear();
+    _podiumRevealState.allRevealed = false;
+  }
+
+  function handlePodiumRevealMessage(msg) {
+    if (!msg || typeof msg !== 'object') return;
+    if (msg.allRevealed === true) _podiumRevealState.allRevealed = true;
+    const slotNum = Number(msg.slot);
+    if (Number.isFinite(slotNum) && slotNum >= 1 && slotNum <= 3) {
+      _podiumRevealState.revealedSlots.add(slotNum);
+    }
+    if (Array.isArray(msg.revealedSlots)) {
+      msg.revealedSlots.forEach(s => {
+        const n = Number(s);
+        if (Number.isFinite(n) && n >= 1 && n <= 3) _podiumRevealState.revealedSlots.add(n);
+      });
+    }
+    if (msg.playerId !== undefined && msg.playerId !== null && String(msg.playerId).trim()) {
+      _podiumRevealState.revealedPlayerIds.add(String(msg.playerId).trim());
+    }
+    if (_pendingFinalPodium && shouldRevealFinalPodium(_pendingFinalPodium, _podiumRevealState)) {
+      const pending = _pendingFinalPodium;
+      _pendingFinalPodium = null;
+      renderRevealedFinalPodium(pending);
+    }
+  }
+
+  function bindPodiumRevealRealtimeSync() {
+    if (!global.ScoreARRealtime || typeof global.ScoreARRealtime.subscribe !== 'function') return;
+    try {
+      if (typeof _podiumSubUnsub === 'function') {
+        _podiumSubUnsub();
+        _podiumSubUnsub = null;
+      }
+      _podiumSubUnsub = global.ScoreARRealtime.subscribe('PODIUM_REVEAL', handlePodiumRevealMessage);
+    } catch (_) {}
+  }
+
+  function shouldRevealFinalPodium(pending, revealState) {
+    if (!pending) return false;
+    if (pending.data?.revealImmediately === true) return true;
+    if (revealState.allRevealed === true) return true;
+    if (pending.myId && revealState.revealedPlayerIds.has(pending.myId)) return true;
+    if (pending.mySlot >= 1 && pending.mySlot <= 3 && revealState.revealedSlots.has(pending.mySlot)) return true;
+    return false;
+  }
+
+  function renderStudentWaitingFinalResult(stage, currentStudent, currentWorldId) {
+    if (!stage) return;
+    const wid = String(currentWorldId || 'royal').trim() || 'royal';
+    const myAvatar = currentStudent?.avatarId || 'char_01';
+    const myName = currentStudent?.name || 'البطل';
+    stage.innerHTML = `
+      <div style="position:absolute;inset:0;background:url('assets/worlds/${escapeHtml(wid)}/podium.jpg'),url('assets/worlds/${escapeHtml(wid)}/results.jpg');background-size:cover;background-position:center;filter:brightness(0.68) saturate(1.06);z-index:1;"></div>
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 35%, rgba(99,57,232,0.34) 0%, rgba(10,11,22,0.86) 100%);z-index:2;"></div>
+      <header class="scorear-control-bar" style="position:relative;z-index:10;padding:12px 16px;text-align:center;">
+        <span style="font-size:13.5px;font-weight:900;color:#fde68a;">نهاية المسابقة</span>
+      </header>
+      <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;text-align:center;gap:14px;">
+        <div id="studentHeroAvatarV3" style="width:110px;height:132px;display:flex;align-items:flex-end;justify-content:center;">
+          <img id="studentHeroAvatarImg" src="assets/characters/animated/${escapeHtml(myAvatar)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(myName)}" style="width:92px;height:112px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.65));">
+        </div>
+        <div id="studentFinalWaitCard" style="background:rgba(16,18,40,0.92);backdrop-filter:blur(18px);border:1.5px solid rgba(251,191,36,0.45);border-radius:22px;padding:22px 20px;width:100%;max-width:340px;box-shadow:0 16px 40px rgba(0,0,0,0.55);">
+          <div style="font-size:32px;line-height:1;margin-bottom:8px;">⏳</div>
+          <h2 style="font-size:22px;font-weight:900;color:#ffffff;margin:0 0 6px;">انتظار النتيجة...</h2>
+          <p style="font-size:13px;font-weight:700;color:#cbd5e1;margin:0;line-height:1.6;">ترقّب ظهور مركزك على الشاشة الرئيسية</p>
+        </div>
+      </main>`;
+    mountStudentV3Hero('studentHeroAvatarV3', myAvatar, 'idle', 110, 132, true);
+  }
+
   function escapeHtml(str) {
     return typeof str !== 'string' ? String(str || '') : str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   }
@@ -100,6 +183,11 @@
   }
 
   function renderStudentReading(stage, qData, currentWorldId, timeRemaining) {
+    if (Number.isFinite(Number(qData?.totalQuestions))) {
+      _sessionTotalQuestions = Number(qData.totalQuestions);
+    }
+    if ((qData?.qIndex || 0) === 0) resetPodiumRevealSync();
+    bindPodiumRevealRealtimeSync();
     if (isMeEliminated(qData, getSessionStudentObj())) {
       renderStudentSpectatorHtml(stage, qData, getSessionStudentObj(), currentWorldId);
       return;
@@ -133,6 +221,11 @@
   }
 
   function renderStudentQuestion(stage, qData, currentWorldId, timeRemaining) {
+    if (Number.isFinite(Number(qData?.totalQuestions))) {
+      _sessionTotalQuestions = Number(qData.totalQuestions);
+    }
+    if ((qData?.qIndex || 0) === 0) resetPodiumRevealSync();
+    bindPodiumRevealRealtimeSync();
     if (isMeEliminated(qData, getSessionStudentObj())) {
       renderStudentSpectatorHtml(stage, qData, getSessionStudentObj(), currentWorldId);
       return;
@@ -176,7 +269,8 @@
   }
 
   function renderStudentResult(stage, resData, state) {
-    const { currentStudent, currentWorldId, currentQIndex, selectedOptionIndex, currentScore, currentStreak, lastRank } = state;
+    bindPodiumRevealRealtimeSync();
+    const { currentStudent, currentWorldId, currentQIndex, selectedOptionIndex, currentScore, lastRank } = state;
     const myId = (currentStudent?.uid !== undefined && currentStudent?.uid !== null) ? String(currentStudent.uid).trim() : '';
     const myName = (currentStudent?.name || '').trim();
     let myResult = (myId && resData.playerResults && resData.playerResults[myId]) ? resData.playerResults[myId] : null;
@@ -184,19 +278,8 @@
       myResult = Object.values(resData.playerResults).find(r => matchesStudentIdentity(r, myId, myName)) || null;
     }
 
-    const correctIdx = Number(resData.correctAnswer);
-    const correctText = resData.correctAnswerText || (resData.options && resData.options[correctIdx]) || 'الإجابة النموذجية';
-    const myChoiceIdx = (myResult && myResult.chosenIndex !== undefined && myResult.chosenIndex !== -1) ? Number(myResult.chosenIndex) : (selectedOptionIndex !== null ? Number(selectedOptionIndex) : -1);
     const isCorrect = myResult ? Boolean(myResult.isCorrect ?? myResult.correct) : false;
     const earned = myResult ? Number(myResult.pointsEarned || 0) : 0;
-    const respTime = myResult ? myResult.respTime : null;
-    const isFastest = Boolean(resData.fastestStudent && matchesStudentIdentity(resData.fastestStudent, myId, myName));
-    const myFastRank = (resData.fastestTop2 && Array.isArray(resData.fastestTop2))
-      ? (resData.fastestTop2.findIndex(f => matchesStudentIdentity(f, myId, myName)) + 1)
-      : (isFastest ? 1 : 0);
-    const isCardArena = (typeof window !== 'undefined' && window.ScoreARCardArena && typeof window.ScoreARCardArena.isModeActive === 'function')
-      ? window.ScoreARCardArena.isModeActive()
-      : (resData.gameMode === 'CARD_ARENA' || resData.mode === 'CARD_ARENA');
 
     let currentRank = '-';
     if (resData.topLeaderboard && Array.isArray(resData.topLeaderboard)) {
@@ -204,79 +287,53 @@
       if (foundIdx !== -1) currentRank = foundIdx + 1;
     }
 
-    let deltaIcon = '—', deltaText = 'حافظت على موقعك';
-    if (lastRank !== null && currentRank !== '-') {
-      if (currentRank < lastRank) { deltaIcon = `▲ ${lastRank - currentRank}`; deltaText = `صعدت ${lastRank - currentRank} مراكز!`; }
-      else if (currentRank > lastRank) { deltaIcon = `▼ ${currentRank - lastRank}`; deltaText = `تراجعت ${currentRank - lastRank} مراكز`; }
+    const updatedScore = Number(myResult?.totalScore ?? currentScore);
+    const activeMode = resData?.mode || resData?.gameMode || global.__scorearJoinedRoomMode || 'SOLO';
+    const knownTotalQs = Number(resData?.totalQuestions || _sessionTotalQuestions);
+    const isLastQ = Boolean(
+      resData?.isLastQuestion ||
+      resData?.survivalState?.championEarly ||
+      resData?.survivalResult?.championEarly ||
+      (Number.isFinite(knownTotalQs) && knownTotalQs > 0 && (Number(currentQIndex) + 1) >= knownTotalQs)
+    );
+
+    if (isLastQ) {
+      renderStudentWaitingFinalResult(stage, currentStudent, currentWorldId);
+      return { isCorrect, earned, currentRank, updatedScore };
     }
 
+    const amElim = (activeMode === 'SURVIVAL') && isMeEliminated(resData, currentStudent);
     const myAvatar = currentStudent?.avatarId || 'char_01';
-    const opts = resData.options || [];
+    const wid = String(currentWorldId || 'royal').trim() || 'royal';
+
     stage.innerHTML = `
-      <div style="position:absolute;inset:0;background:url('assets/worlds/${currentWorldId}/results.jpg') center/cover no-repeat;filter:brightness(0.8) saturate(1.08);z-index:1;"></div>
-      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 25%, ${isCorrect ? 'rgba(20,56,37,0.38)' : 'rgba(56,22,22,0.38)'} 0%, rgba(10,11,22,0.68) 100%);z-index:2;"></div>
+      <div style="position:absolute;inset:0;background:url('assets/worlds/${escapeHtml(wid)}/results.jpg') center/cover no-repeat;filter:brightness(0.78) saturate(1.08);z-index:1;"></div>
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 35%, ${isCorrect ? 'rgba(16,185,129,0.34)' : 'rgba(239,68,68,0.34)'} 0%, rgba(10,11,22,0.78) 100%);z-index:2;"></div>
       <header class="scorear-control-bar" style="position:relative;z-index:10;padding:10px 16px;text-align:center;">
-        <span style="font-size:13px;font-weight:900;color:#ffffff;">نتيجة السؤال ${currentQIndex + 1}</span>
+        <span style="font-size:13px;font-weight:900;color:#ffffff;">السؤال ${(Number(currentQIndex) || 0) + 1}</span>
       </header>
-      <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:14px;text-align:center;gap:10px;overflow-y:auto;">
-        <div style="background:rgba(18,20,44,0.92);backdrop-filter:blur(16px);border:1.5px solid ${isCorrect ? '#10b981' : '#ef4444'};border-radius:20px;padding:14px 16px;width:100%;max-width:360px;box-shadow:0 10px 28px rgba(0,0,0,0.5);">
-          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;">
-            <div id="studentHeroAvatarV3" style="width:76px;height:90px;display:flex;align-items:flex-end;justify-content:center;"><img id="studentHeroAvatarImg" src="assets/characters/animated/${escapeHtml(myAvatar)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(myName || 'البطل')}" style="width:68px;height:82px;object-fit:contain;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.55));"></div>
-            <div style="font-size:32px;line-height:1;">${isCorrect ? '🎉' : '❌'}</div>
-          </div>
-          <h2 style="font-size:19px;font-weight:900;color:${isCorrect ? '#34d399' : '#f87171'};margin:0 0 4px 0;">${isCorrect ? 'إجابة صحيحة وممتازة!' : (myChoiceIdx === -1 ? 'انتهى الوقت ولم تُجب!' : 'إجابة خاطئة!')}</h2>
-          <div style="font-size:18px;font-weight:900;color:${earned < 0 ? '#f87171' : '#fcd34d'};margin:2px 0;">${earned > 0 ? `+${earned}` : (earned < 0 ? `${earned}` : '+0')} <span style="font-size:12px;color:#c9baff;">نقطة</span>${respTime ? `<span style="font-size:11px;color:#6ee7b7;font-weight:700;margin-inline-start:6px;">(⚡ ${respTime}ث)</span>` : ''}</div>
-          ${myResult?.wager100Outcome === 'won' ? `<div style="background:rgba(16,185,129,0.24);border:1px solid rgba(52,211,153,0.55);color:#6ee7b7;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">🎲 ربحت رهان المائة! (+100 نقطة إضافية)</div>` : (myResult?.wager100Outcome === 'lost' ? `<div style="background:rgba(239,68,68,0.24);border:1px solid rgba(248,113,113,0.55);color:#fca5a5;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">🎲 خسرت رهان المائة (${earned} نقطة)</div>` : '')}
-          ${isCardArena && (myFastRank === 1 || myFastRank === 2) ? `<div style="background:rgba(142,100,239,0.22);border:1px solid rgba(172,139,242,0.45);color:#e9d5ff;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">المركز ${myFastRank === 1 ? 'الأول' : 'الثاني'} في السرعة! كسبت كارت تكتيكي</div>` : (isCardArena && isCorrect && ((myResult?.streak ?? (currentStreak + 1)) % 2 === 0) ? `<div style="background:rgba(245,158,11,0.22);border:1px solid rgba(251,191,36,0.48);color:#fde68a;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">🔥 إجابتان متتاليتان صحيحتان! كسبت كارت تكتيكي جديد!</div>` : (isCardArena && isCorrect ? `<div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#c9baff;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;margin-top:4px;">أسرع في السؤال القادم أو حقق إجابتين متتاليتين لكسب كارت!</div>` : (isFastest ? `<div style="background:rgba(245,158,11,0.22);border:1px solid rgba(245,158,11,0.45);color:#fcd34d;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:900;margin-top:4px;">⚡ بطل السرعة: كنت أسرع إجابة صحيحة!</div>` : '')))}
-          ${currentStreak > 1 ? `<div style="font-size:11px;color:#f97316;font-weight:800;margin-top:3px;">🔥 سلسلة ${currentStreak} إجابات متتالية!</div>` : ''}
-          <div style="background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.45);border-radius:12px;padding:8px 12px;margin-top:8px;text-align:center;">
-            <span style="color:#6ee7b7;font-size:11px;font-weight:800;display:block;">✓ الإجابة النموذجية الصحيحة:</span>
-            <b style="color:#ffffff;font-size:15px;display:block;margin-top:2px;">${escapeHtml(correctText)}</b>
-          </div>
-          ${(!isCorrect && myChoiceIdx !== null && myChoiceIdx >= 0 && opts[myChoiceIdx]) ? `<div style="font-size:11px;color:#fca5a5;margin-top:4px;font-weight:700;">إجابتك التي اخترتها: <b style="color:#fff;">${escapeHtml(opts[myChoiceIdx])}</b></div>` : ''}
+      <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 16px;text-align:center;gap:14px;">
+        <div id="studentHeroAvatarV3" style="width:108px;height:130px;display:flex;align-items:flex-end;justify-content:center;">
+          <img id="studentHeroAvatarImg" src="assets/characters/animated/${escapeHtml(myAvatar)}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(myName || 'البطل')}" style="width:92px;height:112px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));">
         </div>
-        ${opts.length ? `<div style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:5px;">${opts.map((opt, i) => {
-          const isThisCorrect = (i === correctIdx), isThisChosen = (i === myChoiceIdx);
-          let bg = 'rgba(22,24,51,0.88)', border = 'rgba(255,255,255,0.12)', badge = '';
-          if (isThisCorrect) { bg = 'rgba(16,185,129,0.28)'; border = '#10b981'; badge = '<span style="background:#10b981;color:#fff;font-size:10px;padding:2px 6px;border-radius:6px;font-weight:900;">✓ الصحيحة</span>'; }
-          else if (isThisChosen) { bg = 'rgba(239,68,68,0.28)'; border = '#ef4444'; badge = '<span style="background:#ef4444;color:#fff;font-size:10px;padding:2px 6px;border-radius:6px;font-weight:900;">✕ اختيارك</span>'; }
-          return `<div style="background:${bg};border:1px solid ${border};border-radius:10px;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:800;color:#fff;"><span>${escapeHtml(opt)}</span>${badge}</div>`;
-        }).join('')}</div>` : ''}
-        ${(resData.why || resData.explanation) ? `<div style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);border-radius:10px;padding:6px 12px;width:100%;max-width:360px;text-align:right;font-size:11px;color:#d1fae5;font-weight:700;"><b>التفسير التعليمي:</b> ${escapeHtml(resData.why || resData.explanation)}</div>` : ''}
-        <div id="studentDuelResultStrip" style="width:100%;max-width:360px;">${resData.duelScores ? renderStudentDuelStripHtml(resData.duelScores, resolveStudentTeamId(resData, currentStudent)) : ''}</div>
-        ${renderStudentSurvivalBannerHtml(resData, currentStudent, true)}
-        <div style="background:rgba(18,19,41,0.88);border:1px solid rgba(172,139,242,0.24);border-radius:14px;padding:10px 16px;width:100%;max-width:360px;display:flex;justify-content:space-around;align-items:center;">
-          <div><div style="font-size:11px;color:#a1a4be;font-weight:700;">مجموع نقاطك</div><div class="student-live-score-val" style="font-size:17px;font-weight:900;color:#58dce3;">${Number(myResult?.totalScore ?? currentScore)}</div></div>
-          <div style="width:1px;height:24px;background:rgba(255,255,255,0.1);"></div>
-          <div><div style="font-size:11px;color:#a1a4be;font-weight:700;">ترتيبك الحالي</div><div style="font-size:17px;font-weight:900;color:#fcd34d;">المركز ${currentRank}</div></div>
+        <div id="studentMinimalResultCard" style="background:rgba(16,18,40,0.92);backdrop-filter:blur(18px);border:2px solid ${isCorrect ? '#10b981' : '#ef4444'};border-radius:22px;padding:24px 20px;width:100%;max-width:340px;box-shadow:0 16px 40px rgba(0,0,0,0.55);">
+          <div style="font-size:40px;line-height:1;margin-bottom:10px;">${isCorrect ? '✅' : '❌'}</div>
+          <h2 style="font-size:24px;font-weight:900;color:${isCorrect ? '#34d399' : '#f87171'};margin:0;">${isCorrect ? 'إجابة صحيحة' : 'إجابة خاطئة'}</h2>
+          ${amElim ? `<div id="studentSurvivalStatusBanner" style="margin-top:12px;background:rgba(153,27,27,0.45);border:1px solid rgba(252,165,165,0.55);border-radius:12px;padding:8px 12px;font-size:12px;font-weight:900;color:#fde68a;">خرجت من المنافسة — أنت الآن في مدرج المشجعين</div>` : ''}
         </div>
-        <div style="font-size:11px;color:#c9baff;font-weight:800;">${deltaIcon} ${deltaText} • انتظر السؤال التالي من المعلم</div>
-        ${renderHeroActionDock(false)}
       </main>`;
 
-    mountStudentV3Hero('studentHeroAvatarV3', myAvatar, isCorrect ? 'clap' : 'sad', 76, 90, false);
-    return { isCorrect, earned, currentRank, updatedScore: Number(myResult?.totalScore ?? currentScore) };
+    mountStudentV3Hero('studentHeroAvatarV3', myAvatar, isCorrect ? 'clap' : 'sad', 108, 130, false);
+    return { isCorrect, earned, currentRank: (currentRank !== '-' ? currentRank : lastRank), updatedScore };
   }
 
-  function renderStudentFinalPodium(stage, data, currentStudent, currentScore, currentWorldId) {
-    const myId = (currentStudent?.uid !== undefined && currentStudent?.uid !== null) ? String(currentStudent.uid).trim() : '';
-    const myName = (currentStudent?.name || '').trim();
-    const activeMode = data?.mode || data?.gameMode || global.__scorearJoinedRoomMode || 'SOLO';
-    const isDuel = activeMode === 'DUEL_TEAMS';
+  function renderRevealedFinalPodium(pending) {
+    const { stage, data, currentStudent, currentScore, currentWorldId, myFinalRank, isDuel, duelTeamWon, duelIsTie } = pending;
     const myTeamId = isDuel ? resolveStudentTeamId(data, currentStudent) : null;
     const duelNames = isDuel ? getMobileDuelTeamNames(data?.duelScores) : null;
     const myTeamName = isDuel ? (myTeamId === 'team_b' ? duelNames.team_b : duelNames.team_a) : '';
     const myTeamEmoji = myTeamId === 'team_b' ? '🦁' : '🦅';
-    const leaderTeamId = data?.duelScores?.leaderTeamId || 'tie';
-    const duelTeamWon = isDuel && leaderTeamId === myTeamId;
-    const duelIsTie = isDuel && leaderTeamId === 'tie';
 
-    let myFinalRank = '-';
-    const rankSource = Array.isArray(data.leaderboard) ? data.leaderboard : (Array.isArray(data.podium) ? data.podium : (Array.isArray(data.top3) ? data.top3 : []));
-    if (!isDuel && rankSource.length) {
-      const idx = rankSource.findIndex(p => matchesStudentIdentity(p, myId, myName));
-      if (idx !== -1) myFinalRank = idx + 1;
-    }
     const duelStatusCard = isDuel ? `
         <div id="studentDuelFinaleCard" style="background:rgba(12,18,40,0.88);backdrop-filter:blur(16px);border:1.5px solid ${duelTeamWon ? '#fbbf24' : (duelIsTie ? '#38bdf8' : 'rgba(255,255,255,0.22)')};border-radius:18px;padding:14px 16px;width:100%;max-width:330px;">
           <div style="font-size:15px;font-weight:900;color:${duelTeamWon ? '#fde047' : '#e2e8f0'};">
@@ -287,15 +344,15 @@
         <div style="background:rgba(18,20,44,0.9);backdrop-filter:blur(16px);border:1px solid rgba(251,191,36,0.45);border-radius:18px;padding:14px;width:100%;max-width:310px;">
           <div style="font-size:11px;color:#a1a4be;">مجموع نقاطك النهائي:</div>
           <div style="font-size:26px;font-weight:900;color:#f5c518;margin:2px 0;">${currentScore} نقطة</div>
-          ${myFinalRank !== '-' ? `<div style="font-size:12px;font-weight:900;color:#34d399;">بطل في منصة التتويج (المركز ${myFinalRank})</div>` : ''}
+          ${myFinalRank !== '-' ? `<div style="font-size:12.5px;font-weight:900;color:${myFinalRank <= 3 ? '#34d399' : '#c9baff'};">${myFinalRank <= 3 ? `بطل في منصة التتويج (المركز ${myFinalRank})` : `ترتيبك النهائي: المركز ${myFinalRank}`}</div>` : ''}
         </div>`;
 
     stage.innerHTML = `
-      <div style="position:absolute;inset:0;background:url('assets/worlds/${currentWorldId}/podium.jpg') center/cover no-repeat;filter:brightness(0.78) saturate(1.1);z-index:1;"></div>
+      <div style="position:absolute;inset:0;background:url('assets/worlds/${escapeHtml(currentWorldId)}/podium.jpg') center/cover no-repeat;filter:brightness(0.78) saturate(1.1);z-index:1;"></div>
       <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 25%, rgba(42,34,84,0.34) 0%, rgba(10,11,22,0.72) 100%);z-index:2;"></div>
       <header class="scorear-control-bar" style="position:relative;z-index:10;padding:12px;text-align:center;"><span style="font-size:15px;font-weight:900;color:#fcd34d;display:inline-flex;align-items:center;gap:6px;">${uiIcon('crown', 16)} ${isDuel ? 'تتويج بطل التحدي' : 'نهاية التحدي والتتويج'}</span></header>
       <main style="position:relative;z-index:10;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:12px;">
-        <div id="studentHeroAvatarV3" style="width:120px;height:148px;display:flex;align-items:flex-end;justify-content:center;"><img id="studentHeroAvatarImg" src="assets/characters/animated/${currentStudent?.avatarId || 'char_01'}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(currentStudent?.name || 'البطل')}" style="width:100px;height:120px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));"></div>
+        <div id="studentHeroAvatarV3" style="width:120px;height:148px;display:flex;align-items:flex-end;justify-content:center;"><img id="studentHeroAvatarImg" src="assets/characters/animated/${escapeHtml(currentStudent?.avatarId || 'char_01')}-idle.webp" onerror="this.src='assets/characters/animated/char_01-idle.webp'" alt="${escapeHtml(currentStudent?.name || 'البطل')}" style="width:100px;height:120px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));"></div>
         <h2 style="font-size:19px;font-weight:900;color:#ffffff;margin:0;">أحسنت يا ${escapeHtml(currentStudent?.name || 'البطل')}!</h2>
         ${data.duelScores ? renderStudentDuelStripHtml(data.duelScores, resolveStudentTeamId(data, currentStudent)) : ''}
         ${duelStatusCard}
@@ -323,6 +380,43 @@
     }
     const certificateBtn = stage.querySelector('[data-scorear-certificate]');
     if (certificateBtn) certificateBtn.addEventListener('click', () => global.ScoreARPodiumCapture?.downloadCertificate?.({name:currentStudent?.name || 'طالب',score:currentScore},myFinalRank,currentScore,currentWorldId));
+  }
+
+  function renderStudentFinalPodium(stage, data, currentStudent, currentScore, currentWorldId) {
+    bindPodiumRevealRealtimeSync();
+    const myId = (currentStudent?.uid !== undefined && currentStudent?.uid !== null) ? String(currentStudent.uid).trim() : '';
+    const myName = (currentStudent?.name || '').trim();
+    const activeMode = data?.mode || data?.gameMode || global.__scorearJoinedRoomMode || 'SOLO';
+    const isDuel = activeMode === 'DUEL_TEAMS';
+    const myTeamId = isDuel ? resolveStudentTeamId(data, currentStudent) : null;
+    const leaderTeamId = data?.duelScores?.leaderTeamId || 'tie';
+    const duelTeamWon = isDuel && leaderTeamId === myTeamId;
+    const duelIsTie = isDuel && leaderTeamId === 'tie';
+
+    let myFinalRank = '-';
+    let mySlot = -1;
+    const rankSource = Array.isArray(data?.leaderboard) ? data.leaderboard : (Array.isArray(data?.podium) ? data.podium : (Array.isArray(data?.top3) ? data.top3 : []));
+    if (!isDuel && rankSource.length) {
+      const idx = rankSource.findIndex(p => matchesStudentIdentity(p, myId, myName));
+      if (idx !== -1) {
+        myFinalRank = Number(rankSource[idx]?._rank) || (idx + 1);
+        mySlot = idx + 1;
+      }
+    }
+
+    const pending = {
+      stage, data, currentStudent, currentScore, currentWorldId,
+      myId, myName, myFinalRank, mySlot, isDuel, duelTeamWon, duelIsTie
+    };
+
+    if (!shouldRevealFinalPodium(pending, _podiumRevealState)) {
+      _pendingFinalPodium = pending;
+      renderStudentWaitingFinalResult(stage, currentStudent, currentWorldId);
+      return;
+    }
+
+    _pendingFinalPodium = null;
+    renderRevealedFinalPodium(pending);
   }
 
   function injectGuestSaveCardFallback(stage, currentScore) {
@@ -358,6 +452,10 @@
   }
 
   function renderStudentLeaderboardCard(stage, msg, currentStudent, currentScore, currentWorldId) {
+    if (msg?.isLastQuestion) {
+      renderStudentWaitingFinalResult(stage, currentStudent, currentWorldId);
+      return;
+    }
     const myId = (currentStudent?.uid !== undefined && currentStudent?.uid !== null) ? String(currentStudent.uid).trim() : '';
     const myName = (currentStudent?.name || '').trim();
     const myInfo = (msg.allRanks || []).find(r => matchesStudentIdentity(r, myId, myName)) || {
@@ -733,6 +831,8 @@
 
   function renderStudentRoomClosed(stage, reason, currentStudent, currentScore, currentWorldId) {
     global.__scorearAmEliminated = false;
+    _sessionTotalQuestions = null;
+    resetPodiumRevealSync();
     const charAvatarId = currentStudent?.avatarId || 'char_01';
     stage.innerHTML = `
       <div style="position:absolute;inset:0;background:url('assets/worlds/${currentWorldId}/waiting.jpg') center/cover no-repeat;filter:brightness(0.72) saturate(1.05);z-index:1;"></div>
@@ -756,6 +856,7 @@
     _dockSyncing = true;
     try {
       bindDuelModeRealtimeSync();
+      bindPodiumRevealRealtimeSync();
       const stg = document.getElementById('scorearStudentStage');
       if (!stg || stg.querySelector('#studentOptionsContainer')) return;
       if (!stg.querySelector('.student-hero-action-dock')) {

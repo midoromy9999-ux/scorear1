@@ -347,6 +347,14 @@
     });
   }
 
+  function emitHall2DReveal(slot, p, allRevealed) {
+    try {
+      const payload = { slot, rank: p?._rank || slot || 1, playerId: String(p?.id || ''), playerName: p?.name || '', allRevealed: Boolean(allRevealed) };
+      if (global.ScoreARHostEvents?.publishPodiumReveal) global.ScoreARHostEvents.publishPodiumReveal(payload);
+      else global.ScoreARRealtime?.publish?.('PODIUM_REVEAL', payload);
+    } catch (_) {}
+  }
+
   function revealSlot(slotNum, top3, cfg, immediate = false) {
     const p = top3[slotNum - 1];
     if (!p) return;
@@ -354,6 +362,7 @@
     if (!col) return;
     ensureCelebration2dMusic();
     if (immediate) {
+      emitHall2DReveal(slotNum, p, slotNum === 1);
       col.classList.add('is-revealed');
       col.style.opacity = '1';
       col.style.transform = 'translate3d(0, 0, 0) scale(1)';
@@ -374,10 +383,12 @@
         sfx('applauseGrand', 0.90);
         global.ScoreARAudio?.unduckMusic?.(550);
         if (dim2d) dim2d.style.opacity = '0.36';
+        emitHall2DReveal(1, p, true);
         runSlotPath(1, p, cfg);
       }, 4000);
       return;
     }
+    emitHall2DReveal(slotNum, p, false);
     sfx(slotNum === 2 ? 'rank2Reveal' : 'rank3Reveal', 0.90);
     runSlotPath(slotNum, p, cfg);
   }
@@ -388,6 +399,7 @@
     cancelPaths();
     isSettled = true;
     currentStep = 4;
+    emitHall2DReveal(0, top3?.[0], true);
     ensureCelebration2dMusic();
     global.ScoreARAudio?.unduckMusic?.(250);
     if (!withConfetti) global.ScoreARAudio?.stopAllSfx?.();

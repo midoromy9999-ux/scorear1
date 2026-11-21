@@ -374,9 +374,17 @@
         setMotion(m) {
           this.motion = m;
           card.dataset.motion = m;
-          if (m === 'jump' || m === 'win') card.style.transform = 'translateY(-10px) scale(1.06)';
-          else if (m === 'sad') card.style.opacity = '0.72';
-          else card.style.transform = 'none';
+          if (m === 'jump' || m === 'win') {
+            card.style.transform = 'translateY(-10px) scale(1.06)';
+          } else if (m === 'sad') {
+            card.style.opacity = '0.86';
+            card.style.filter = 'saturate(0.75) brightness(0.88)';
+            card.style.transform = 'translateY(4px) scale(0.97)';
+          } else if (m === 'walkLeft' || m === 'walkRight') {
+            card.style.filter = 'saturate(0.65)';
+          } else {
+            card.style.transform = 'none';
+          }
         }
       };
       actorMap.set(p.id, entry);
@@ -455,6 +463,7 @@
       fastestId: null,
       resultApplied: false,
       survivalFinishTriggered: false,
+      elimPhase: 'none',
       timers: [],
       disposables: [],
       rafId: 0,
@@ -623,7 +632,7 @@
         });
         if (hero && hero.group) {
           hero.group.position.set(slot.x, slotY + 0.12, slot.z);
-          if (hero.preloadMoves) hero.preloadMoves(['idle', 'clap', 'jump', 'win', 'sad', 'wave']);
+          if (hero.preloadMoves) hero.preloadMoves(['idle', 'clap', 'jump', 'win', 'sad', 'wave', 'walkLeft', 'walkRight']);
           scene.add(hero.group);
         }
 
@@ -716,6 +725,9 @@
       instance.audio = audio;
       instance.ambientLight = ambientLight;
       instance.keyLight = keyLight;
+      instance.baseAmbientIntensity = ambientLight.intensity;
+      instance.baseKeyIntensity = keyLight.intensity;
+      instance.baseKeyColorHex = keyLight.color.getHex();
 
       // Render Loop (bounded delta for consistent motion across GPUs & software WebGL)
       let prevTime = performance.now();
@@ -1480,12 +1492,110 @@
     }
   }
 
+  function clearSurvivalElimVeil(inst) {
+    const c = inst?.containerEl || state?.containerEl;
+    if (!c || typeof c.querySelector !== 'function') return;
+    const veil = c.querySelector('#hostSurvivalElimVeil');
+    if (veil && veil.parentElement && typeof veil.parentElement.removeChild === 'function') {
+      veil.parentElement.removeChild(veil);
+    } else if (veil && typeof veil.remove === 'function') {
+      veil.remove();
+    }
+  }
+
+  function restoreBaselineLighting(inst) {
+    if (!inst) return;
+    if (inst.spotlight?.mesh) inst.spotlight.mesh.visible = false;
+    if (inst.ambientLight && Number.isFinite(inst.baseAmbientIntensity)) {
+      inst.ambientLight.intensity = inst.baseAmbientIntensity;
+    }
+    if (inst.keyLight) {
+      if (Number.isFinite(inst.baseKeyIntensity)) inst.keyLight.intensity = inst.baseKeyIntensity;
+      if (Number.isFinite(inst.baseKeyColorHex)) inst.keyLight.color.setHex(inst.baseKeyColorHex);
+    }
+    if (inst.actors) {
+      inst.actors.forEach(entry => {
+        if (entry.status !== 'eliminated' && entry.hero?.setBrightness) {
+          entry.hero.setBrightness(1.0);
+        }
+      });
+    }
+    clearSurvivalElimVeil(inst);
+  }
+
+  function spawnSurvivalExitCorridor(instance, THREE, fromPos, exitPos, durSec) {
+    if (!instance?.scene || !THREE) return;
+    const dx = exitPos.x - fromPos.x;
+    const dz = exitPos.z - fromPos.z;
+    const len = Math.max(2.0, Math.hypot(dx, dz));
+    const corridorGroup = new THREE.Group();
+    corridorGroup.position.set((fromPos.x + exitPos.x) * 0.5, 0.045, (fromPos.z + exitPos.z) * 0.5);
+    corridorGroup.rotation.y = Math.atan2(dx, dz);
+
+    const pathGeo = new THREE.PlaneGeometry(0.95, len);
+    pathGeo.rotateX(-Math.PI / 2);
+    const pathMat = new THREE.MeshBasicMaterial({
+      color: 0xe11d48,
+      transparent: true,
+      opacity: 0.44,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const pathMesh = new THREE.Mesh(pathGeo, pathMat);
+    corridorGroup.add(pathMesh);
+
+    const ringGeo = new THREE.RingGeometry(0.24, 0.34, 20);
+    ringGeo.rotateX(-Math.PI / 2);
+    const ringMats = [];
+    for (let i = 0; i < 4; i++) {
+      const rm = new THREE.MeshBasicMaterial({
+        color: 0xfb7185,
+        transparent: true,
+        opacity: 0.72,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const rMesh = new THREE.Mesh(ringGeo, rm);
+      rMesh.position.set(0, 0.01, -len * 0.35 + i * (len * 0.24));
+      corridorGroup.add(rMesh);
+      ringMats.push(rm);
+    }
+
+    instance.scene.add(corridorGroup);
+    const dur = Math.max(0.5, Number(durSec) || 2.45);
+    const startWallMs = Date.now();
+    instance.cardFxAnims.push({
+      _isSurvivalExitFx: true,
+      elapsed: 0,
+      step(dt, el) {
+        const wallEl = Math.max(el, (Date.now() - startWallMs) / 1000);
+        const t = Math.min(1, wallEl / dur);
+        const fadeOut = t > 0.74 ? Math.max(0, 1 - (t - 0.74) / 0.26) : Math.min(1, t / 0.14);
+        pathMat.opacity = 0.44 * fadeOut;
+        ringMats.forEach((rm, idx) => {
+          rm.opacity = (0.45 + 0.35 * Math.max(0, Math.sin(wallEl * 6 - idx * 1.1))) * fadeOut;
+        });
+        return t >= 1;
+      },
+      dispose(inst) {
+        inst.scene?.remove(corridorGroup);
+        pathGeo.dispose(); pathMat.dispose();
+        ringGeo.dispose(); ringMats.forEach(rm => rm.dispose());
+      }
+    });
+  }
+
   function onSurvivalElimination(eliminatedPlayers, evalResult) {
     if (!state || !state.active) return;
     const elimList = Array.isArray(eliminatedPlayers) ? eliminatedPlayers : [];
     if (!elimList.length) return;
 
     const capturedState = state;
+    const PAUSE_DUR_MS = 2000;
+    const WALK_DUR_MS = 2400;
+
     const runElimSpotlight = () => {
       if (!state || state !== capturedState || !state.active) return;
       const reasonMap = new Map();
@@ -1501,48 +1611,192 @@
       });
       if (!victimEntries.length) return;
 
+      // Beat 1: Dramatic pause with distinct twilight lighting shift + crimson spotlight + sad pose
+      state.elimPhase = 'pause';
       const leadVictim = victimEntries[0];
       const sy = leadVictim.pos.slotY || 0;
-      if (state.ambientLight) state.ambientLight.intensity = 0.26;
-      if (state.spotlight && state.spotlight.mesh) {
+
+      if (state.ambientLight) state.ambientLight.intensity = 0.14;
+      if (state.keyLight) {
+        state.keyLight.intensity = 0.28;
+        state.keyLight.color?.setHex?.(0x64748b);
+      }
+      if (state.spotlight?.mesh) {
         state.spotlight.mesh.position.set(leadVictim.pos.x, 11.2, leadVictim.pos.z);
         state.spotlight.mesh.visible = true;
-        if (state.spotlight.material?.uniforms?.uColor?.value?.setHex) {
-          state.spotlight.material.uniforms.uColor.value.setHex(0xef4444);
-        }
+        state.spotlight.material?.uniforms?.uColor?.value?.setHex?.(0xe11d48);
         if (state.spotlight.material?.uniforms?.uOpacity) {
-          state.spotlight.material.uniforms.uOpacity.value = 0.50;
+          state.spotlight.material.uniforms.uOpacity.value = 0.62;
         }
       }
+      state.actors.forEach(actor => {
+        if (!victimEntries.includes(actor) && actor.status !== 'eliminated') {
+          actor.hero?.setBrightness?.(0.42);
+          actor.setMotion('idle', true);
+        }
+      });
+
+      if (state.containerEl && typeof document !== 'undefined') {
+        clearSurvivalElimVeil(state);
+        const veil = document.createElement('div');
+        veil.id = 'hostSurvivalElimVeil';
+        veil.style.cssText = 'position:absolute;inset:0;z-index:3;pointer-events:none;background:radial-gradient(circle at 50% 48%, rgba(225,29,72,0.10) 0%, rgba(10,12,28,0.68) 78%);transition:opacity 0.55s ease;';
+        veil.innerHTML = `<div style="position:absolute;top:14px;left:50%;transform:translateX(-50%);padding:6px 18px;border-radius:999px;background:rgba(136,19,55,0.78);border:1px solid rgba(251,113,133,0.65);color:#ffe4e6;font-family:Cairo,sans-serif;font-size:13px;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,0.45);">💔 لحظة الإقصاء — خروج من المنافسة...</div>`;
+        state.containerEl.appendChild(veil);
+      }
+
       if (state.cameraDirector) {
         const multiPad = victimEntries.length > 1 ? 1.15 : 0;
-        const camX = leadVictim.pos.x * 0.68;
+        const camX = leadVictim.pos.x * 0.66;
         const camZ = Math.max(2.9, leadVictim.pos.z + 4.1 + multiPad);
-        state.cameraDirector.setShot([camX, 2.0 + sy + multiPad * 0.25, camZ], [leadVictim.pos.x, 1.25 + sy, leadVictim.pos.z], 2.8);
+        state.cameraDirector.setShot([camX, 1.98 + sy + multiPad * 0.25, camZ], [leadVictim.pos.x, 1.25 + sy, leadVictim.pos.z], 2.9);
         state.cameraDirector.impulse(0.22);
       }
-      try {
-        if (state.audio?.playTimpaniPulse) state.audio.playTimpaniPulse(72, 0.18);
-      } catch (_) {}
+      try { state.audio?.playTimpaniPulse?.(58, 0.22); } catch (_) {}
 
       victimEntries.forEach(entry => {
         entry.status = 'eliminated';
-        applyPodColor(entry, 0xef4444, true);
-        const label = reasonMap.get(entry.id) === 'unanswered' ? '❌ لم يُجب' : '❌ غادر المنافسة';
-        updateEntryNameplate(entry, label, '#ef4444');
+        entry.exitedHall = false;
+        applyPodColor(entry, 0xe11d48, true);
+        const label = reasonMap.get(entry.id) === 'unanswered' ? '⏱ لم يُجب — غادر القاعة' : '❌ غادر القاعة';
+        updateEntryNameplate(entry, label, '#e11d48');
+        if (entry.plateSprite) {
+          entry.plateSprite.position.y = (entry.pos.slotY || 0) + 0.06;
+        }
         entry.setMotion('sad', true);
-
-        const tWave = setTimeout(() => {
-          if (!state || state !== capturedState || !state.active) return;
-          entry.setMotion('wave', true);
-          if (entry.hero?.setOpacity) entry.hero.setOpacity(0.22);
-          if (entry.el) entry.el.style.opacity = '0.28';
-        }, 850);
-        state.timers.push(tWave);
       });
+
+      // Beat 2: Guided exit walk out along illuminated corridor
+      const tWalk = setTimeout(() => {
+        if (!state || state !== capturedState || !state.active) return;
+        state.elimPhase = 'exit-walk';
+        const THREE = global.THREE;
+        const walkDurSec = WALK_DUR_MS / 1000;
+
+        if (state.spotlight?.material?.uniforms?.uColor?.value?.setHex) {
+          state.spotlight.material.uniforms.uColor.value.setHex(0xfb7185);
+        }
+        if (state.spotlight?.material?.uniforms?.uOpacity) {
+          state.spotlight.material.uniforms.uOpacity.value = 0.56;
+        }
+
+        victimEntries.forEach((entry, vIdx) => {
+          const exitDir = (entry.pos.x >= 0) ? 1 : -1;
+          const exitX = exitDir * 12.2;
+          const exitZ = Math.min(3.5, (entry.pos.z || 0) + 1.8);
+          const walkMove = exitDir > 0 ? 'walkRight' : 'walkLeft';
+
+          if (entry.pod) {
+            entry.pod.discMat.opacity = 0.08;
+            entry.pod.ringMat.color?.setHex?.(0x334155);
+            entry.pod.ringMat.opacity = 0.22;
+          }
+          entry.setMotion(walkMove, true);
+
+          if (state.webgl && THREE && entry.hero?.group) {
+            spawnSurvivalExitCorridor(state, THREE, entry.pos, { x: exitX, z: exitZ }, walkDurSec);
+            const startX = entry.pos.x;
+            const startZ = entry.pos.z;
+            const startY = (entry.pos.slotY || 0) + 0.12;
+            const floorY = 0.12;
+            entry._exitTarget = { x: exitX, y: floorY, z: exitZ };
+            const walkStartMs = Date.now();
+            const isLead = vIdx === 0;
+            if (isLead && state.cameraDirector) {
+              state.cameraDirector.setShot([exitDir * 2.4, 2.75, Math.max(4.8, exitZ + 5.2)], [exitX * 0.48, 1.15, (startZ + exitZ) * 0.5], 1.6);
+            }
+
+            state.cardFxAnims.push({
+              _isSurvivalExitFx: true,
+              elapsed: 0,
+              step(dt, el, inst) {
+                const wallEl = Math.max(el, (Date.now() - walkStartMs) / 1000);
+                const t = Math.min(1, wallEl / walkDurSec);
+                const stepDown = Math.min(1, t / 0.22);
+                const walkFrac = Math.max(0, Math.min(1, (t - 0.12) / 0.88));
+                const curX = startX + (exitX - startX) * walkFrac;
+                const curZ = startZ + (exitZ - startZ) * walkFrac;
+                const bobY = Math.abs(Math.sin(t * Math.PI * 8)) * 0.06;
+                const curY = startY + (floorY - startY) * stepDown + bobY;
+
+                entry.hero.group.position.set(curX, curY, curZ);
+                if (entry.plateSprite) {
+                  entry.plateSprite.position.set(curX, curY - 0.04, curZ + 0.85);
+                }
+                if (isLead && inst.spotlight?.mesh) {
+                  inst.spotlight.mesh.position.set(curX, 11.2, curZ);
+                }
+                if (t > 0.68) {
+                  const fade = Math.max(0, 1 - (t - 0.68) / 0.32);
+                  entry.hero?.setOpacity?.(fade);
+                  if (entry.plateSprite?.material) entry.plateSprite.material.opacity = fade;
+                }
+                if (t >= 1) {
+                  entry.exitedHall = true;
+                  entry.hero.group.visible = false;
+                  if (entry.plateSprite) entry.plateSprite.visible = false;
+                  return true;
+                }
+                return false;
+              },
+              dispose() {}
+            });
+          } else {
+            if (entry.el) {
+              entry.el.style.transition = 'transform 2.2s ease-in, opacity 1.8s ease-in';
+              entry.el.style.transform = `translateX(${exitDir * 115}vw)`;
+              entry.el.style.opacity = '0';
+            }
+            const tFallbackExit = setTimeout(() => {
+              if (!state || state !== capturedState) return;
+              entry.exitedHall = true;
+            }, Math.min(WALK_DUR_MS, 2200));
+            state.timers.push(tFallbackExit);
+          }
+        });
+
+        // Beat 3: Restore hall lighting & camera cleanly after exit walk finishes
+        const tRestore = setTimeout(() => {
+          if (!state || state !== capturedState || !state.active) return;
+          victimEntries.forEach(entry => {
+            if (!entry.exitedHall) {
+              entry.exitedHall = true;
+              if (entry.hero?.group) {
+                if (entry._exitTarget) {
+                  entry.hero.group.position.set(entry._exitTarget.x, entry._exitTarget.y, entry._exitTarget.z);
+                }
+                entry.hero.setOpacity?.(0);
+                entry.hero.group.visible = false;
+              }
+              if (entry.plateSprite) {
+                if (entry.plateSprite.material) entry.plateSprite.material.opacity = 0;
+                entry.plateSprite.visible = false;
+              }
+            }
+          });
+          if (Array.isArray(state.cardFxAnims)) {
+            for (let i = state.cardFxAnims.length - 1; i >= 0; i--) {
+              const fx = state.cardFxAnims[i];
+              if (fx && fx._isSurvivalExitFx) {
+                try { fx.dispose?.(state); } catch (_) {}
+                state.cardFxAnims.splice(i, 1);
+              }
+            }
+          }
+          state.elimPhase = 'done';
+          restoreBaselineLighting(state);
+          if (state.cameraDirector) {
+            const dp = state.defaultCamPos || [0, 3.85, 12.6];
+            const dl = state.defaultCamLook || [0, 1.35, -0.8];
+            state.cameraDirector.setShot(dp, dl, 2.2);
+          }
+        }, WALK_DUR_MS + 180);
+        state.timers.push(tRestore);
+      }, PAUSE_DUR_MS);
+      state.timers.push(tWalk);
     };
 
-    const tDelay = setTimeout(runElimSpotlight, 1350);
+    const tDelay = setTimeout(runElimSpotlight, 1050);
     state.timers.push(tDelay);
   }
 
@@ -1554,8 +1808,7 @@
       state.cardFxAnims.forEach(fx => { try { if (fx.dispose) fx.dispose(state); } catch (_) {} });
       state.cardFxAnims.length = 0;
     }
-    if (state.spotlight?.mesh) state.spotlight.mesh.visible = false;
-    if (state.ambientLight) state.ambientLight.intensity = 0.88;
+    restoreBaselineLighting(state);
     if (state.cameraDirector) {
       const ovPos = state.defaultCamPos
         ? [0, state.defaultCamPos[1] + (mode === 'CARD_ARENA' ? 0.15 : 0), state.defaultCamPos[2] + (mode === 'CARD_ARENA' ? 0.35 : 0)]
@@ -1601,9 +1854,16 @@
         name: entry.player?.name || '',
         teamId: entry.teamId,
         status: entry.status,
+        exitedHall: Boolean(entry.exitedHall),
         motion: entry.motion,
         podColor: hexToCss(entry.podColor),
         pos: entry.pos,
+        heroPos: entry.hero?.group?.position
+          ? { x: entry.hero.group.position.x, y: entry.hero.group.position.y, z: entry.hero.group.position.z }
+          : null,
+        heroVisible: entry.hero?.group
+          ? Boolean(entry.hero.group.visible)
+          : (entry.el ? entry.el.style.opacity !== '0' : true),
         visibleCards: entry.visibleCards || 0,
         hasTrap: Boolean(entry.cardStatus?.trapCount > 0),
         isPinned: Boolean(entry.cardStatus?.isPinned),
@@ -1618,6 +1878,7 @@
       mode: state.mode,
       layout: state.layout,
       phase: state.phase,
+      elimPhase: state.elimPhase || 'none',
       qIndex: state.qIndex,
       webgl: state.webgl,
       actorCount: actors.length,
@@ -1668,6 +1929,7 @@
       }
     } catch (_) {}
     if (s.containerEl) {
+      clearSurvivalElimVeil(s);
       const fb = s.containerEl.querySelector('#hostArenaFallback');
       if (fb && fb.parentNode) fb.parentNode.removeChild(fb);
     }

@@ -394,6 +394,13 @@
     }, 45);
   }
 
+  function emitPodiumReveal(payload) {
+    try {
+      if (global.ScoreARHostEvents?.publishPodiumReveal) global.ScoreARHostEvents.publishPodiumReveal(payload);
+      else global.ScoreARRealtime?.publish?.('PODIUM_REVEAL', payload);
+    } catch (_) {}
+  }
+
   function finishChampionState() {
     const btn = $('scRevBtn'), cinBtn = $('scCinBtn'), revAllBtn = $('scRevAllBtn');
     if (cinBtn) cinBtn.disabled = false;
@@ -419,36 +426,46 @@
     const sc = $('scSpot'), c1 = $('col_1'), c2 = $('col_2'), c3 = $('col_3');
     const dark = $('scDarknessOverlay'), roving = $('scRovingSpotlight'), crossL = $('scCrossSpotL'), crossR = $('scCrossSpotR');
 
-    if (targetSlot === 3 && c3 && slotPlayer(3)) {
+    if (targetSlot === 3 && slotPlayer(3)) {
       sfx('rank3Reveal', 0.90);
       if (sc) runSpotlights(sc, wid, 1);
-      c3.style.pointerEvents = 'auto'; c3.style.zIndex = '25'; c3.style.opacity = '1';
-      c3.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))';
+      if (c3) {
+        c3.style.pointerEvents = 'auto'; c3.style.zIndex = '25'; c3.style.opacity = '1';
+        c3.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))';
+      }
       schedulePodium(() => {
         sfx('applauseWarm', 0.88);
         if (global.confetti && !isReduced()) global.confetti({ particleCount: 40, spread: 72, origin: { x: 0.25, y: 0.62 }, colors: ['#fdba74', '#fb923c', '#fef08a'] });
-        if (scenes()?.animateHeroEntry) scenes().animateHeroEntry(3, getTheme(), mountHero, slotPlayer(3));
-        else { const h3 = $('podiumHeroArea_3'); if (h3) { h3.style.display = 'flex'; mountHero($('hm_3'), slotPlayer(3).avatarId, 'clap'); } }
+        if (c3) {
+          if (scenes()?.animateHeroEntry) scenes().animateHeroEntry(3, getTheme(), mountHero, slotPlayer(3));
+          else { const h3 = $('podiumHeroArea_3'); if (h3) { h3.style.display = 'flex'; mountHero($('hm_3'), slotPlayer(3).avatarId, 'clap'); } }
+        }
         setMysteryScore(3, slotPlayer(3).score || 0, '#fed7aa');
+        emitPodiumReveal({ slot: 3, rank: slotPlayer(3)?._rank || 3, playerId: String(slotPlayer(3)?.id || ''), playerName: slotPlayer(3)?.name || '', revealedSlots: [3], allRevealed: false });
       }, 240);
       if (btn) btn.innerHTML = nextRevealLabel(revealStep);
-    } else if (targetSlot === 2 && c2 && slotPlayer(2)) {
+    } else if (targetSlot === 2 && slotPlayer(2)) {
       sfx('rank2Reveal', 0.92);
       if (sc) runSpotlights(sc, wid, 2);
       if (c3) { c3.style.zIndex = '5'; c3.style.transform = 'translate(calc(-50% + var(--pod-recede, 240px)), 28px) scale(calc(0.76 * var(--pod-s, 1)))'; c3.style.opacity = '0'; c3.style.pointerEvents = 'none'; }
       schedulePodium(() => {
-        c2.style.pointerEvents = 'auto'; c2.style.zIndex = '25'; c2.style.opacity = '1';
-        c2.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))';
+        if (c2) {
+          c2.style.pointerEvents = 'auto'; c2.style.zIndex = '25'; c2.style.opacity = '1';
+          c2.style.transform = 'translate(-50%, 0) scale(calc(1.06 * var(--pod-s, 1)))';
+        }
         schedulePodium(() => {
           sfx('applauseStrong', 0.92);
           if (global.confetti && !isReduced()) global.confetti({ particleCount: 60, spread: 84, origin: { x: 0.75, y: 0.58 }, colors: ['#e2e8f0', '#93c5fd', '#fef08a'] });
-          if (scenes()?.animateHeroEntry) scenes().animateHeroEntry(2, getTheme(), mountHero, slotPlayer(2));
-          else { const h2 = $('podiumHeroArea_2'); if (h2) { h2.style.display = 'flex'; mountHero($('hm_2'), slotPlayer(2).avatarId, 'clap'); } }
+          if (c2) {
+            if (scenes()?.animateHeroEntry) scenes().animateHeroEntry(2, getTheme(), mountHero, slotPlayer(2));
+            else { const h2 = $('podiumHeroArea_2'); if (h2) { h2.style.display = 'flex'; mountHero($('hm_2'), slotPlayer(2).avatarId, 'clap'); } }
+          }
           setMysteryScore(2, slotPlayer(2).score || 0, '#e2e8f0');
+          emitPodiumReveal({ slot: 2, rank: slotPlayer(2)?._rank || 2, playerId: String(slotPlayer(2)?.id || ''), playerName: slotPlayer(2)?.name || '', revealedSlots: [3, 2], allRevealed: false });
         }, 230);
       }, 300);
       if (btn) btn.innerHTML = nextRevealLabel(revealStep);
-    } else if (targetSlot === 1 && c1 && slotPlayer(1)) {
+    } else if (targetSlot === 1 && slotPlayer(1)) {
       if (btn) btn.disabled = true;
       sfx('whoosh');
       if (c2) { c2.style.zIndex = '6'; c2.style.transform = 'translate(calc(-50% - var(--pod-recede, 240px)), 26px) scale(calc(0.78 * var(--pod-s, 1)))'; c2.style.opacity = '0'; }
@@ -458,8 +475,10 @@
         if (dark && !isReduced()) dark.style.opacity = '1';
         if (c2) { c2.style.transform = 'translate(calc(-50% - var(--pod-dx, 240px)), 4px) scale(calc(0.94 * var(--pod-s, 1)))'; c2.style.opacity = '0.28'; c2.style.filter = 'brightness(0.55)'; }
         if (c3) { c3.style.transform = 'translate(calc(-50% + var(--pod-dx, 240px)), 6px) scale(calc(0.90 * var(--pod-s, 1)))'; c3.style.opacity = '0.28'; c3.style.filter = 'brightness(0.55)'; }
-        c1.style.pointerEvents = 'auto'; c1.style.zIndex = '30'; c1.style.opacity = '1';
-        c1.style.transform = 'translate(-50%, 0) scale(calc(1.04 * var(--pod-s, 1)))';
+        if (c1) {
+          c1.style.pointerEvents = 'auto'; c1.style.zIndex = '30'; c1.style.opacity = '1';
+          c1.style.transform = 'translate(-50%, 0) scale(calc(1.04 * var(--pod-s, 1)))';
+        }
         if (!isReduced()) {
           if (crossL?.style) { crossL.style.animation = 'none'; void crossL.offsetWidth; crossL.style.display = 'block'; crossL.style.opacity = '1'; crossL.style.animation = 'classicCrossL 4s cubic-bezier(0.4, 0, 0.2, 1) forwards'; }
           if (crossR?.style) { crossR.style.animation = 'none'; void crossR.offsetWidth; crossR.style.display = 'block'; crossR.style.opacity = '1'; crossR.style.animation = 'classicCrossR 4s cubic-bezier(0.4, 0, 0.2, 1) forwards'; }
@@ -476,6 +495,7 @@
           else { const h1 = $('podiumHeroArea_1'); if (h1) { h1.style.display = 'flex'; mountHero($('hm_1'), slotPlayer(1).avatarId, 'win'); } }
           if (crown) crown.style.visibility = 'visible';
           setMysteryScore(1, slotPlayer(1).score || 0, '#fef08a');
+          emitPodiumReveal({ slot: 1, rank: 1, playerId: String(slotPlayer(1)?.id || ''), playerName: slotPlayer(1)?.name || '', revealedSlots: [3, 2, 1], allRevealed: true });
           schedulePodium(() => {
             if (dark) dark.style.opacity = '0';
             resetRovingSpotlight();
@@ -544,6 +564,7 @@
     });
     const crown = $('championCrownEl'); if (crown) crown.style.visibility = 'visible';
     sfx('victoryFanfare', 0.90);
+    emitPodiumReveal({ slot: 0, revealedSlots: [3, 2, 1], allRevealed: true });
     finishChampionState();
   }
 

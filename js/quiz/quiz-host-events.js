@@ -143,8 +143,21 @@
     if (rt()) {
       rt().publish('QUESTION_RESULT', {
         ...payload, mode, gameMode, aiEnabled, roster, duelScores, duelTeamNames, survivalState,
+        totalQuestions: payload.totalQuestions ?? room?._lastTotalQuestions,
         cardGrants: grantRes?.cardGrants || null,
         cardDropSummary: grantRes?.cardDropSummary || []
+      });
+    }
+  }
+
+  function publishPodiumReveal(payload = {}) {
+    const { mode, duelScores } = getModeInfo();
+    if (rt()) {
+      rt().publish('PODIUM_REVEAL', {
+        ...payload,
+        mode: payload.mode || mode,
+        duelScores: payload.duelScores || duelScores,
+        timestamp: Date.now()
       });
     }
   }
@@ -454,6 +467,7 @@
     publishQuestionReading,
     publishQuestionStart,
     publishQuestionResult,
+    publishPodiumReveal,
     publishContestCompleted,
     publishStudentKicked,
     publishRoomLockState,

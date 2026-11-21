@@ -43,11 +43,16 @@ function createStorageMock() {
 
 function createMockElement(tag, elementsMap) {
   let _id = '';
+  let _html = '';
+  const _ownedIds = new Set();
   const el = {
     tagName: String(tag || 'DIV').toUpperCase(),
     get id() { return _id; },
     set id(v) { _id = v; if (v) elementsMap.set(v, el); },
-    style: {},
+    style: {
+      setProperty(k, v) { this[k] = String(v); },
+      removeProperty(k) { delete this[k]; }
+    },
     className: '',
     value: '',
     disabled: false,
@@ -56,11 +61,28 @@ function createMockElement(tag, elementsMap) {
     classList: {
       add() {},
       remove() {},
-      contains: () => false
+      contains: () => false,
+      toggle() {}
     },
     children: [],
     parentElement: null,
-    innerHTML: '',
+    get innerHTML() { return _html; },
+    set innerHTML(v) {
+      _ownedIds.forEach(oid => { if (oid !== _id) elementsMap.delete(oid); });
+      _ownedIds.clear();
+      _html = String(v ?? '');
+      const re = /\sid=["']([^"']+)["']/g;
+      let m;
+      while ((m = re.exec(_html)) !== null) {
+        const cid = m[1];
+        if (cid && cid !== _id && !elementsMap.has(cid)) {
+          const child = createMockElement('DIV', elementsMap);
+          child.id = cid;
+          child.parentElement = el;
+          _ownedIds.add(cid);
+        }
+      }
+    },
     textContent: '',
     offsetWidth: 360,
     offsetHeight: 220,
@@ -80,14 +102,27 @@ function createMockElement(tag, elementsMap) {
     removeEventListener() {},
     getContext() {
       return {
-        fillStyle: '', font: '', textAlign: '', globalCompositeOperation: '',
-        fillRect() {}, fillText() {}, beginPath() {}, arc() {}, fill() {}
+        fillStyle: '', font: '', textAlign: '', globalCompositeOperation: '', globalAlpha: 1,
+        fillRect() {}, clearRect() {}, fillText() {}, beginPath() {}, moveTo() {}, lineTo() {},
+        closePath() {}, arc() {}, fill() {}, save() {}, translate() {}, restore() {},
+        createLinearGradient: () => ({ addColorStop() {} })
       };
     },
     getBoundingClientRect: () => ({ left: 0, top: 0, width: 360, height: 220 }),
-    remove() { if (el.id) elementsMap.delete(el.id); },
+    remove() {
+      if (el.id) elementsMap.delete(el.id);
+      if (el.parentElement?.children) {
+        el.parentElement.children = el.parentElement.children.filter(c => c !== el);
+      }
+    },
     querySelector(sel) {
-      if (sel && sel.startsWith('#')) return elementsMap.get(sel.slice(1)) || null;
+      if (sel && sel.startsWith('#')) {
+        const targetId = sel.slice(1);
+        const direct = el.children.find(c => c.id === targetId);
+        if (direct) return direct;
+        if (_html.includes(`id="${targetId}"`) || _html.includes(`id='${targetId}'`)) return elementsMap.get(targetId) || null;
+        return elementsMap.get(targetId) || null;
+      }
       return null;
     },
     querySelectorAll() { return []; }
@@ -278,6 +313,8 @@ function loadVmContext({ scripts = [], dbEngine = null, role = 'host', uid = 'ho
     localStorage: createStorageMock(),
     sessionStorage: createStorageMock(),
     setTimeout, clearTimeout, setInterval, clearInterval,
+    requestAnimationFrame: () => 0, cancelAnimationFrame() {},
+    matchMedia: () => ({ matches: false }),
     Date, Math, Set, Map, Array, Object, Number, String, Boolean, JSON, Promise, RegExp, console,
     URL,
     CustomEvent: function(name, opts) { this.type = name; this.detail = opts?.detail; },
@@ -414,9 +451,27 @@ function loadVmContext({ scripts = [], dbEngine = null, role = 'host', uid = 'ho
     assert.strictEqual(outcome2.isCorrect, false, 'Student 2 result must show wrong/timeout');
     assert.strictEqual(outcome2.earned, 0, 'Student 2 earned must be 0');
     assert.strictEqual(outcome2.currentRank, 2, 'Student 2 rank must be 2, not 1');
-    assert(!stg2.innerHTML.includes('بطل السرعة'), 'Student 2 must NOT get Ahmed #1 fastest badge');
-    assert(!stg2.innerHTML.includes('🦅 فريق الصقور <small style="color:#fde047;">(فريقك ✓)</small>'), 'Student 2 must NOT see team_a marked as his team');
-    assert(stg2.innerHTML.includes('🦁 فريق الأسود <small style="color:#fde047;">(فريقك ✓)</small>'), 'Student 2 must see team_b marked as his team');
+    assert(stg2.innerHTML.includes('إجابة خاطئة'), 'Minimal student result displays only verdict');
+    assert(!stg2.innerHTML.includes('بطل السرعة'), 'Minimal student result hides speed badges');
+
+    // Leaderboard card still verifies strict team_b UID isolation
+    const stgTeamLb = c.doc.createElement('div');
+    StuView.renderStudentLeaderboardCard(stgTeamLb, {
+      totalPlayers: 2,
+      allRanks: [
+        { id: 'uid_ahmed_1', name: 'أحمد محمد', rank: 1, score: players[0].score, teamId: 'team_a', eliminated: false },
+        { id: 'uid_ahmed_2', name: 'أحمد محمد', rank: 2, score: 0, teamId: 'team_b', eliminated: false }
+      ],
+      duelScores: {
+        team_a: { id: 'team_a', name: 'فريق الصقور', score: players[0].score },
+        team_b: { id: 'team_b', name: 'فريق الأسود', score: 0 },
+        leaderTeamId: 'team_a'
+      },
+      mode: 'DUEL_TEAMS',
+      gameMode: 'DUEL_TEAMS'
+    }, { uid: 'uid_ahmed_2', name: 'أحمد محمد', avatarId: 'char_02' }, 0, 'royal');
+    assert(!stgTeamLb.innerHTML.includes('🦅 فريق الصقور <small style="color:#fde047;">(فريقك ✓)</small>'), 'Student 2 must NOT see team_a marked as his team');
+    assert(stgTeamLb.innerHTML.includes('🦁 فريق الأسود <small style="color:#fde047;">(فريقك ✓)</small>'), 'Student 2 must see team_b marked as his team');
 
     // SURVIVAL elimination isolation: uid_ahmed_1 is eliminated, uid_ahmed_2 is NOT
     const stgSurv = c.doc.createElement('div');
@@ -453,6 +508,7 @@ function loadVmContext({ scripts = [], dbEngine = null, role = 'host', uid = 'ho
     const stgPod = c.doc.createElement('div');
     StuView.renderStudentFinalPodium(stgPod, {
       mode: 'SOLO',
+      revealImmediately: true,
       leaderboard: [
         { id: 'uid_ahmed_1', name: 'أحمد محمد', score: 2500 },
         { id: 'uid_2', name: 'سارة', score: 2000 },
@@ -655,7 +711,7 @@ function loadVmContext({ scripts = [], dbEngine = null, role = 'host', uid = 'ho
     assert.strictEqual(evalRes.playerResults['stu_250'].pointsEarned, -100, 'Actual pointsEarned from 250 must be -100');
 
     const stg = c.doc.createElement('div');
-    StuView.renderStudentResult(stg, {
+    const out4 = StuView.renderStudentResult(stg, {
       correctAnswer: 0,
       options: q.opts,
       playerResults: evalRes.playerResults,
@@ -669,8 +725,11 @@ function loadVmContext({ scripts = [], dbEngine = null, role = 'host', uid = 'ho
       currentStreak: 0,
       lastRank: null
     });
-    assert(stg.innerHTML.includes('خسرت رهان المائة (-35 نقطة)'), 'Student result badge shows actual -35 deduction');
+    assert.strictEqual(out4.earned, -35, 'Returned outcome reports actual -35 deduction');
+    assert.strictEqual(out4.updatedScore, 0, 'Returned outcome updates score to 0');
+    assert(stg.innerHTML.includes('إجابة خاطئة'), 'Minimal student result displays only verdict');
     assert(!stg.innerHTML.includes('(-100 نقطة)'), 'Student result must NOT show misleading -100');
+    assert(!stg.innerHTML.includes('نقطة'), 'Minimal student result hides numeric score breakdown');
     console.log('✅ PASSED TEST 4: Actual wager loss (-35 / 0 / -100) matches actual score change everywhere.\n');
   }
 
@@ -682,7 +741,7 @@ function loadVmContext({ scripts = [], dbEngine = null, role = 'host', uid = 'ho
     const hostScripts = [
       'CardArenaEngine.js', 'quiz-evaluator.js', 'quiz-game-modes.js', 'quiz-arena-modes.js',
       'quiz-survival-engine.js', 'quiz-card-cinema.js', 'quiz-card-arena.js',
-      'quiz-host-leaderboard.js', 'quiz-podium-effects.js', 'quiz-host-events.js', 'quiz-host-view.js', 'quiz-host.js', 'quiz-bots.js'
+      'quiz-host-leaderboard.js', 'quiz-duel-coronation.js', 'quiz-podium-effects.js', 'quiz-host-events.js', 'quiz-host-view.js', 'quiz-host.js', 'quiz-bots.js'
     ];
     const stuScripts = [
       'CardArenaEngine.js', 'quiz-evaluator.js', 'quiz-game-modes.js', 'quiz-arena-modes.js',
@@ -776,9 +835,12 @@ function loadVmContext({ scripts = [], dbEngine = null, role = 'host', uid = 'ho
       assert.strictEqual(duelSb.leaderTeamId, 'team_a', 'DUEL_TEAMS leader is team_a');
       assert.strictEqual(duelSb.team_a.score, room.players.find(p => p.id === 'stu_1').score);
       assert.strictEqual(duelSb.team_b.score, 0);
-      host.sandbox.ScoreARQuizHost.renderHostPodium();
       const s1Stage = s1.doc.getElementById('scorearStudentStage');
-      assert(s1Stage.innerHTML.includes('أبطال النحو') && s1Stage.innerHTML.includes('بطل التحدي'), 'Student 1 sees custom winning team name on Podium');
+      assert(s1Stage.innerHTML.includes('انتظار النتيجة'), 'DUEL_TEAMS final question puts mobile in wait suspense state');
+      host.sandbox.ScoreARQuizHost.renderHostPodium();
+      assert(s1Stage.innerHTML.includes('انتظار النتيجة'), 'Student 1 stays waiting during Duel suspense before reveal');
+      host.sandbox.ScoreARDuelCoronation.skipToReveal();
+      assert(s1Stage.innerHTML.includes('أبطال النحو') && s1Stage.innerHTML.includes('بطل التحدي'), 'Student 1 sees custom winning team name on Podium after Host reveal');
       host.sandbox.ScoreARQuizHost.closeHostSession();
       console.log('✓ 5B Verified: Synchronized DUEL_TEAMS session matches direct-sum scoreboard & custom names across Host <-> Students!');
     }
@@ -838,11 +900,183 @@ function loadVmContext({ scripts = [], dbEngine = null, role = 'host', uid = 'ho
       const p2 = room.players.find(p => p.id === 'stu_2');
       assert.strictEqual(p1.score, 0, 'CARD_ARENA: stu_1 wager loss drops 35 -> 0');
       assert.strictEqual(s1.sandbox.ScoreARQuizStudent.getScore(), 0, 'Student 1 phone synced to 0');
-      assert(s1.doc.getElementById('scorearStudentStage').innerHTML.includes('-35 نقطة'), 'Student 1 sees actual -35 deduction');
+      assert(s1.doc.getElementById('scorearStudentStage').innerHTML.includes('انتظار النتيجة'), 'Final question hides premature verdict in wait state');
+      assert.strictEqual(room.players.find(p => p.id === 'stu_1').score, 0);
+      host.sandbox.ScoreARQuizHost.renderHostPodium();
+      host.sandbox.ScoreARPodiumEffects.revealAll();
+      assert(s1.doc.getElementById('scorearStudentStage').innerHTML.includes('0 نقطة'), 'Student 1 sees actual 0 final score after podium reveal');
       assert(p2.score > 900, 'Student 2 scored > 900');
       assert.strictEqual(s2.sandbox.ScoreARQuizStudent.getScore(), p2.score, 'Student 2 phone score synced with Host');
       host.sandbox.ScoreARQuizHost.closeHostSession();
       console.log('✓ 5D Verified: Synchronized CARD_ARENA session syncs wager100 (-35) & scores across Host <-> Students!\n');
+    }
+  }
+
+  // =========================================================================
+  // TEST 6: Survival Exit Walk Choreography + Minimal Feedback + Last-Q Podium Sync
+  // =========================================================================
+  console.log('--- TEST 6: Survival Exit Walk + Minimal Student Feedback + Live Podium Rank Sync ---');
+  {
+    // 6A: Survival elimination pause (sad + distinct crimson lighting) -> exit walk -> cleanup
+    {
+      const cArena = loadVmContext({ scripts: ['quiz-arena-3d.js'] });
+      const stageEl = cArena.doc.createElement('div');
+      stageEl.id = 'hostArena3DMount';
+      const inst = cArena.sandbox.ScoreARArena3D.mount(stageEl, {
+        mode: 'SURVIVAL',
+        worldId: 'royal',
+        players: [
+          { id: 'p_keep', name: 'الناجي', avatarId: 'char_01', score: 1200 },
+          { id: 'p_out', name: 'الخارج', avatarId: 'char_02', score: 400 }
+        ]
+      });
+      assert(inst && inst.active, 'Arena 3D DOM fallback mounted for SURVIVAL');
+      cArena.sandbox.ScoreARArena3D.onSurvivalElimination(
+        [{ id: 'p_out', name: 'الخارج', reason: 'slowest' }],
+        { playerResults: { p_out: { isCorrect: false, unanswered: false } } }
+      );
+      await new Promise(r => setTimeout(r, 1250));
+      let dbg = cArena.sandbox.ScoreARArena3D.getDebugState();
+      let victim = dbg.actors.find(a => a.id === 'p_out');
+      assert.strictEqual(dbg.elimPhase, 'pause', 'Beat 1 enters dramatic elimination pause');
+      assert.strictEqual(victim.motion, 'sad', 'Beat 1 puts eliminated player in sad pose');
+      assert.strictEqual(victim.podColor, '#e11d48', 'Beat 1 applies distinct crimson spotlight pod color');
+      assert.strictEqual(victim.exitedHall, false, 'Beat 1 pauses before exiting hall');
+      assert(Boolean(stageEl.querySelector('#hostSurvivalElimVeil')), 'Beat 1 renders distinct atmospheric veil');
+
+      await new Promise(r => setTimeout(r, 2000));
+      dbg = cArena.sandbox.ScoreARArena3D.getDebugState();
+      victim = dbg.actors.find(a => a.id === 'p_out');
+      assert.strictEqual(dbg.elimPhase, 'exit-walk', 'Beat 2 starts guided exit walk');
+      assert(victim.motion === 'walkLeft' || victim.motion === 'walkRight', 'Beat 2 switches hero motion to walking');
+
+      await new Promise(r => setTimeout(r, 2750));
+      dbg = cArena.sandbox.ScoreARArena3D.getDebugState();
+      victim = dbg.actors.find(a => a.id === 'p_out');
+      assert.strictEqual(dbg.elimPhase, 'done', 'Beat 3 finishes exit choreography and restores lighting');
+      assert.strictEqual(victim.exitedHall, true, 'Beat 3 marks victim exited from hall');
+      cArena.sandbox.ScoreARArena3D.dispose();
+      console.log('✓ 6A Verified: Survival elimination pauses in sad pose under distinct lighting, walks out of hall, and restores hall!');
+    }
+
+    // 6B: Minimal student mobile feedback across SOLO, DUEL_TEAMS, SURVIVAL, CARD_ARENA
+    {
+      const cView = loadVmContext({ scripts: ['quiz-student-view.js'] });
+      const StuView = cView.sandbox.ScoreARQuizStudentView;
+      for (const m of ['SOLO', 'DUEL_TEAMS', 'SURVIVAL', 'CARD_ARENA']) {
+        const stgOk = cView.doc.createElement('div');
+        StuView.renderStudentResult(stgOk, {
+          mode: m,
+          gameMode: m,
+          qIndex: 0,
+          totalQuestions: 3,
+          isLastQuestion: false,
+          correctAnswer: 0,
+          options: ['أ', 'ب', 'ج', 'د'],
+          why: 'شرح لا يجب أن يظهر',
+          fastestStudent: { id: 'stu_1', name: 'الأول', timeSec: 1.1 },
+          playerResults: { stu_1: { id: 'stu_1', isCorrect: true, correct: true, pointsEarned: 1180, totalScore: 1180, wager100Outcome: 'won' } },
+          topLeaderboard: [{ id: 'stu_1', name: 'الأول', score: 1180 }]
+        }, { currentStudent: { uid: 'stu_1', name: 'الأول', avatarId: 'char_01' }, currentWorldId: 'royal', currentQIndex: 0, selectedOptionIndex: 0, currentScore: 0, currentStreak: 2, lastRank: 2 });
+        assert(stgOk.innerHTML.includes('إجابة صحيحة'), `${m}: displays minimal correct verdict`);
+        assert(!stgOk.innerHTML.includes('1180') && !stgOk.innerHTML.includes('بطل السرعة') && !stgOk.innerHTML.includes('التفسير التعليمي') && !stgOk.innerHTML.includes('المركز 1'), `${m}: hides all extra score/rank/explanation details`);
+
+        const stgNo = cView.doc.createElement('div');
+        StuView.renderStudentResult(stgNo, {
+          mode: m,
+          gameMode: m,
+          qIndex: 0,
+          totalQuestions: 3,
+          isLastQuestion: false,
+          correctAnswer: 0,
+          options: ['أ', 'ب', 'ج', 'د'],
+          playerResults: { stu_1: { id: 'stu_1', isCorrect: false, correct: false, chosenIndex: 1, pointsEarned: 0, totalScore: 500 } },
+          topLeaderboard: [{ id: 'stu_1', name: 'الأول', score: 500 }]
+        }, { currentStudent: { uid: 'stu_1', name: 'الأول', avatarId: 'char_01' }, currentWorldId: 'royal', currentQIndex: 0, selectedOptionIndex: 1, currentScore: 500, currentStreak: 0, lastRank: 1 });
+        assert(stgNo.innerHTML.includes('إجابة خاطئة'), `${m}: displays minimal wrong verdict`);
+        assert(!stgNo.innerHTML.includes('الإجابة النموذجية') && !stgNo.innerHTML.includes('500'), `${m}: hides correct answer text and point score`);
+      }
+      console.log('✓ 6B Verified: All 4 modes display strictly "إجابة صحيحة" / "إجابة خاطئة" on intermediate mobile screens!');
+    }
+
+    // 6C: Last-question suspense ("انتظار النتيجة") + Rank-by-rank Host Podium reveal sync
+    {
+      const hostScripts6 = [
+        'CardArenaEngine.js', 'quiz-evaluator.js', 'quiz-game-modes.js', 'quiz-arena-modes.js',
+        'quiz-survival-engine.js', 'quiz-card-cinema.js', 'quiz-card-arena.js',
+        'quiz-host-leaderboard.js', 'quiz-podium-effects.js', 'quiz-host-events.js', 'quiz-host-view.js', 'quiz-host.js', 'quiz-bots.js'
+      ];
+      const stuScripts6 = [
+        'CardArenaEngine.js', 'quiz-evaluator.js', 'quiz-game-modes.js', 'quiz-arena-modes.js',
+        'quiz-survival-engine.js', 'quiz-card-cinema.js', 'quiz-card-arena.js',
+        'quiz-student-view.js', 'quiz-student.js'
+      ];
+      const bus = { clients: [] };
+      const rtdb = createRtdbEngine();
+      const pin = '889900';
+      const host = loadVmContext({ scripts: hostScripts6, dbEngine: rtdb, role: 'host', uid: 'teacher_sync', bus });
+      host.sandbox.ScoreARRealtime.generatedPin = pin;
+      const students = ['stu_1', 'stu_2', 'stu_3', 'stu_4'].map((id, i) =>
+        loadVmContext({ scripts: stuScripts6, dbEngine: rtdb, role: 'student', uid: id, bus })
+      );
+
+      host.sandbox.contestQuestions = [
+        { q: 'السؤال ١', opts: ['صح', 'خطأ'], ans: 0, points: 1000, timeLimit: 20 },
+        { q: 'السؤال ٢ الأخير', opts: ['صح', 'خطأ'], ans: 0, points: 1000, timeLimit: 20 }
+      ];
+      host.sandbox.ScoreARGameModes.setMode('SOLO');
+      await host.sandbox.ScoreARQuizHost.startHostLobby('royal', pin, true, true);
+      await new Promise(r => setTimeout(r, 30));
+
+      for (let i = 0; i < students.length; i++) {
+        await students[i].sandbox.ScoreARQuizStudent.startStudentSession(pin, { uid: `stu_${i + 1}`, name: `متسابق ${i + 1}`, avatarId: 'char_01' });
+      }
+      const room = host.sandbox.ScoreARQuizHost.getCurrentRoom();
+
+      // Launch Q2 directly as the last question after giving staggered scores
+      host.sandbox.ScoreARQuizHost.launchQuestion(1, true);
+      await host.sandbox.ScoreARQuizHost.revealQuestionOptionsNow();
+      room.players.find(p => p.id === 'stu_1').score = 2500;
+      room.players.find(p => p.id === 'stu_2').score = 1800;
+      room.players.find(p => p.id === 'stu_3').score = 1200;
+      room.players.find(p => p.id === 'stu_4').score = 400;
+      await students[0].sandbox.ScoreARQuizStudent.submitAnswer(0);
+      host.sandbox.ScoreARQuizHost.finishCurrentQuestion();
+
+      // Every phone MUST show "انتظار النتيجة" on the last question
+      students.forEach((sc, idx) => {
+        const html = sc.doc.getElementById('scorearStudentStage').innerHTML;
+        assert(html.includes('انتظار النتيجة'), `Student ${idx + 1} sees wait suspense screen on final question`);
+        assert(!html.includes('إجابة صحيحة') && !html.includes('إجابة خاطئة'), `Student ${idx + 1} does not leak verdict on last question`);
+      });
+
+      // Host opens Podium -> phones STILL wait until their specific rank is revealed!
+      host.sandbox.ScoreARQuizHost.renderHostPodium();
+      students.forEach((sc, idx) => {
+        assert(sc.doc.getElementById('scorearStudentStage').innerHTML.includes('انتظار النتيجة'), `Student ${idx + 1} waits on Podium start before reveal`);
+      });
+
+      // Step 1: Reveal 3rd Place (stu_3) -> ONLY stu_3 unlocks immediately
+      host.sandbox.ScoreARPodiumEffects.advanceReveal();
+      await new Promise(r => setTimeout(r, 300));
+      assert(students[2].doc.getElementById('scorearStudentStage').innerHTML.includes('المركز 3'), '3rd place student immediately receives Rank 3 on reveal');
+      assert(students[0].doc.getElementById('scorearStudentStage').innerHTML.includes('انتظار النتيجة'), '1st place still waiting when 3rd revealed');
+      assert(students[1].doc.getElementById('scorearStudentStage').innerHTML.includes('انتظار النتيجة'), '2nd place still waiting when 3rd revealed');
+      assert(students[3].doc.getElementById('scorearStudentStage').innerHTML.includes('انتظار النتيجة'), '4th place still waiting when 3rd revealed');
+
+      // Step 2: Reveal 2nd Place (stu_2) -> ONLY stu_2 unlocks now
+      host.sandbox.ScoreARPodiumEffects.advanceReveal();
+      await new Promise(r => setTimeout(r, 620));
+      assert(students[1].doc.getElementById('scorearStudentStage').innerHTML.includes('المركز 2'), '2nd place student immediately receives Rank 2 on reveal');
+      assert(students[0].doc.getElementById('scorearStudentStage').innerHTML.includes('انتظار النتيجة'), '1st place still waiting until Champion reveal');
+      assert(students[3].doc.getElementById('scorearStudentStage').innerHTML.includes('انتظار النتيجة'), '4th place still waiting until Champion reveal');
+
+      // Step 3: Reveal All / Champion -> stu_1 (1st) and stu_4 (4th) both unlock with exact ranks
+      host.sandbox.ScoreARPodiumEffects.revealAll();
+      assert(students[0].doc.getElementById('scorearStudentStage').innerHTML.includes('المركز 1'), '1st place Champion receives Rank 1');
+      assert(students[3].doc.getElementById('scorearStudentStage').innerHTML.includes('المركز 4'), '4th place participant receives Rank 4');
+      host.sandbox.ScoreARQuizHost.closeHostSession();
+      console.log('✓ 6C Verified: Final-question suspense & exact 3rd -> 2nd -> 1st+all Host-to-Mobile rank reveal sync!\n');
     }
   }
 
