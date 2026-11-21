@@ -1351,3 +1351,245 @@ body.is-logged-in #launchRegister {
     font-weight: 800;
   }
 }
+
+/* =====================================================================
+   DAY MODE (Sky-White -> Sky-Blue Gradient for #home & Launch Shell)
+   ===================================================================== */
+html[data-theme="day"] .launch-mode,
+html[data-theme="day"] .launch-page {
+  background: linear-gradient(170deg, #f8fcff 0%, #e5f3ff 42%, #cee7ff 78%, #bddbff 100%) !important;
+  color: #0d1b3e;
+}
+html[data-theme="day"] .launch-mode main {
+  background: transparent;
+}
+html[data-theme="day"] .launch-mode .footer {
+  background: rgba(240, 248, 255, 0.94) !important;
+  border-top-color: rgba(14, 165, 233, 0.22);
+  color: #334e7b;
+}
+html[data-theme="day"] .launch-nav {
+  background: rgba(248, 252, 255, 0.88);
+  border-bottom-color: rgba(14, 165, 233, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+html[data-theme="day"] .launch-brand > span {
+  color: #0d1b3e;
+}
+html[data-theme="day"] .launch-brand small {
+  color: #334e7b;
+}
+html[data-theme="day"] .launch-brand small span {
+  color: #0284c7;
+}
+html[data-theme="day"] .launch-nav nav {
+  color: #1e3a6e;
+}
+html[data-theme="day"] .launch-nav nav a {
+  color: #1e3a6e;
+}
+html[data-theme="day"] .launch-nav nav a:hover {
+  color: #6339e8;
+}
+html[data-theme="day"] .nav-join {
+  background: rgba(255, 255, 255, 0.86);
+  border-color: rgba(2, 132, 199, 0.34);
+  color: #0d1b3e;
+}
+html[data-theme="day"] .nav-join svg {
+  color: #0284c7;
+}
+html[data-theme="day"] .nav-join:hover {
+  background: rgba(224, 242, 254, 0.95);
+}
+html[data-theme="day"] .btn.launch-student-join {
+  background: linear-gradient(135deg, #ffffff 0%, #ddf1ff 100%);
+  color: #0369a1;
+  border-color: rgba(2, 132, 199, 0.4);
+  box-shadow: 0 10px 24px rgba(14, 116, 190, 0.14);
+}
+html[data-theme="day"] .btn.launch-student-join svg {
+  color: #0284c7;
+}
+html[data-theme="day"] .btn.launch-student-join:hover {
+  background: linear-gradient(135deg, #f0f9ff 0%, #c7e7ff 100%);
+  border-color: #0284c7;
+}
+html[data-theme="day"] .launch-menu {
+  background: rgba(240, 248, 255, 0.97) !important;
+  color: #0d1b3e;
+}
+html[data-theme="day"] .launch-menu a {
+  color: #0d1b3e;
+  border-color: rgba(14, 165, 233, 0.18);
+}
+html[data-theme="day"] .launch-hero {
+  background: linear-gradient(170deg, #f8fcff 0%, #e4f2ff 48%, #cae5ff 100%);
+}
+html[data-theme="day"] .launch-hero:after {
+  background: linear-gradient(transparent, rgba(206, 231, 255, 0.9));
+}
+html[data-theme="day"] .launch-copy h1 {
+  color: #0d1b3e;
+}
+html[data-theme="day"] .launch-description,
+html[data-theme="day"] .launch-footnote,
+html[data-theme="day"] .launch-watch small,
+html[data-theme="day"] .launch-section-heading > p,
+html[data-theme="day"] .film-copy p,
+html[data-theme="day"] .film-note,
+html[data-theme="day"] .film-label,
+html[data-theme="day"] .film-bottom,
+html[data-theme="day"] .launch-final > small {
+  color: #334e7b;
+}
+html[data-theme="day"] .launch-watch {
+  color: #0d1b3e;
+}
+html[data-theme="day"] .launch-watch > span {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(99, 57, 232, 0.28);
+  box-shadow: 0 8px 20px rgba(14, 116, 190, 0.12);
+}
+html[data-theme="day"] .launch-watch svg {
+  fill: #6339e8;
+}
+html[data-theme="day"] .launch-footnote svg {
+  color: #6339e8;
+}
+html[data-theme="day"] .hero-bottom > button {
+  color: #1e3a6e;
+  border-color: rgba(14, 165, 233, 0.3);
+  background: rgba(255, 255, 255, 0.78);
+}
+html[data-theme="day"] .orbital-ring {
+  border-color: rgba(2, 132, 199, 0.22);
+}
+html[data-theme="day"] .floating-subject {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(14, 165, 233, 0.28);
+  color: #0d1b3e;
+  box-shadow: 0 10px 26px rgba(14, 116, 190, 0.12);
+}
+html[data-theme="day"] .floating-subject svg {
+  color: #6339e8;
+}
+html[data-theme="day"] .floating-question {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(14, 165, 233, 0.3);
+  color: #0d1b3e;
+  box-shadow: 0 18px 42px rgba(14, 116, 190, 0.18);
+}
+html[data-theme="day"] .fq-top > span:first-child {
+  color: #6339e8;
+}
+html[data-theme="day"] .fq-answers button {
+  background: #edf6ff;
+  color: #0d1b3e;
+  border-color: rgba(14, 165, 233, 0.28);
+}
+html[data-theme="day"] .fq-answers button:hover {
+  background: #dbeeff;
+  border-color: #6339e8;
+}
+html[data-theme="day"] .fq-answers button.right {
+  background: #dcfce7;
+  color: #065f46;
+  border-color: #10b981;
+}
+html[data-theme="day"] .fq-answers button.wrong {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #ef4444;
+}
+html[data-theme="day"] .fq-result {
+  color: #475569;
+}
+html[data-theme="day"] .fq-result.success {
+  color: #047857;
+}
+html[data-theme="day"] .fq-result.try-again {
+  color: #be123c;
+}
+html[data-theme="day"] .section-kicker {
+  color: #0284c7;
+}
+html[data-theme="day"] .launch-section-heading h2,
+html[data-theme="day"] .film-copy h2,
+html[data-theme="day"] .launch-final h2 {
+  color: #0d1b3e;
+}
+html[data-theme="day"] .launch-section-heading h2 > span:not(.gradient-text) {
+  color: #334e7b;
+}
+html[data-theme="day"] .experience-card.play-card,
+html[data-theme="day"] .experience-card.student-card,
+html[data-theme="day"] .role-track-card,
+html[data-theme="day"] .launch-register-bar,
+html[data-theme="day"] .film-player {
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.95) 0%, rgba(232, 245, 255, 0.94) 100%);
+  border-color: rgba(14, 165, 233, 0.24);
+  box-shadow: 0 14px 36px rgba(14, 116, 190, 0.12);
+}
+html[data-theme="day"] .play-card .experience-num,
+html[data-theme="day"] .student-card .experience-num,
+html[data-theme="day"] .mode-mini-pill,
+html[data-theme="day"] .role-track-desc,
+html[data-theme="day"] .launch-register-copy > div > span,
+html[data-theme="day"] .play-card p,
+html[data-theme="day"] .student-card p {
+  color: #334e7b;
+}
+html[data-theme="day"] .play-card h3,
+html[data-theme="day"] .student-card h3,
+html[data-theme="day"] .role-track-head h3,
+html[data-theme="day"] .launch-register-copy strong,
+html[data-theme="day"] .film-label > span:nth-child(2) {
+  color: #0d1b3e;
+}
+html[data-theme="day"] .play-card .experience-icon,
+html[data-theme="day"] .student-card .experience-icon,
+html[data-theme="day"] .play-card .experience-link,
+html[data-theme="day"] .student-card .experience-link {
+  color: #4f46e5;
+}
+html[data-theme="day"] .mode-mini-pill {
+  background: rgba(235, 245, 255, 0.95);
+  border-color: rgba(14, 165, 233, 0.26);
+  color: #0369a1;
+}
+html[data-theme="day"] .orb-core {
+  background: linear-gradient(145deg, #6339e8, #0284c7);
+}
+html[data-theme="day"] .orb-display > span {
+  border-color: rgba(2, 132, 199, 0.28);
+}
+html[data-theme="day"] .skill-node {
+  background: #ffffff;
+  color: #1e3a6e;
+  border-color: rgba(14, 165, 233, 0.3);
+}
+html[data-theme="day"] .skill-node.done {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #10b981;
+}
+html[data-theme="day"] .teacher-card,
+html[data-theme="day"] .teacher-card h3,
+html[data-theme="day"] .teacher-card .experience-num,
+html[data-theme="day"] .teacher-card .experience-icon {
+  color: #ffffff;
+}
+html[data-theme="day"] .teacher-card p {
+  color: #e2e8f0;
+}
+html[data-theme="day"] .teacher-card .experience-link {
+  color: #7dd3fc;
+}
+html[data-theme="day"] .photo-label,
+html[data-theme="day"] .photo-label b,
+html[data-theme="day"] .photo-label small {
+  color: #ffffff;
+}
+

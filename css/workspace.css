@@ -836,15 +836,244 @@
   transform: translateY(-2px);
 }
 
+/* Illustrated Studio Hero Card & Cartoon Art */
+.studio-hero-card {
+  display: grid;
+  grid-template-columns: 1.25fr 0.95fr;
+  gap: 28px;
+  align-items: center;
+  padding: 26px 28px;
+  border-radius: 26px 64px 26px 26px;
+  border: 1px solid var(--border-lilac, rgba(172, 139, 242, 0.28));
+  background: radial-gradient(ellipse at 12% 20%, rgba(117, 80, 239, 0.22), transparent 62%),
+              radial-gradient(ellipse at 90% 90%, rgba(88, 220, 227, 0.12), transparent 55%),
+              #111329;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45), 0 0 36px rgba(117, 80, 239, 0.12);
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.studio-hero-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  z-index: 2;
+}
+
+.studio-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.studio-mini-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #d7d2f5;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(172, 139, 242, 0.24);
+}
+
+.studio-mini-chip svg {
+  color: #58dce3;
+}
+
+.studio-hero-art {
+  position: relative;
+  height: 225px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+}
+
+.studio-hero-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 20px 52px 20px 20px;
+  overflow: hidden;
+  border: 1px solid rgba(196, 181, 253, 0.34);
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.55);
+  transform: perspective(1000px) rotateY(4deg) rotateZ(-1deg);
+}
+
+.studio-hero-scene img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  display: block;
+}
+
+.studio-hero-scene-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 48%, rgba(12, 13, 29, 0.86));
+}
+
+.studio-scene-tag {
+  position: absolute;
+  bottom: 12px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #f6f3ff;
+  background: rgba(11, 13, 30, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 5px 12px;
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+}
+
+.studio-hero-companion {
+  position: absolute;
+  left: -10px;
+  bottom: -10px;
+  height: 165px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.65));
+  pointer-events: none;
+  z-index: 3;
+}
+
+.studio-tool-card.has-art {
+  padding-top: 0;
+}
+
+.tool-card-art {
+  position: relative;
+  height: 82px;
+  margin: 0 -20px 10px;
+  overflow: hidden;
+}
+
+.tool-card-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  display: block;
+  transition: transform 0.6s var(--ease);
+}
+
+.studio-tool-card.has-art:hover .tool-card-art img {
+  transform: scale(1.07);
+}
+
+.tool-card-art-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(17, 19, 41, 0.1) 15%, rgba(17, 19, 41, 0.96) 100%);
+}
+
+/* Sky-White Day Mode Overrides for Teacher Studio (#studio) */
+html[data-theme="day"] .studio-hero-card {
+  background: radial-gradient(ellipse at 12% 20%, rgba(117, 80, 239, 0.11), transparent 62%),
+              radial-gradient(ellipse at 90% 90%, rgba(14, 165, 233, 0.14), transparent 55%),
+              rgba(255, 255, 255, 0.92);
+  border-color: rgba(37, 99, 235, 0.18);
+  box-shadow: 0 18px 50px rgba(37, 99, 235, 0.11), 0 4px 16px rgba(13, 27, 62, 0.05);
+}
+html[data-theme="day"] .studio-main-title,
+html[data-theme="day"] .studio-group-head h2,
+html[data-theme="day"] .tool-card-body h4,
+html[data-theme="day"] .tools-head h2 {
+  color: #0d1b3e;
+}
+html[data-theme="day"] .studio-main-sub,
+html[data-theme="day"] .tool-card-body p {
+  color: #334e7b;
+}
+html[data-theme="day"] .studio-mini-chip {
+  color: #1e3a6e;
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(37, 99, 235, 0.18);
+}
+html[data-theme="day"] .studio-mini-chip svg { color: #0284c7; }
+html[data-theme="day"] .studio-hero-scene {
+  border-color: rgba(37, 99, 235, 0.25);
+  box-shadow: 0 18px 46px rgba(37, 99, 235, 0.18);
+}
+html[data-theme="day"] .studio-tools-grid.cols-4 .studio-tool-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(239, 248, 255, 0.94) 100%);
+  border-color: rgba(37, 99, 235, 0.16);
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.08);
+}
+html[data-theme="day"] .studio-tools-grid.cols-4 .studio-tool-card.tone-cyan {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(229, 245, 255, 0.96) 100%);
+}
+html[data-theme="day"] .studio-tools-grid.cols-4 .studio-tool-card:hover {
+  border-color: rgba(99, 57, 232, 0.42);
+  box-shadow: 0 16px 38px rgba(37, 99, 235, 0.15);
+}
+html[data-theme="day"] .tool-card-art-shade {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 20%, rgba(255, 255, 255, 0.98) 100%);
+}
+html[data-theme="day"] .tool-badge {
+  color: #5b21b6;
+  background: rgba(117, 80, 239, 0.12);
+  border-color: rgba(117, 80, 239, 0.25);
+}
+html[data-theme="day"] .tool-badge.tone-cyan {
+  color: #0369a1;
+  background: rgba(2, 132, 199, 0.11);
+  border-color: rgba(2, 132, 199, 0.28);
+}
+html[data-theme="day"] .tool-arrow { color: #526d99; }
+html[data-theme="day"] .studio-mini-link {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(37, 99, 235, 0.2);
+  color: #1e3a6e;
+}
+html[data-theme="day"] .studio-mini-link:hover {
+  background: rgba(235, 245, 255, 1);
+  color: #4f46e5;
+  border-color: rgba(99, 57, 232, 0.4);
+}
+html[data-theme="day"] .academy-tabs button {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(37, 99, 235, 0.18);
+  color: #1e3a6e;
+}
+html[data-theme="day"] .academy-tabs button[aria-pressed=true] {
+  color: #ffffff;
+}
+
 @media (max-width: 1100px) {
   .studio-tools-grid.cols-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .studio-hero-card {
+    grid-template-columns: 1fr;
+    padding: 22px;
+  }
+  .studio-hero-art {
+    height: 190px;
   }
 }
 
 @media (max-width: 600px) {
   .studio-tools-grid.cols-4 {
     grid-template-columns: 1fr;
+  }
+  .studio-hero-card {
+    padding: 18px 16px;
+    border-radius: 20px 40px 20px 20px;
+  }
+  .studio-hero-companion {
+    height: 130px;
   }
   .studio-quick-actions {
     width: 100%;

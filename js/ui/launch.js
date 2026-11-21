@@ -18,6 +18,7 @@ window.renderLaunchHome = function () {
           <a href="#library">المحتوى</a>
         </nav>
         <div class="launch-nav-actions">
+          <button type="button" class="scorear-theme-toggle" data-action="toggle-theme" aria-pressed="${typeof document !== 'undefined' && document.documentElement?.getAttribute?.('data-theme') === 'day' ? 'true' : 'false'}" title="تبديل الوضع النهاري / الليلي">${icon(typeof document !== 'undefined' && document.documentElement?.getAttribute?.('data-theme') === 'day' ? 'moon' : 'sun')}<span>${typeof document !== 'undefined' && document.documentElement?.getAttribute?.('data-theme') === 'day' ? 'ليلي' : 'نهاري'}</span></button>
           <button class="nav-join" data-action="join">${icon('key')} دخول القاعة بالرمز</button>
           <button class="btn launch-primary" data-action="unified-login">دخول / حساب جديد ${icon('arrow')}</button>
           <button class="icon-btn launch-menu" data-action="menu" aria-label="فتح القائمة">${icon('menu')}</button>

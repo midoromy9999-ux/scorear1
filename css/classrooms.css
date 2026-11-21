@@ -559,3 +559,50 @@
     justify-content: flex-end;
   }
 }
+
+/* ===== Day Mode Overrides for Virtual Classrooms ===== */
+html[data-theme="day"] .scorear-classrooms-view {
+  color: #0d1b3e;
+}
+html[data-theme="day"] .scorear-classrooms-view .learning-intro,
+html[data-theme="day"] .scorear-classrooms-view .card-panel,
+html[data-theme="day"] .scorear-classrooms-view .class-card {
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.95) 0%, rgba(235, 246, 255, 0.93) 100%) !important;
+  border-color: rgba(14, 165, 233, 0.24) !important;
+  box-shadow: 0 14px 36px rgba(14, 116, 190, 0.12) !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .intro-copy h1,
+html[data-theme="day"] .scorear-classrooms-view .panel-header h3,
+html[data-theme="day"] .scorear-classrooms-view .class-name,
+html[data-theme="day"] .scorear-classrooms-view .member-name {
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .intro-copy p,
+html[data-theme="day"] .scorear-classrooms-view .form-group label,
+html[data-theme="day"] .scorear-classrooms-view .class-meta,
+html[data-theme="day"] .scorear-classrooms-view .member-meta {
+  color: #334e7b !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .intro-badge,
+html[data-theme="day"] .scorear-classrooms-view .icon-chip {
+  background: rgba(99, 57, 232, 0.1) !important;
+  border-color: rgba(99, 57, 232, 0.25) !important;
+  color: #4f46e5 !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .form-input,
+html[data-theme="day"] .scorear-classrooms-view .member-row,
+html[data-theme="day"] .scorear-classrooms-view .stat-box {
+  background: #ffffff !important;
+  border-color: rgba(14, 165, 233, 0.22) !important;
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .code-badge {
+  background: rgba(2, 132, 199, 0.12) !important;
+  border-color: #0284c7 !important;
+  color: #0369a1 !important;
+}
+html[data-theme="day"] .scorear-classrooms-view .code-badge:hover {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
+

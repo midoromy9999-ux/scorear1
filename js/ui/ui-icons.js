@@ -89,7 +89,9 @@
     eyeOff: 'EyeOff',
     skipForward: 'SkipForward',
     camera: 'Camera',
-    gamepad: 'Gamepad2'
+    gamepad: 'Gamepad2',
+    sun: 'Sun',
+    moon: 'Moon'
   };
 
   const FALLBACK_PATHS = {
@@ -157,6 +159,8 @@
     userPlus: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm10-3v6m3-3h-6',
     logOut: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9',
     qrCode: 'M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h3v3h-3zM18 18h3v3h-3z',
+    sun: 'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41',
+    moon: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z',
     school: 'm4 6 8-4 8 4m-16 0v16h16V6M9 22v-4h6v4',
     flag: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7',
     eyeOff: 'm2 2 20 20M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-2.2 3.2m-3.6 2.4A10 10 0 0 1 12 19c-6.4 0-10-7-10-7a16 16 0 0 1 4.2-4.8',

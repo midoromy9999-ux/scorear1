@@ -74,6 +74,7 @@
           <button type="button" class="scorear-unified-action-btn ${isCards ? 'is-active-cards' : ''}" onclick="ScoreARUnifiedViews.openView('cards')">${uiIcon('layers', 14)} <span>الكروت (٢٠)</span></button>
           <button type="button" class="scorear-unified-action-btn ${isHeroes ? 'is-active-heroes' : ''}" onclick="ScoreARUnifiedViews.openView('heroes')">${uiIcon('spark', 14)} <span>الأبطال (٢٠)</span></button>
           <button type="button" class="scorear-unified-action-btn ${isPodium ? 'is-active-podium' : ''}" onclick="ScoreARUnifiedViews.openView('podium')">${uiIcon('crown', 14)} <span>التتويج</span></button>
+          <button type="button" class="scorear-theme-toggle" data-action="toggle-theme" title="تبديل الوضع النهاري / الليلي">${uiIcon(typeof document !== 'undefined' && document.documentElement?.getAttribute?.('data-theme') === 'day' ? 'moon' : 'sun', 14)}<span>${typeof document !== 'undefined' && document.documentElement?.getAttribute?.('data-theme') === 'day' ? 'ليلي' : 'نهاري'}</span></button>
         </div>
         <button type="button" class="scorear-unified-close-btn" onclick="ScoreARUnifiedViews.closeView()" title="إغلاق العرض المدمج">${uiIcon('close', 14)} <span>إغلاق</span></button>
       </header>

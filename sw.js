@@ -4,7 +4,7 @@
  * Ensures resilient classroom gameplay on slow or intermittent school networks.
  */
 
-const CACHE_NAME = 'scorear-v27-promo-worlds';
+const CACHE_NAME = 'scorear-v28-day-night-cartoon';
 const STATIC_ASSETS = [
   './',
   './index.html',

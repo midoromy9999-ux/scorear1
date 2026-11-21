@@ -16,8 +16,45 @@
     { id: 'about', hash: '#about', title: 'عن سكور آر', icon: 'info', desc: 'رؤية المنصة وتفاصيل المشروع' }
   ];
 
+  const THEME_KEY = 'scorear_theme_mode';
   let isMenuOpen = false;
   let previousFocusedElement = null;
+
+  function getTheme() {
+    try { return (global.localStorage && global.localStorage.getItem(THEME_KEY) === 'day') ? 'day' : 'night'; }
+    catch { return 'night'; }
+  }
+
+  function buildThemeBtnInner(mode) {
+    const isDay = mode === 'day';
+    const icName = isDay ? 'moon' : 'sun';
+    const label = isDay ? 'ليلي' : 'نهاري';
+    const svg = (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function')
+      ? global.ScoreARUI.icon(icName, { size: 15 })
+      : (typeof global.icon === 'function' ? global.icon(icName) : `<span>${isDay ? '☾' : '☀'}</span>`);
+    return `${svg}<span>${label}</span>`;
+  }
+
+  function applyTheme(mode) {
+    const next = mode === 'day' ? 'day' : 'night';
+    try { if (global.localStorage) global.localStorage.setItem(THEME_KEY, next); } catch {}
+    if (typeof document !== 'undefined') {
+      try { document.documentElement?.setAttribute?.('data-theme', next); } catch {}
+      try { document.body?.classList?.toggle('day-mode', next === 'day'); } catch {}
+      try {
+        document.querySelectorAll('[data-action="toggle-theme"]').forEach(btn => {
+          btn.setAttribute('aria-pressed', next === 'day' ? 'true' : 'false');
+          btn.setAttribute('title', next === 'day' ? 'التبديل للوضع الليلي الكوني' : 'التبديل للوضع النهاري السماوي');
+          btn.innerHTML = buildThemeBtnInner(next);
+        });
+      } catch {}
+    }
+    return next;
+  }
+
+  function toggleTheme() {
+    return applyTheme(getTheme() === 'day' ? 'night' : 'day');
+  }
 
   function ensureStylesInjected() {
     if (typeof document === 'undefined') return;
@@ -139,6 +176,14 @@
     ensureStylesInjected();
 
     document.addEventListener('click', (e) => {
+      const themeTrigger = e.target.closest('[data-action="toggle-theme"]');
+      if (themeTrigger) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        toggleTheme();
+        return;
+      }
+
       const menuTrigger = e.target.closest('[data-action="menu"], .mobile-menu, .launch-menu');
       if (menuTrigger) {
         e.preventDefault();
@@ -206,6 +251,7 @@
       closeSidebar();
       updateActiveNavLinks();
       mountTopbarNav();
+      applyTheme(getTheme());
     });
     window.addEventListener('popstate', () => {
       closeSidebar();
@@ -229,6 +275,7 @@
     updateActiveNavLinks();
     closeSidebar();
     mountTopbarNav();
+    applyTheme(getTheme());
   }
 
   function updateActiveNavLinks() {
@@ -351,21 +398,16 @@
     const currentHash = (window.location && window.location.hash) || '#home';
     const isHome = !standalone && (!currentHash || currentHash === '#' || currentHash === '#home');
 
-    if (isHome) {
-      navSlot.innerHTML = '';
-      navSlot.style.display = 'none';
-      return;
-    }
-
     const homeIcon = (global.ScoreARUI && typeof global.ScoreARUI.icon === 'function')
       ? global.ScoreARUI.icon('home', { size: 14 })
       : '<span>⌂</span>';
+    const curMode = getTheme();
 
     navSlot.style.display = 'inline-flex';
     navSlot.innerHTML = `
-      <button type="button" class="scorear-back-home-btn" onclick="ScoreARNav.goBackOrHome()" title="العودة للرئيسية">
-        ${homeIcon}
-        <span>الرئيسية</span>
+      ${isHome ? '' : `<button type="button" class="scorear-back-home-btn" onclick="ScoreARNav.goBackOrHome()" title="العودة للرئيسية">${homeIcon}<span>الرئيسية</span></button>`}
+      <button type="button" class="scorear-theme-toggle" data-action="toggle-theme" aria-pressed="${curMode === 'day' ? 'true' : 'false'}" title="${curMode === 'day' ? 'التبديل للوضع الليلي الكوني' : 'التبديل للوضع النهاري السماوي'}">
+        ${buildThemeBtnInner(curMode)}
       </button>
     `;
   }
@@ -379,6 +421,9 @@
 
   const NavAPI = {
     NAV_CONFIG,
+    getTheme,
+    applyTheme,
+    toggleTheme,
     openSidebar,
     closeSidebar,
     toggleSidebar,

@@ -338,61 +338,69 @@
     const dueMistakes = state.mistakes.filter(m => !m.archived && !m.mastered).length;
     const activeComp = COMPANIONS.find(c => c.id === state.companionId) || COMPANIONS[0];
     const rank = computeRhetoricRank(state.xp);
-    const orbDaily = u.orbShowcase ? u.orbShowcase('calendarCheck', { tone: 'cyan', compact: true }) : iconBox('calendarCheck', { size: 'lg', tone: 'cyan' });
-    const orbBook = u.orbShowcase ? u.orbShowcase('bookMarked', { tone: 'violet', compact: true }) : iconBox('bookMarked', { size: 'lg', tone: 'violet' });
     const metrics = [
       { icon: 'zap', tone: 'violet', val: `${state.xp} XP`, lbl: 'رصيد الخبرة الهادئة' },
       { icon: 'flame', tone: 'cyan', val: `${state.streak?.count || 0} أيام`, lbl: 'سلسلة التعلّم النشطة' },
       { icon: 'bookMarked', tone: 'violet', val: `${dueMistakes}`, lbl: 'أخطاء قيد المراجعة' },
       { icon: 'award', tone: 'cyan', val: `${earnedCount} / 4`, lbl: 'أوسمة الرحلة' }
     ];
+    const lockerRaw = global.ScoreARHeroCosmetics?.renderLockerHtml ? global.ScoreARHeroCosmetics.renderLockerHtml() : '';
+    const lockerHtml = lockerRaw ? `
+      <details class="scorear-cosmetics-drawer">
+        <summary class="scorear-cosmetics-summary">
+          <span class="scorear-inline-icon">${iconBox('sparkles', { size: 'sm', tone: 'cyan', tilted: true })} <span><strong>خزانة مقتنيات وبطل المنصة</strong><small>تأثيرات الصعود والهالات المفتوحة بتقدّمك — اضغط للفتح</small></span></span>
+          <span class="launch-pill">تخصيص البطل</span>
+        </summary>
+        <div class="scorear-cosmetics-body">${lockerRaw}</div>
+      </details>` : '';
     return `
-      <header class="scorear-editorial-head" style="margin-bottom:8px;">
-        <div class="scorear-editorial-copy">
-          <span class="launch-pill"><span class="live-dot"></span> رحلة الطالب والتدريب الهادئ</span>
-          <h1>مسارك الشخصي نحو <span class="gradient-text">الإتقان اللغوي</span></h1>
-          <p>تحدٍ يومي بتوقيت القاهرة، خريطة محطات متدرجة، ودفتر ذكي يرسّخ أخطاءك السابقة بلا ضغط وقت.</p>
-          <div style="margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span class="scorear-control-pill" style="border-color:rgba(251,191,36,0.38);color:#fde68a;">${icon('crown', 14)} <span>رتبتك البلاغية: ${escapeHtml(rank.title)} (${rank.progressPct}%)</span></span>
-            <button type="button" onclick="ScoreARJourneyExtras.downloadParentCard()" class="scorear-gear-btn" style="border-color:rgba(88,220,227,0.38);color:#c7f9ff;padding:6px 13px;">${icon('download', 14)} <span>بطاقة الإنجاز (PNG)</span></button>
-            <button type="button" onclick="document.querySelector('[data-action=join]')?.click()" class="scorear-gear-btn" style="border-color:rgba(172,139,242,0.35);padding:6px 13px;">${icon('key', 14)} <span>دخول القاعة بالرمز</span></button>
+      <header class="journey-cartoon-hero spotlight">
+        <div class="journey-cartoon-bg" aria-hidden="true"><img src="assets/students.webp" alt=""></div>
+        <div class="journey-hero-grid">
+          <div class="scorear-editorial-copy">
+            <span class="launch-pill"><span class="live-dot"></span> رحلة الطالب والتدريب الهادئ</span>
+            <h1>مسارك الشخصي نحو <span class="gradient-text">الإتقان اللغوي</span></h1>
+            <p>تحدٍ يومي بتوقيت القاهرة، محطات متدرجة بالرسومات الكرتونية، ودفتر ذكي يرسّخ أخطاءك بلا ضغط وقت.</p>
+            <div class="journey-hero-actions">
+              <span class="scorear-control-pill journey-rank-pill">${icon('crown', 14)} <span>رتبتك: ${escapeHtml(rank.title)} (${rank.progressPct}%)</span></span>
+              <button type="button" onclick="ScoreARJourneyExtras.downloadParentCard()" class="scorear-gear-btn journey-card-btn">${icon('download', 14)} <span>بطاقة الإنجاز (PNG)</span></button>
+              <button type="button" onclick="document.querySelector('[data-action=join]')?.click()" class="scorear-gear-btn">${icon('key', 14)} <span>دخول القاعة بالرمز</span></button>
+            </div>
           </div>
-        </div>
-        <div class="scorear-floating-companion">
-          <div class="scorear-hero-avatar"><img src="assets/characters/${escapeHtml(activeComp.id)}.webp" alt="${escapeHtml(activeComp.name)}" onerror="this.src='assets/characters/char_01.webp'"></div>
-          <div>
-            <div style="font-size:10px;color:#58dce3;font-weight:800;">رفيق الرحلة</div>
-            <strong style="display:block;color:#f6f3ff;font-size:14.5px;font-weight:900;">${escapeHtml(activeComp.name)} — ${escapeHtml(activeComp.title)}</strong>
-            <div style="display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;">
-              ${COMPANIONS.map(c => `<button type="button" data-companion-pick="${escapeHtml(c.id)}" style="padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;cursor:pointer;border:1px solid ${c.id === activeComp.id ? '#9665ff' : '#ffffff1e'};background:${c.id === activeComp.id ? '#7550ef44' : '#0c0d1d'};color:${c.id === activeComp.id ? '#fff' : '#a1a4be'};">${escapeHtml(c.name)}</button>`).join('')}
+          <div class="scorear-floating-companion journey-companion-stage">
+            <div class="scorear-hero-avatar journey-avatar-lg"><img src="assets/characters/${escapeHtml(activeComp.id)}.webp" alt="${escapeHtml(activeComp.name)}" onerror="this.src='assets/characters/char_01.webp'"></div>
+            <div style="min-width:0;">
+              <div class="journey-comp-kicker">رفيق رحلتك الكرتوني</div>
+              <strong class="journey-comp-name">${escapeHtml(activeComp.name)} — ${escapeHtml(activeComp.title)}</strong>
+              <div class="journey-comp-pills">
+                ${COMPANIONS.map(c => `<button type="button" data-companion-pick="${escapeHtml(c.id)}" class="journey-comp-pill ${c.id === activeComp.id ? 'is-selected' : ''}">${escapeHtml(c.name)}</button>`).join('')}
+              </div>
             </div>
           </div>
         </div>
+        <div class="scorear-stat-ribbon journey-ribbon">
+          ${metrics.map(m => `<div class="scorear-ribbon-item scorear-metric-card" style="background:transparent;border:none;">${iconBox(m.icon, { size: 'sm', tone: m.tone })}<div><b>${m.val}</b><span>${m.lbl}</span></div></div>`).join('')}
+        </div>
       </header>
-      <div class="scorear-stat-ribbon">
-        ${metrics.map(m => `<div class="scorear-ribbon-item scorear-metric-card" style="background:transparent;border:none;">${iconBox(m.icon, { size: 'sm', tone: m.tone })}<div><b>${m.val}</b><span>${m.lbl}</span></div></div>`).join('')}
-      </div>
-      ${global.ScoreARHeroCosmetics?.renderLockerHtml ? global.ScoreARHeroCosmetics.renderLockerHtml() : ''}
-      <div class="scorear-bento-two">
-        <section class="scorear-experience-panel tone-cyan spotlight" style="display:flex;flex-direction:column;justify-content:space-between;gap:14px;">
+      <div class="scorear-bento-two" style="margin-top:20px;">
+        <section class="scorear-experience-panel tone-cyan spotlight journey-action-card">
+          <div class="journey-bento-art"><img src="assets/modes/mode_solo.jpg" alt="" loading="lazy"><div class="journey-bento-shade"></div><span class="launch-pill journey-art-badge"><span class="live-dot"></span> تحدي اليوم • +20 XP</span><span class="journey-art-date">${escapeHtml(state.todayKey)}</span></div>
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;"><span class="scorear-panel-index">01 / DAILY CHALLENGE</span><span class="launch-pill" style="padding:3px 10px;font-size:10px;"><span class="live-dot"></span> ${escapeHtml(state.todayKey)}</span></div>
-            ${orbDaily}
-            <h3 style="color:#f6f3ff;font-size:19px;font-weight:900;margin:4px 0 6px;">تحدي اليوم بتوقيت القاهرة</h3>
-            <p style="color:#aaa9c1;font-size:13px;margin:0;line-height:1.75;">${state.todayCompleted ? 'أحسنت! أنجزت تحدي اليوم وحصلت على +20 XP. يمكنك إعادته للمران.' : '3 أسئلة مركّزة في النحو والبلاغة والإملاء لتحصد +20 نقطة خبرة يومية.'}</p>
+            <h3 class="journey-card-h">تحدي اليوم بتوقيت القاهرة</h3>
+            <p class="journey-card-p">${state.todayCompleted ? 'أحسنت! أنجزت تحدي اليوم وحصلت على +20 XP. يمكنك إعادته للمران.' : '3 أسئلة مركّزة في النحو والبلاغة والإملاء لتحصد +20 نقطة خبرة يومية.'}</p>
           </div>
           <div><button type="button" class="btn launch-primary" id="startDailyChallengeBtn" style="width:100%;padding:11px 18px;">${icon('play', { size: 15 })} ${state.todayCompleted ? 'إعادة تحدي اليوم' : 'ابدأ تحدي اليوم'}</button></div>
         </section>
-        <section class="scorear-experience-panel spotlight" style="display:flex;flex-direction:column;justify-content:space-between;gap:14px;">
+        <section class="scorear-experience-panel spotlight journey-action-card">
+          <div class="journey-bento-art"><img src="assets/oasis.webp" alt="" loading="lazy"><div class="journey-bento-shade"></div><span class="launch-pill journey-art-badge"><span class="live-dot"></span> مراجعة متباعدة • +10 XP</span><span class="journey-art-date">${dueMistakes} قيد المراجعة</span></div>
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;"><span class="scorear-panel-index">02 / SPACED REVIEW</span><span class="launch-pill" style="padding:3px 10px;font-size:10px;">${dueMistakes} قيد المراجعة</span></div>
-            ${orbBook}
-            <h3 style="color:#f6f3ff;font-size:19px;font-weight:900;margin:4px 0 6px;">دفتر أخطائي الذكي</h3>
-            <p style="color:#aaa9c1;font-size:13px;margin:0;line-height:1.75;">يعيد لك الأسئلة التي أخطأت فيها بجدولة متباعدة حتى تتقنها وتكسب +10 XP.</p>
+            <h3 class="journey-card-h">دفتر أخطائي الذكي</h3>
+            <p class="journey-card-p">يعيد لك الأسئلة التي أخطأت فيها بجدولة متباعدة ذكية حتى تتقنها وتكسب +10 XP.</p>
           </div>
-          <div><button type="button" class="btn launch-outline" id="openJourneyNotebookBtn" style="width:100%;padding:11px 18px;border-color:#9665ff66;">${icon('bookMarked', { size: 15 })} افتح دفتر أخطائي</button></div>
+          <div><button type="button" class="btn launch-outline" id="openJourneyNotebookBtn" style="width:100%;padding:11px 18px;">${icon('bookMarked', { size: 15 })} افتح دفتر أخطائي</button></div>
         </section>
-      </div>`;
+      </div>
+      ${lockerHtml}`;
   }
 
   function renderExtrasBottomHtml(state = getExtrasState()) {
@@ -400,23 +408,25 @@
     const badges = computeBadges(state);
     const recent = state.attempts.slice(0, VISIBLE_ATTEMPTS);
     return `
-      <section class="scorear-experience-panel spotlight" style="margin-top:26px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:10px;">${iconBox('award', { size: 'sm', tone: 'violet', tilted: true })}<div><h3 style="color:#f6f3ff;font-size:17px;font-weight:900;margin:0;">الأوسمة المكتسبة</h3><small style="color:#a1a4be;font-size:11px;">تُفتح تلقائياً مع تقدمك الحقيقي</small></div></div>
-          <span class="scorear-panel-index">ACHIEVEMENTS</span>
-        </div>
-        <div class="scorear-badges-grid">
-          ${badges.map(b => `<div class="scorear-badge-card ${b.earned ? 'earned' : 'locked'}">${iconBox(b.icon, { size: 'md', tone: b.earned ? 'cyan' : 'muted', tilted: b.earned })}<div style="min-width:0;"><strong style="display:block;color:#f6f3ff;font-size:13px;font-weight:800;">${escapeHtml(b.title)}</strong><small style="display:block;color:#a1a4be;font-size:11px;line-height:1.5;">${escapeHtml(b.desc)}</small></div></div>`).join('')}
-        </div>
-      </section>
-      <section class="scorear-experience-panel tone-cyan spotlight" style="margin-top:18px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:10px;">${iconBox('history', { size: 'sm', tone: 'cyan' })}<div><h3 style="color:#f6f3ff;font-size:17px;font-weight:900;margin:0;">أحدث محاولاتك (${recent.length})</h3><small style="color:#a1a4be;font-size:11px;">يحتفظ النظام بآخر 50 محاولة ويعرض أحدث 5 محاولات</small></div></div>
-          <span class="scorear-panel-index">RECENT LOG</span>
-        </div>
-        ${recent.length ? `<div class="scorear-attempts-list">${recent.map(a => `<div class="scorear-attempt-row"><div style="min-width:0;"><strong style="display:block;color:#f6f3ff;font-size:13px;font-weight:800;">${escapeHtml(a.title)}</strong><small style="color:#a1a4be;font-size:11px;">${escapeHtml(a.cairoDate || '')} • ${a.correct}/${a.total} إجابات صحيحة</small></div><div style="display:flex;align-items:center;gap:8px;"><span style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;background:#1d5c52;color:#befff2;border:1px solid #44b8a544;">${a.percentage}%</span>${a.xpEarned ? `<span style="padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;background:#2b234d;color:#d7ccea;">+${a.xpEarned} XP</span>` : ''}</div></div>`).join('')}</div>`
-        : `<p style="color:#a1a4be;font-size:13px;margin:0;line-height:1.8;">لم تسجّل محاولات بعد — ابدأ تحدي اليوم أو أي مسار تدريبي لتظهر نتائجك هنا.</p>`}
-      </section>`;
+      <div class="scorear-bento-two" style="margin-top:24px;">
+        <section class="scorear-experience-panel spotlight">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:10px;">${iconBox('award', { size: 'sm', tone: 'violet', tilted: true })}<div><h3 class="journey-card-h" style="margin:0;font-size:17px;">الأوسمة المكتسبة</h3><small class="journey-sub-note">تُفتح تلقائياً مع تقدمك الحقيقي</small></div></div>
+            <span class="scorear-panel-index">أوسمة التميّز</span>
+          </div>
+          <div class="scorear-badges-grid badges-two-col">
+            ${badges.map(b => `<div class="scorear-badge-card ${b.earned ? 'earned' : 'locked'}">${iconBox(b.icon, { size: 'md', tone: b.earned ? 'cyan' : 'muted', tilted: b.earned })}<div style="min-width:0;"><strong class="journey-badge-title">${escapeHtml(b.title)}</strong><small class="journey-badge-desc">${escapeHtml(b.desc)}</small></div></div>`).join('')}
+          </div>
+        </section>
+        <section class="scorear-experience-panel tone-cyan spotlight">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:10px;">${iconBox('history', { size: 'sm', tone: 'cyan' })}<div><h3 class="journey-card-h" style="margin:0;font-size:17px;">أحدث محاولاتك (${recent.length})</h3><small class="journey-sub-note">يحتفظ النظام بآخر 50 محاولة ويعرض أحدث 5</small></div></div>
+            <span class="scorear-panel-index">سجل النشاط</span>
+          </div>
+          ${recent.length ? `<div class="scorear-attempts-list">${recent.map(a => `<div class="scorear-attempt-row"><div style="min-width:0;"><strong class="journey-badge-title">${escapeHtml(a.title)}</strong><small class="journey-badge-desc">${escapeHtml(a.cairoDate || '')} • ${a.correct}/${a.total} إجابات صحيحة</small></div><div style="display:flex;align-items:center;gap:8px;"><span class="journey-pct-pill">${a.percentage}%</span>${a.xpEarned ? `<span class="journey-xp-pill">+${a.xpEarned} XP</span>` : ''}</div></div>`).join('')}</div>`
+          : `<p class="journey-card-p">لم تسجّل محاولات بعد — ابدأ تحدي اليوم أو أي مسار تدريبي لتظهر نتائجك هنا.</p>`}
+        </section>
+      </div>`;
   }
 
   function polishLegacyJourneyIcons(page) {
@@ -442,7 +452,8 @@
     if (legacyHeader) legacyHeader.style.display = 'none';
     const legacyStats = page.querySelector('.scorear-legacy-stats');
     if (legacyStats) legacyStats.style.display = 'none';
-    // Deduplicate redundant Bento section from legacy journey view cleanly without touching protected engine files
+    const legacyTracks = page.querySelector('#practiceTracksSection');
+    if (legacyTracks) legacyTracks.style.display = 'none';
     const streakBox = page.querySelector('#scorearStreakContainer');
     if (streakBox && streakBox.nextElementSibling && streakBox.nextElementSibling.classList.contains('scorear-bento-two')) {
       streakBox.nextElementSibling.style.display = 'none';

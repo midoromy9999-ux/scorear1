@@ -776,3 +776,58 @@
   display: block;
   animation: character-walk-frames 1.2s steps(1, end) infinite;
 }
+
+/* ===== Day Mode Overrides for Standalone Galleries (Characters / Cards / Podium) ===== */
+html[data-theme="day"] .character-gallery-page {
+  color: #0d1b3e;
+}
+html[data-theme="day"] .scorear-unified-header {
+  background: rgba(244, 250, 255, 0.94) !important;
+  border-bottom-color: rgba(14, 165, 233, 0.22) !important;
+}
+html[data-theme="day"] .scorear-unified-tabs {
+  background: rgba(232, 244, 255, 0.92) !important;
+  border-color: rgba(14, 165, 233, 0.24) !important;
+}
+html[data-theme="day"] .scorear-unified-tab {
+  color: #1e3a6e !important;
+}
+html[data-theme="day"] .scorear-unified-tab.is-active {
+  color: #ffffff !important;
+}
+html[data-theme="day"] .scorear-unified-action-btn {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(14, 165, 233, 0.28) !important;
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .character-stage {
+  background: radial-gradient(ellipse at 50% 50%, rgba(56, 189, 248, 0.22), transparent 68%),
+    linear-gradient(160deg, #ffffff, #e4f2ff) !important;
+  border-color: rgba(14, 165, 233, 0.28) !important;
+}
+html[data-theme="day"] #studentCustomPreviewTitle h3,
+html[data-theme="day"] .character-card h3 {
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] #studentCustomPreviewTitle p,
+html[data-theme="day"] .character-stage p,
+html[data-theme="day"] .character-card p,
+html[data-theme="day"] .character-card small {
+  color: #334e7b !important;
+}
+html[data-theme="day"] .character-card,
+html[data-theme="day"] #studentProfileSetup {
+  background: linear-gradient(160deg, #ffffff, #ebf5ff) !important;
+  border-color: rgba(14, 165, 233, 0.25) !important;
+  color: #0d1b3e !important;
+}
+html[data-theme="day"] .character-tabs button {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(14, 165, 233, 0.24) !important;
+  color: #1e3a6e !important;
+}
+html[data-theme="day"] .character-tabs button[aria-selected="true"],
+html[data-theme="day"] .character-tabs button.active {
+  color: #ffffff !important;
+}
+

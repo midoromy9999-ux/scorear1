@@ -94,11 +94,14 @@
         <div class="scorear-tracks-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 290px), 1fr));gap:18px;width:100%;box-sizing:border-box;">
     `;
 
+    const trackBgs = ['assets/academy.webp', 'assets/magic.webp', 'assets/oasis.webp'];
     tracks.forEach((track, tIdx) => {
       const stations = track.stations || [];
       const tIcon = tIdx === 0 ? 'book' : tIdx === 1 ? 'spark' : 'edit';
+      const trackArt = trackBgs[tIdx % trackBgs.length];
       html += `
         <div class="scorear-experience-panel scorear-track-card spotlight" style="display:flex;flex-direction:column;gap:14px;box-sizing:border-box;width:100%;">
+          <div class="scorear-track-art"><img src="${trackArt}" alt="" loading="lazy"><div class="scorear-track-art-shade"></div></div>
           <div style="display:flex;align-items:center;gap:12px;border-bottom:1px solid #ffffff12;padding-bottom:14px;">
             ${ui.iconBox(tIcon, { size: 'md', tone: 'violet', tilted: true })}
             <div>

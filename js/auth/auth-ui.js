@@ -257,8 +257,10 @@
 
     const launchActions = document.querySelector('.launch-nav-actions');
     if (launchActions) {
+      const themeBtn = `<button type="button" class="scorear-theme-toggle" data-action="toggle-theme" title="تبديل الوضع النهاري / الليلي">${uiIcon('sun', 15)}<span>نهاري</span></button>`;
       if (isTeacher) {
         launchActions.innerHTML = `
+          ${themeBtn}
           <button class="nav-join" data-action="join">${uiIcon('key', 14)} <span>دخول القاعة بالرمز</span></button>
           <a href="#studio" class="btn launch-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:12px;font-weight:800;font-size:13px;">${uiIcon('grid', 15)} <span>استوديو المعلم</span></a>
           <button class="scorear-gear-btn" data-action="logout" style="border-color:rgba(255,107,107,0.4);color:#fca5a5;padding:8px 12px;">${uiIcon('logOut', 14)} <span>خروج</span></button>
@@ -266,6 +268,7 @@
         `;
       } else if (isStudent) {
         launchActions.innerHTML = `
+          ${themeBtn}
           <button class="nav-join" data-action="join">${uiIcon('key', 14)} <span>دخول القاعة بالرمز</span></button>
           <a href="#journey" class="btn launch-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:12px;font-weight:800;font-size:13px;">${uiIcon('route', 15)} <span>رحلتي التعليمية</span></a>
           <button class="scorear-gear-btn" data-action="logout" style="border-color:rgba(255,107,107,0.4);color:#fca5a5;padding:8px 12px;">${uiIcon('logOut', 14)} <span>خروج</span></button>
@@ -273,12 +276,16 @@
         `;
       } else {
         launchActions.innerHTML = `
+          ${themeBtn}
           <button class="nav-join" data-action="join">${uiIcon('key', 14)} <span>دخول القاعة بالرمز</span></button>
           <button class="btn launch-primary" data-action="unified-login">دخول / حساب جديد ${uiIcon('arrow', 14)}</button>
           <button class="icon-btn launch-menu" data-action="menu" aria-label="فتح القائمة">${uiIcon('menu', 18)}</button>
         `;
       }
       if (global.hydrate) global.hydrate(launchActions);
+      if (global.ScoreARNav && typeof global.ScoreARNav.applyTheme === 'function') {
+        global.ScoreARNav.applyTheme(global.ScoreARNav.getTheme());
+      }
     }
   }
 

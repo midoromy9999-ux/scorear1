@@ -14,17 +14,17 @@ window.renderTeacherStudio = function () {
   const launchWorlds = "window.ScoreARWorldFlow && window.ScoreARWorldFlow.openWorldPicker ? window.ScoreARWorldFlow.openWorldPicker({ onConfirm: function(wId){ renderLiveLobby(wId, null, true, false); } }) : renderLiveLobby('royal', null, false, false)";
 
   const contentTools = [
-    ['edit', 'إنشاء مسابقة جديدة', 'أنشئ أسئلتك وخياراتها مع الحفظ التلقائي الفوري.', "openToolModal('builder')", 'violet', 'محرر'],
-    ['spark', 'مساعد الأسئلة الذكي AI', 'توليد الأسئلة بالذكاء الاصطناعي مع مراجعة دقيقة.', "openToolModal('ai')", 'cyan', 'ذكي'],
-    ['layers', 'بنك الأسئلة ومسابقاتي', 'بنك أسئلة منظم ومكتبة مسابقات خاصة بالمعلم.', "openToolModal('bank')", 'violet', 'مكتبتك'],
-    ['spreadsheet', 'استيراد Excel / CSV', 'استيراد سريع بنفس ترتيب الأعمدة ومعاينة حية.', "openToolModal('import')", 'cyan', 'سريع']
+    ['edit', 'إنشاء مسابقة جديدة', 'أنشئ أسئلتك وخياراتها مع الحفظ التلقائي الفوري.', "openToolModal('builder')", 'violet', 'محرر', 'assets/classroom.webp'],
+    ['spark', 'مساعد الأسئلة الذكي AI', 'توليد الأسئلة بالذكاء الاصطناعي مع مراجعة دقيقة.', "openToolModal('ai')", 'cyan', 'ذكي', 'assets/cosmic.webp'],
+    ['layers', 'بنك الأسئلة ومسابقاتي', 'بنك أسئلة منظم ومكتبة مسابقات خاصة بالمعلم.', "openToolModal('bank')", 'violet', 'مكتبتك', 'assets/academy.webp'],
+    ['spreadsheet', 'استيراد Excel / CSV', 'استيراد سريع بنفس ترتيب الأعمدة ومعاينة حية.', "openToolModal('import')", 'cyan', 'سريع', 'assets/oasis.webp']
   ];
 
   const manageTools = [
-    ['users', 'صفوفي وواجبات الطلاب', 'أنشئ صفوفك واقبل طلابك وتابع واجباتهم.', 'ScoreARClassrooms.openView()', 'cyan', 'الفصول'],
-    ['chart', 'تقارير القاعة والنتائج', 'تحليلات دقيقة لنسب الصواب وتشخيص الثغرات.', "openToolModal('reports')", 'violet', 'تحليلات'],
-    ['shield', 'إدارة المعلمين والمنصة', 'الموافقات والصلاحيات المتقدمة حسب الرتبة.', "openToolModal('teachers')", 'violet', 'إدارة'],
-    ['sparkles', 'معرض الأبطال والكروت', 'استعرض ٢٠ بطلاً متحركاً و٢٠ كارتاً تكتيكياً.', "window.ScoreARUnifiedViews ? ScoreARUnifiedViews.openView('cards') : (window.location.href='cards.html')", 'cyan', '٢٠+٢٠']
+    ['users', 'صفوفي وواجبات الطلاب', 'أنشئ صفوفك واقبل طلابك وتابع واجباتهم.', 'ScoreARClassrooms.openView()', 'cyan', 'الفصول', ''],
+    ['chart', 'تقارير القاعة والنتائج', 'تحليلات دقيقة لنسب الصواب وتشخيص الثغرات.', "openToolModal('reports')", 'violet', 'تحليلات', ''],
+    ['shield', 'إدارة المعلمين والمنصة', 'الموافقات والصلاحيات المتقدمة حسب الرتبة.', "openToolModal('teachers')", 'violet', 'إدارة', ''],
+    ['sparkles', 'معرض الأبطال والكروت', 'استعرض ٢٠ بطلاً متحركاً و٢٠ كارتاً تكتيكياً.', "window.ScoreARUnifiedViews ? ScoreARUnifiedViews.openView('cards') : (window.location.href='cards.html')", 'cyan', '٢٠+٢٠', '']
   ];
 
   const renderGroup = (kicker, title, items, extraClass = '') => `
@@ -36,8 +36,9 @@ window.renderTeacherStudio = function () {
         </div>
       </div>
       <div class="studio-tools-grid cols-4">
-        ${items.map(([iconName, cardTitle, desc, onclickCode, tone, badge]) => `
-          <button type="button" class="studio-tool-card spotlight tone-${tone}" onclick="${onclickCode}">
+        ${items.map(([iconName, cardTitle, desc, onclickCode, tone, badge, artSrc]) => `
+          <button type="button" class="studio-tool-card spotlight tone-${tone} ${artSrc ? 'has-art' : ''}" onclick="${onclickCode}">
+            ${artSrc ? `<div class="tool-card-art"><img src="${artSrc}" alt="" loading="lazy"><div class="tool-card-art-shade"></div></div>` : ''}
             <div class="tool-card-top">
               ${ib(iconName, tone, 'sm')}
               <div class="tool-card-meta">
@@ -58,24 +59,39 @@ window.renderTeacherStudio = function () {
   return `<div class="page teacher-space scorear-open-page">
     ${ui.cosmicBackdrop ? ui.cosmicBackdrop() : ''}
 
-    <header class="studio-heading studio-compact-head reveal">
-      <div class="studio-identity">
-        <div class="studio-avatar-wrap">
-          <img src="assets/characters/teacher_ahmed.webp?v=20261106_real" alt="${teacherName}">
+    <header class="studio-hero-card reveal">
+      <div class="studio-hero-main">
+        <div class="studio-identity">
+          <div class="studio-avatar-wrap">
+            <img src="assets/characters/teacher_ahmed.webp?v=20261106_real" alt="${teacherName}">
+          </div>
+          <div>
+            <div class="launch-pill" style="margin-bottom:8px;"><span class="live-dot"></span> استوديو المعلم · ${teacherName}</div>
+            <h1 class="studio-main-title">مساحة عملك، <span class="gradient-text">جاهزة للانطلاق.</span></h1>
+            <p class="studio-main-sub">أنشئ مسابقتك، أدر فصولك، وأطلق قاعتك الحية من شاشة واحدة واضحة.</p>
+          </div>
         </div>
-        <div>
-          <div class="launch-pill" style="margin-bottom:8px;"><span class="live-dot"></span> استوديو المعلم · ${teacherName}</div>
-          <h1 class="studio-main-title">مساحة عملك، <span class="gradient-text">جاهزة للانطلاق.</span></h1>
-          <p class="studio-main-sub">أنشئ مسابقتك، أدر فصولك، وأطلق قاعتك الحية من شاشة واحدة واضحة.</p>
+        <div class="studio-hero-chips" aria-label="ملخص إمكانات القاعة">
+          <span class="studio-mini-chip">${ic('planet', 14)} ٦ عوالم 2K</span>
+          <span class="studio-mini-chip">${ic('trophy', 14)} ٤ أوضاع لعب</span>
+          <span class="studio-mini-chip">${ic('spark', 14)} ٢٠ بطلاً وكارتاً</span>
+        </div>
+        <div class="studio-quick-actions">
+          <button type="button" class="btn launch-primary" onclick="openToolModal('builder')">
+            ${ic('plus', 17)} مسابقة جديدة
+          </button>
+          <button type="button" class="btn launch-student-join" onclick="${launchWorlds}">
+            ${ic('planet', 17)} إطلاق قاعة حية
+          </button>
         </div>
       </div>
-      <div class="studio-quick-actions">
-        <button type="button" class="btn launch-primary" onclick="openToolModal('builder')">
-          ${ic('plus', 17)} مسابقة جديدة
-        </button>
-        <button type="button" class="btn launch-student-join" onclick="${launchWorlds}">
-          ${ic('planet', 17)} إطلاق قاعة حية
-        </button>
+      <div class="studio-hero-art" aria-hidden="true">
+        <div class="studio-hero-scene">
+          <img src="assets/classroom.webp" alt="">
+          <div class="studio-hero-scene-shade"></div>
+          <span class="studio-scene-tag"><span class="live-dot"></span> قاعة تفاعلية جاهزة للبث</span>
+        </div>
+        <img class="studio-hero-companion" src="assets/characters/char_01.webp" alt="">
       </div>
     </header>
 
